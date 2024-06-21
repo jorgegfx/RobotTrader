@@ -13,11 +13,17 @@ package object data {
     snapshotTime: Instant) {
   }
 
+  enum StockQuoteInterval:
+    case OneMinute, FiveMinutes, FifteenMinutes, ThirtyMinutes, SixtyMinutes
+
+  enum StockQuoteFrequency:
+    case Daily, Weekly, Monthly
+
   trait StockQuotesDataProvider {
-    def getCurrentInfo(symbol: String): Try[StockQuote]
+    def getIntradayQuotes(symbol: String,
+                          interval: StockQuoteInterval): Try[List[StockQuote]]
+    def getQuotes(symbol: String,
+                  frequency: StockQuoteFrequency): Try[List[StockQuote]]
 
-    def getHistory(symbol: String, from: Instant, to: Instant): Try[List[StockQuote]]
-
-    def release(): Unit
   }
 }

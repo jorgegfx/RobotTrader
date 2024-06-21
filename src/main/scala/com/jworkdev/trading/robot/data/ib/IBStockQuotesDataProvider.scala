@@ -2,7 +2,7 @@ package com.jworkdev.trading.robot.data.ib
 
 import com.ib.client.*
 import com.ib.controller.ApiConnection.ILogger
-import com.jworkdev.trading.robot.data.{StockQuote, StockQuotesDataProvider}
+import com.jworkdev.trading.robot.data.{StockQuote, StockQuoteFrequency, StockQuoteInterval, StockQuotesDataProvider}
 import com.typesafe.scalalogging.Logger
 
 import java.time.Instant
@@ -48,6 +48,12 @@ class IBStockQuotesDataProvider(host: String, port: Int) extends StockQuotesData
     }
   }
 
+  def getIntradayQuotes(symbol: String,
+                        interval: StockQuoteInterval): Try[List[StockQuote]] = ???
+  
+  def getQuotes(symbol: String,
+                frequency: StockQuoteFrequency): Try[List[StockQuote]] = ???
+
   def getCurrentInfo(symbol: String): Try[StockQuote] = {
     connect()
     semaphore.tryAcquire(5,TimeUnit.SECONDS)
@@ -72,7 +78,7 @@ class IBStockQuotesDataProvider(host: String, port: Int) extends StockQuotesData
   }
   def getHistory(symbol: String, from: Instant, to: Instant): Try[List[StockQuote]] = ???
 
-  override def release(): Unit = {
+  def release(): Unit = {
     logger.info("Disconnecting ...")
     clientSocket.eDisconnect()
   }
