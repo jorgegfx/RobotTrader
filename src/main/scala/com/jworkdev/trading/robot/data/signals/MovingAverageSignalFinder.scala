@@ -1,6 +1,6 @@
 package com.jworkdev.trading.robot.data.signals
 
-import com.jworkdev.trading.robot.data.StockQuote
+import com.jworkdev.trading.robot.data.StockPrice
 import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
 
 class MovingAverageSignalFinder(
@@ -8,12 +8,12 @@ class MovingAverageSignalFinder(
     private val longTermPeriod: Int
 ) extends SignalFinder[MovingAverageRequest]:
   override def find(request: MovingAverageRequest): List[Signal] =
-    if request.stockQuotes.size > 1 then
-      val prices = request.stockQuotes.map(_.close)
+    if request.stockPrices.size > 1 then
+      val prices = request.stockPrices.map(_.close)
       val shortTermMA = calculateSMA(prices = prices, period = shortTermPeriod)
       val longTermMA = calculateSMA(prices = prices, period = longTermPeriod)
       detectSignals(
-        stockQuotes = request.stockQuotes,
+        stockQuotes = request.stockPrices,
         shortTermMA = shortTermMA,
         longTermMA = longTermMA
       )
@@ -31,9 +31,9 @@ class MovingAverageSignalFinder(
     }
 
   private def detectSignals(
-      stockQuotes: List[StockQuote],
-      shortTermMA: List[Option[Double]],
-      longTermMA: List[Option[Double]]
+                             stockQuotes: List[StockPrice],
+                             shortTermMA: List[Option[Double]],
+                             longTermMA: List[Option[Double]]
   ): List[Signal] =
     (for i <- 1 until stockQuotes.length
     yield (
@@ -57,4 +57,4 @@ class MovingAverageSignalFinder(
     ).flatten.toList
 
 object MovingAverageSignalFinder:
-  def apply(): MovingAverageSignalFinder = new MovingAverageSignalFinder(3, 5)
+  def apply(): MovingAverageSignalFinder = new MovingAverageSignalFinder(50, 200)

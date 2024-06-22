@@ -5,6 +5,8 @@ object SignalFinderStrategy {
     signalFinderRequest match
       case request: MovingAverageRequest =>
         MovingAverageSignalFinder().find(request = request)
+      case request: RelativeStrengthIndexRequest =>
+        RelativeStrengthIndexSignalFinder().find(request = request)  
       case _ => List.empty
   }
 }
