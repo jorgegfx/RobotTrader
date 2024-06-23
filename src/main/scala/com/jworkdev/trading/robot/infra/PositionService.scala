@@ -4,12 +4,15 @@ import com.jworkdev.trading.robot.domain.Position
 import doobie.implicits.*
 import io.github.gaelrenoux.tranzactio.doobie
 import io.github.gaelrenoux.tranzactio.doobie.{TranzactIO, tzio}
+import zio.{ULayer, ZLayer}
 
 import java.time.Instant
 import java.util.Date
 
 trait PositionService:
   def create(position: Position): TranzactIO[Unit]
+
+  def findAll(): TranzactIO[List[Position]]
 
   def findOpenBetween(from: Instant, to: Instant): TranzactIO[List[Position]]
 
@@ -48,6 +51,21 @@ class PositionServiceImpl extends PositionService:
       pnl = Option(pnl)
     )
 
+  override def findAll(): TranzactIO[List[Position]] =
+    tzio {
+      sql"""SELECT id,
+             symbol,
+             number_of_shares,
+             open_price_per_share,
+             close_price_per_share,
+             open_date,
+             close_date,
+             pnl FROM position"""
+        .query[PositionDB]
+        .to[List]
+        .map(_.map(_.toDomain))
+    }
+
   override def findOpenBetween(from: Instant, to: Instant): TranzactIO[List[Position]] =
     tzio {
       sql"""SELECT id,
@@ -79,3 +97,7 @@ class PositionServiceImpl extends PositionService:
 
   override def getPnL(from: Instant, to: Instant): TranzactIO[Double] =
     findCloseBetween(from = from, to = to).map(_.flatMap(_.pnl).sum)
+
+
+object PositionServiceLayer:
+  val layer: ULayer[PositionService] = ZLayer.succeed(new PositionServiceImpl)
