@@ -1,5 +1,5 @@
 package com.jworkdev.trading.robot.data.ib
-
+/*
 import com.ib.client.*
 import com.ib.controller.ApiConnection.ILogger
 import com.jworkdev.trading.robot.data.{
@@ -564,3 +564,4 @@ class IBStockQuotesDataProvider(host: String, port: Int)
   ): Unit = {}
 
   override def userInfo(reqId: Int, whiteBrandingId: String): Unit = {}
+*/
