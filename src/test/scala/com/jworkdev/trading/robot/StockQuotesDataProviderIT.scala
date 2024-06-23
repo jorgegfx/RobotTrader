@@ -1,5 +1,5 @@
 package com.jworkdev.trading.robot
-
+/*
 import com.jworkdev.trading.robot.data.ib.IBStockQuotesDataProvider
 
 
@@ -15,3 +15,4 @@ object StockQuotesDataProviderIT extends App {
 
   //stockQuotesDataProvider.release()
 }
+*/

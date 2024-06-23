@@ -1,11 +1,11 @@
 ThisBuild / version := "0.1.0-SNAPSHOT"
-scalaVersion := "3.2.0"
+scalaVersion := "3.4.2"
 
 // ZIO Version
 val zioVersion = "2.0.0"
 
 // Doobie Version
-val doobieVersion = "1.0.0-RC1"
+val doobieVersion = "1.0.0-RC5"
 
 // ZIO JSON Version
 val zioJsonVersion = "0.3.0"
@@ -25,16 +25,16 @@ libraryDependencies ++= Seq(
 
   // ZIO JSON
   "dev.zio" %% "zio-json" % zioJsonVersion,
-
+  "io.github.gaelrenoux" %% "tranzactio-doobie" % "5.2.0",
   // Doobie Core
   // Start with this one
-  "org.tpolecat" %% "doobie-core" % "1.0.0-RC4",
+  "org.tpolecat" %% "doobie-core" % doobieVersion,
 
   // And add any of these as needed
-  "org.tpolecat" %% "doobie-h2" % "1.0.0-RC4", // H2 driver 1.4.200 + type mappings.
-  "org.tpolecat" %% "doobie-hikari" % "1.0.0-RC4", // HikariCP transactor.
-  "org.tpolecat" %% "doobie-specs2" % "1.0.0-RC4" % "test", // Specs2 support for typechecking statements.
-  "org.tpolecat" %% "doobie-scalatest" % "1.0.0-RC4" % "test",
+  "org.tpolecat" %% "doobie-h2" % doobieVersion, // H2 driver 1.4.200 + type mappings.
+  "org.tpolecat" %% "doobie-hikari" % doobieVersion, // HikariCP transactor.
+  "org.tpolecat" %% "doobie-specs2" % doobieVersion % "test", // Specs2 support for typechecking statements.
+  "org.tpolecat" %% "doobie-scalatest" % doobieVersion % "test",
 
 // ZIO Interop Cats
   "dev.zio" %% "zio-interop-cats" % "3.2.9.1",
