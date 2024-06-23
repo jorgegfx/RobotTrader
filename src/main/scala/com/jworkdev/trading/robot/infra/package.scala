@@ -11,7 +11,7 @@ package object infra:
   object DatabaseConfig:
     private val hikariConfig: HikariConfig = {
       val hikariConfig = new HikariConfig()
-      hikariConfig.setJdbcUrl("jdbc:mysql://localhost:33060/robot_trading")
+      hikariConfig.setJdbcUrl("jdbc:mysql://localhost:3306/robot_trading")
       hikariConfig.setUsername("trading")
       hikariConfig.setPassword("trading")
       hikariConfig.setDriverClassName("com.mysql.cj.jdbc.Driver")
