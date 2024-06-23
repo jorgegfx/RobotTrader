@@ -15,7 +15,5 @@ package object domain {
                        openDate: Instant,
                        closeDate: Option[Instant],
                        pnl: Option[Double]
-                     ) {
-    def openDateSql(): Date = Date.from(openDate)
-  }
+                     ) 
 }
