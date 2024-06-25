@@ -1,6 +1,9 @@
 package com.jworkdev.trading.robot
 
 import com.zaxxer.hikari.HikariDataSource
+import doobie.util.transactor
+import io.github.gaelrenoux.tranzactio.doobie.Database
+import io.github.gaelrenoux.tranzactio.{DatabaseOps, ErrorStrategies}
 import zio.config.magnolia.*
 import zio.config.typesafe.*
 import zio.{Config, ConfigProvider, IO}
@@ -33,11 +36,24 @@ package object infra:
       hikariConfig
 
     val layer: ZLayer[Any, Throwable, DataSource] = ZLayer.scoped {
-      for{
-        cfg <- dbConfig.map(dbCfg=>hikariConfig(dbConfig = dbCfg))
+      for
+        cfg <- dbConfig.map(dbCfg => hikariConfig(dbConfig = dbCfg))
         ds <- ZIO.attemptBlocking {
           val ds: DataSource = new HikariDataSource(cfg)
           ds
         }
-      }yield ds
+      yield ds
     }
+
+    private val dbRecovery = ZLayer.succeed(
+      ErrorStrategies
+        .timeout(10.seconds)
+        .retryForeverExponential(10.seconds, maxDelay = 10.seconds)
+    )
+    private val datasource = DatabaseConfig.dbRecovery >>> DatabaseConfig.layer
+    val database: ZLayer[Any, Throwable, DatabaseOps.ServiceOps[
+      transactor.Transactor[Task]
+    ]] =
+      (datasource ++ dbRecovery) >>> Database.fromDatasourceAndErrorStrategies
+    val alternateDbRecovery: ErrorStrategies =
+      ErrorStrategies.timeout(10.seconds).retryCountFixed(3, 3.seconds)

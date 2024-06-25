@@ -16,19 +16,19 @@ object PnLAnalyzerApp extends App:
   val initialCash = 100000.0
   provider.getIntradayQuotes("NVDA", FiveMinutes) match
     case Failure(exception) => exception.printStackTrace()
-    case Success(stockQuotes) =>
+    case Success(stockPrices) =>
       println("stockQuotes")
-      stockQuotes.foreach(println)
+      stockPrices.foreach(println)
 
       println("MovingAverage: ")
       val movingAvgSignals =
         SignalFinderStrategy.findSignals(signalFinderRequest =
-          MovingAverageRequest(stockPrices = stockQuotes)
+          MovingAverageRequest(stockPrices = stockPrices)
         )
       val pnlMovingAvg =
         pnLAnalyzer.execute(
           initialCash = initialCash,
-          prices = stockQuotes,
+          prices = stockPrices,
           signals = movingAvgSignals
         )
       println(s"PNL: ${pnlMovingAvg.pnl}")
@@ -36,13 +36,13 @@ object PnLAnalyzerApp extends App:
         s"${order.`type`},${order.symbol},${order.dateTime},${order.shares},${order.price}"
       }}.foreach(println)
       val rsiSignals = SignalFinderStrategy.findSignals(signalFinderRequest =
-        RelativeStrengthIndexRequest(stockPrices = stockQuotes)
+        RelativeStrengthIndexRequest(stockPrices = stockPrices)
       )
       println("RSI: ")
       val pnlRsi =
         pnLAnalyzer.execute(
           initialCash = initialCash,
-          prices = stockQuotes,
+          prices = stockPrices,
           signals = rsiSignals
         )
       println(s"PNL: ${pnlRsi.pnl}")

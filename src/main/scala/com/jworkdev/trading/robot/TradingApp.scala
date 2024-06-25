@@ -1,6 +1,7 @@
-package com.jworkdev.trading.robot.infra
+package com.jworkdev.trading.robot
 
 import com.jworkdev.trading.robot.domain.Position
+import com.jworkdev.trading.robot.infra.{DatabaseConfig, FinInstrumentConfigService, PositionService, PositionServiceLayer}
 import doobie.util.log.LogHandler
 import io.github.gaelrenoux.tranzactio.doobie.*
 import io.github.gaelrenoux.tranzactio.{DbException, ErrorStrategiesRef}
@@ -10,22 +11,26 @@ import zio.interop.catz.*
 
 import java.time.Instant
 
-object PositionServiceTestApp extends zio.ZIOAppDefault:
+object TradingApp extends zio.ZIOAppDefault:
   implicit val dbContext: DbContext = DbContext(logHandler = LogHandler.jdkLogHandler[Task])
   private val positionService = PositionServiceLayer.layer
-  type AppEnv = Database & PositionService
-  private val appEnv = DatabaseConfig.database ++ positionService
+  private val finInstrumentConfigService = FinInstrumentConfigService.layer
+  type AppEnv = Database & PositionService & FinInstrumentConfigService
+  private val appEnv = DatabaseConfig.database ++ positionService ++ finInstrumentConfigService
 
-  override def run: ZIO[ZIOAppArgs with Scope, Any, Any] =
+  override def run: ZIO[ZIOAppArgs & Scope, Any, Any] =
     for {
       _ <- Console.printLine("Starting the app")
-      trio <- myApp().provideLayer(appEnv)
+      trio <- runTradingLoop().provideLayer(appEnv)
       _ <- Console.printLine(trio.mkString(", "))
     } yield ExitCode(0)
 
-  def myApp(): ZIO[AppEnv, DbException, List[Position]] = {
-    val queries: ZIO[Connection with AppEnv, DbException, List[Position]] = for {
+  private def runTradingLoop(): ZIO[AppEnv, DbException, List[Position]] = {
+    val queries: ZIO[Connection & AppEnv, DbException, List[Position]] = for {
+      finInstrumentConfigService <- ZIO.service[FinInstrumentConfigService]
+      finInstrumentConfigs <- finInstrumentConfigService.findAll()
       positionService <- ZIO.service[PositionService]
+
       _ <- positionService.create(
         Position(
           id = 0,
