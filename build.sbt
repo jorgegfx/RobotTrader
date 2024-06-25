@@ -4,6 +4,8 @@ scalaVersion := "3.4.2"
 // ZIO Version
 val zioVersion = "2.0.0"
 
+val zioConfigVersion = "4.0.2"
+
 // Doobie Version
 val doobieVersion = "1.0.0-RC5"
 
@@ -22,6 +24,11 @@ libraryDependencies ++= Seq(
   // ZIO Core
   "dev.zio" %% "zio" % zioVersion,
   "dev.zio" %% "zio-streams" % zioVersion,
+
+  "dev.zio" %% "zio-config"          % zioConfigVersion,
+  "dev.zio" %% "zio-config-magnolia" % zioConfigVersion,
+  "dev.zio" %% "zio-config-typesafe" % zioConfigVersion,
+  "dev.zio" %% "zio-config-refined"  % zioConfigVersion,
 
   // ZIO JSON
   "dev.zio" %% "zio-json" % zioJsonVersion,
