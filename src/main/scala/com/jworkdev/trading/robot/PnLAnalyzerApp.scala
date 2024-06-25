@@ -1,7 +1,7 @@
 package com.jworkdev.trading.robot
 
 import com.jworkdev.trading.robot.data.StockQuoteInterval.FiveMinutes
-import com.jworkdev.trading.robot.data.alphavantage.AlphaVantageQuotesDataProvider
+import com.jworkdev.trading.robot.data.alphavantage.AlphaVantageFinancialInstrumentDataProvider
 import com.jworkdev.trading.robot.data.signals.{
   MovingAverageRequest,
   RelativeStrengthIndexRequest,
@@ -11,7 +11,7 @@ import com.jworkdev.trading.robot.data.signals.{
 import com.jworkdev.trading.robot.pnl.PnLAnalyzer
 import scala.util.{Failure, Success}
 object PnLAnalyzerApp extends App:
-  val provider = AlphaVantageQuotesDataProvider()
+  val provider = AlphaVantageFinancialInstrumentDataProvider()
   private val pnLAnalyzer = PnLAnalyzer()
   val initialCash = 100000.0
   provider.getIntradayQuotes("NVDA", FiveMinutes) match

@@ -1,6 +1,6 @@
 package com.jworkdev.trading.robot.data.alphavantage
 
-import com.jworkdev.trading.robot.data.{StockPrice, StockQuoteFrequency, StockQuoteInterval, StockQuotesDataProvider}
+import com.jworkdev.trading.robot.data.{StockPrice, StockQuoteFrequency, StockQuoteInterval, FinancialIInstrumentDataProvider}
 import org.json.JSONObject
 
 import java.net.URI
@@ -9,7 +9,7 @@ import java.time.{LocalDateTime, ZoneId}
 import java.time.format.DateTimeFormatter
 import scala.util.{Failure, Try}
 
-class AlphaVantageQuotesDataProvider extends StockQuotesDataProvider:
+class AlphaVantageFinancialInstrumentDataProvider extends FinancialIInstrumentDataProvider:
   import scala.jdk.CollectionConverters.*
   private val baseUrl = "https://www.alphavantage.co/query"
   private val apiKey = "TMNOJBPZ86A9UL98"

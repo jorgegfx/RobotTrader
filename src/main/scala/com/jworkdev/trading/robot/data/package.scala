@@ -20,7 +20,7 @@ package object data:
   enum StockQuoteFrequency:
     case Daily, Weekly, Monthly
 
-  trait StockQuotesDataProvider:
+  trait FinancialIInstrumentDataProvider:
     def getIntradayQuotes(
         symbol: String,
         interval: StockQuoteInterval
