@@ -24,7 +24,8 @@ class PnLAnalyzerImpl extends PnLAnalyzer:
     logger.info(s"Starting execution initialCash:$initialCash")
     var cash = initialCash // Initial cash
     var position = 0 // Number of shares held
-    var pnl = 0.0 // Profit and Loss
+    var currentPosition = (0,0.0D)
+    var totalGain = 0.0D;
     val orders = mutable.ListBuffer.empty[Order]
 
     signals.foreach { signal =>
@@ -35,7 +36,7 @@ class PnLAnalyzerImpl extends PnLAnalyzer:
             case Buy if cash >= orderPrice =>
               val sharesToBuy = (cash / orderPrice).toInt
               cash -= sharesToBuy * orderPrice
-              position += sharesToBuy
+              currentPosition = (currentPosition._1+sharesToBuy,orderPrice)
               orders += Order(
                 `type` = OrderType.Buy,
                 symbol = stockPrice.symbol,
@@ -44,11 +45,9 @@ class PnLAnalyzerImpl extends PnLAnalyzer:
                 price = orderPrice
               )
 
-            case Sell if position > 0 =>
-              cash += position * orderPrice
-              pnl += (position * orderPrice) - (orders.collect {
-                case order: Order => order.shares * order.price
-              }.sum / orders.count(_._1 == OrderType.Buy))
+            case Sell if currentPosition._1 > 0 =>
+              cash += currentPosition._1 * orderPrice
+              totalGain += currentPosition._1*(orderPrice-currentPosition._2)
               orders += Order(
                 `type` = OrderType.Sell,
                 symbol = stockPrice.symbol,
@@ -56,10 +55,11 @@ class PnLAnalyzerImpl extends PnLAnalyzer:
                 shares = position,
                 price = orderPrice
               )
-              position = 0
+              currentPosition = (0,0.0D)
             case _ =>
         case None =>
     }
+    val pnl = totalGain
     logger.info(s"Final Cash: $$${cash.formatted("%.2f")}")
     logger.info(s"Final Position: $position shares")
     logger.info(s"Final PnL: $$${pnl.formatted("%.2f")}")

@@ -20,7 +20,7 @@ object PnLAnalyzerApp extends App:
       println("stockQuotes")
       stockQuotes.foreach(println)
 
-      println("MovingAverage: PnL")
+      println("MovingAverage: ")
       val movingAvgSignals =
         SignalFinderStrategy.findSignals(signalFinderRequest =
           MovingAverageRequest(stockPrices = stockQuotes)
@@ -31,15 +31,21 @@ object PnLAnalyzerApp extends App:
           prices = stockQuotes,
           signals = movingAvgSignals
         )
-      println(pnlMovingAvg)
+      println(s"PNL: ${pnlMovingAvg.pnl}")
+      pnlMovingAvg.orders.map{order=>{
+        s"${order.`type`},${order.symbol},${order.dateTime},${order.shares},${order.price}"
+      }}.foreach(println)
       val rsiSignals = SignalFinderStrategy.findSignals(signalFinderRequest =
         RelativeStrengthIndexRequest(stockPrices = stockQuotes)
       )
-      println("RSI: PnL")
+      println("RSI: ")
       val pnlRsi =
         pnLAnalyzer.execute(
           initialCash = initialCash,
           prices = stockQuotes,
           signals = rsiSignals
         )
-      println(pnlRsi)
+      println(s"PNL: ${pnlRsi.pnl}")
+      pnlRsi.orders.map{order=>{
+        s"${order.`type`},${order.symbol},${order.dateTime},${order.shares},${order.price}"
+      }}.foreach(println)
