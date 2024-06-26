@@ -1,6 +1,7 @@
 package com.jworkdev.trading.robot.data.alphavantage
 
-import com.jworkdev.trading.robot.data.{StockPrice, StockQuoteFrequency, StockQuoteInterval, FinancialIInstrumentDataProvider}
+import com.jworkdev.trading.robot.data.{FinancialIInstrumentDataProvider, StockPrice, StockQuoteFrequency, StockQuoteInterval}
+import com.typesafe.scalalogging.Logger
 import org.json.JSONObject
 
 import java.net.URI
@@ -10,12 +11,14 @@ import java.time.format.DateTimeFormatter
 import scala.util.{Failure, Try}
 
 class AlphaVantageFinancialInstrumentDataProvider extends FinancialIInstrumentDataProvider:
+  private val logger = Logger(classOf[AlphaVantageFinancialInstrumentDataProvider])
   import scala.jdk.CollectionConverters.*
   private val baseUrl = "https://www.alphavantage.co/query"
   private val apiKey = "TMNOJBPZ86A9UL98"
   private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
   private def fetchResponse(url: String):Try[List[StockPrice]] =
+    logger.info(s"fetching :$url")
     val request = HttpRequest
       .newBuilder()
       .uri(URI.create(url))

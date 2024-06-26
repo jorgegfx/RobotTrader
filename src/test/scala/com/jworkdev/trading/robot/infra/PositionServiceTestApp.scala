@@ -12,7 +12,7 @@ import java.time.Instant
 
 object PositionServiceTestApp extends zio.ZIOAppDefault:
   implicit val dbContext: DbContext = DbContext(logHandler = LogHandler.jdkLogHandler[Task])
-  private val positionService = PositionServiceLayer.layer
+  private val positionService = PositionService.layer
   type AppEnv = Database & PositionService
   private val appEnv = DatabaseConfig.database ++ positionService
 

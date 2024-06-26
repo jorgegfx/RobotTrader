@@ -13,7 +13,10 @@ package object domain:
       openDate: Instant,
       closeDate: Option[Instant],
       pnl: Option[Double]
-  )
+  ){
+    def totalOpenPrice: Double = numberOfShares * openPricePerShare
+    def totalClosePrice: Option[Double] = closePricePerShare.map(numberOfShares * _ ) 
+  }
   enum FinInstrumentType:
     case Stock, Crypto
 
@@ -23,3 +26,5 @@ package object domain:
       finInstrumentType: FinInstrumentType,
       lastPnlUpdate: Option[Instant],
   )
+
+  case class Account(id: Long, name: String, balance: Double)

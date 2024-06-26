@@ -15,6 +15,9 @@ package object robot:
       `type`: OrderType,
       symbol: String,
       dateTime: Instant,
-      shares: Int,
-      price: Double
-  )
+      shares: Long,
+      price: Double,
+      positionId: Option[Long] = None 
+  ){
+    def totalPrice: Double = shares * price 
+  }

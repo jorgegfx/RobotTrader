@@ -1,5 +1,7 @@
 package com.jworkdev.trading.robot
 
+import com.jworkdev.trading.robot.data.alphavantage.AlphaVantageFinancialInstrumentDataProvider
+
 import java.time.Instant
 import scala.util.Try
 
@@ -29,3 +31,7 @@ package object data:
         symbol: String,
         frequency: StockQuoteFrequency
     ): Try[List[StockPrice]]
+
+
+  object FinancialIInstrumentDataProvider:
+    def apply(): FinancialIInstrumentDataProvider = new AlphaVantageFinancialInstrumentDataProvider()
