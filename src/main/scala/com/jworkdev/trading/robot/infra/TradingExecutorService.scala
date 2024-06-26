@@ -4,14 +4,10 @@ import com.jworkdev.trading.robot.Order
 import com.jworkdev.trading.robot.OrderType.{Buy, Sell}
 import com.jworkdev.trading.robot.data.FinancialIInstrumentDataProvider
 import com.jworkdev.trading.robot.data.StockQuoteInterval.FiveMinutes
-import com.jworkdev.trading.robot.data.signals.{
-  MovingAverageRequest,
-  SignalFinderStrategy,
-  SignalType
-}
+import com.jworkdev.trading.robot.data.signals.{MovingAverageRequest, SignalFinderStrategy, SignalType}
 import com.jworkdev.trading.robot.domain.{FinInstrumentConfig, Position}
 import com.typesafe.scalalogging.Logger
-import zio.{Task, ZIO}
+import zio.{Console, Task, ZIO}
 
 import java.time.Instant
 import scala.util.{Failure, Success}
@@ -31,12 +27,12 @@ class TradingExecutorServiceImpl(
       balancePerFinInst: Double,
       finInstrumentConfig: FinInstrumentConfig,
       openPositions: List[Position]
-  ): Option[Order] =
+  ): Task[Option[Order]] =
     logger.info(s"Trading on  $finInstrumentConfig")
     val symbolOpenPosition = openPositions.find(position =>
       finInstrumentConfig.symbol == position.symbol
     )
-    financialIInstrumentDataProvider.getIntradayQuotes(
+    val res = financialIInstrumentDataProvider.getIntradayQuotes(
       symbol = finInstrumentConfig.symbol,
       FiveMinutes
     ) match
@@ -49,6 +45,7 @@ class TradingExecutorServiceImpl(
         )
         signals.lastOption match
           case Some(lastSignal) =>
+            logger.info(s"Last Signal: $lastSignal")
             val orderPrice =
               stockPrices.find(_.snapshotTime == lastSignal.date).head.close
             symbolOpenPosition match
@@ -66,7 +63,9 @@ class TradingExecutorServiceImpl(
                     )
                   logger.info(s"Creating Sell Order: $order")
                   Some(order)
-                else None
+                else
+                  logger.info(s"No Sell Signal")
+                  None
               case None =>
                 // Trying to make a Buy
                 if lastSignal.`type` == SignalType.Buy then
@@ -81,18 +80,24 @@ class TradingExecutorServiceImpl(
                     )
                   logger.info(s"Creating Buy Order: $order")
                   Some(order)
-                else None
-          case None => None
+                else
+                  logger.info(s"No Buy Signal")
+                  None
+          case None =>
+            logger.info(s"No Last Signal found!")
+            None
+    ZIO.succeed(res)
 
   override def execute(
       balancePerFinInst: Double,
       finInstrumentConfigs: List[FinInstrumentConfig],
       openPositions: List[Position]
   ): Task[List[Order]] = for
-    fibers <- ZIO.foreach(finInstrumentConfigs)(n =>
+    _ <- Console.printLine(s"Trading on  $finInstrumentConfigs")
+    fibers <- ZIO.foreach(finInstrumentConfigs)(finInstrumentConfig =>
       execute(
         balancePerFinInst = balancePerFinInst,
-        finInstrumentConfigs = finInstrumentConfigs,
+        finInstrumentConfig = finInstrumentConfig,
         openPositions = openPositions
       ).fork
     )

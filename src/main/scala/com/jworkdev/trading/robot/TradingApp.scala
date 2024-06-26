@@ -33,20 +33,19 @@ object TradingApp extends zio.ZIOAppDefault:
     yield ExitCode(0)
 
   private def updateBalance(
-                           account: Account,
-                           orders: List[Order]
-                         ): ZIO[Connection & AppEnv, Throwable, Option[Unit]] = {
+      account: Account,
+      orders: List[Order]
+  ): ZIO[Connection & AppEnv, Throwable, Option[Unit]] =
     val newBalance = orders.map(_.totalPrice).sum
     ZIO.when(orders.nonEmpty)(ZIO.scoped {
-      for {
+      for
         accountService <- ZIO.service[AccountService]
         _ <- accountService.updateBalance(
           id = account.id,
           newBalance = newBalance
         )
-      } yield ()
+      yield ()
     })
-  }
 
   private def applyOrders(
       account: Account,
@@ -54,10 +53,11 @@ object TradingApp extends zio.ZIOAppDefault:
       orders: List[Order]
   ): ZIO[Connection & AppEnv, Throwable, Unit] =
     for
+      _ <- Console.printLine(s"Orders:$orders")
       newBalance <- ZIO.succeed(
         orders.map(_.totalPrice).sum
       )
-      _ <- updateBalance(account= account, orders = orders)
+      _ <- updateBalance(account = account, orders = orders)
       positionService <- ZIO.service[PositionService]
       _ <- positionService.closeOpenPositions(
         openPositions = openPositions,
@@ -90,6 +90,7 @@ object TradingApp extends zio.ZIOAppDefault:
       )
       positionService <- ZIO.service[PositionService]
       openPositions <- positionService.findAllOpen()
+      _ <- Console.printLine("Executing orders ...")
       orders <- tradingExecutorService.execute(
         balancePerFinInst = balancePerFinInst,
         finInstrumentConfigs = finInstrumentConfigs,
