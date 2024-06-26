@@ -20,8 +20,7 @@ class AccountServiceImpl extends AccountService:
   }
 
   override def updateBalance(id: Long, newBalance: Double): TranzactIO[Unit] = tzio {
-    sql"""UPDATE account WHERE
-         id= $id, balance = $newBalance""".update.run
+    sql"""UPDATE account SET balance = $newBalance WHERE id=$id""".update.run
       .map(_ => ())
   }
 

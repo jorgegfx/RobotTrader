@@ -32,6 +32,7 @@ class TradingExecutorServiceImpl(
       finInstrumentConfig: FinInstrumentConfig,
       openPositions: List[Position]
   ): Option[Order] =
+    logger.info(s"Trading on  $finInstrumentConfig")
     val symbolOpenPosition = openPositions.find(position =>
       finInstrumentConfig.symbol == position.symbol
     )
@@ -61,7 +62,7 @@ class TradingExecutorServiceImpl(
                       dateTime = Instant.now(),
                       shares = position.numberOfShares,
                       price = orderPrice,
-                      positionId = Some(position.id) 
+                      positionId = Some(position.id)
                     )
                   logger.info(s"Creating Sell Order: $order")
                   Some(order)
