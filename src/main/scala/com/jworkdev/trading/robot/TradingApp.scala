@@ -1,10 +1,6 @@
 package com.jworkdev.trading.robot
 
-import com.jworkdev.trading.robot.domain.{
-  Account,
-  FinInstrumentConfig,
-  Position
-}
+import com.jworkdev.trading.robot.domain.{Account, FinInstrumentConfig, Position}
 import com.jworkdev.trading.robot.infra.*
 import doobie.util.log.LogHandler
 import io.github.gaelrenoux.tranzactio.ErrorStrategiesRef
@@ -24,13 +20,23 @@ object TradingApp extends zio.ZIOAppDefault:
     FinInstrumentConfigService
   private val appEnv =
     DatabaseConfig.database ++ accountService ++ positionService ++ finInstrumentConfigService
+  // Define the interval in minutes
+  private val intervalMinutes: Int = 1
+  private val schedule: Schedule[Any, Any, Long] = Schedule.fixed(intervalMinutes.minutes)
 
   override def run: ZIO[ZIOAppArgs & Scope, Any, Any] =
     for
-      _ <- Console.printLine("Starting the app")
-      trio <- runTradingLoop().provideLayer(appEnv)
-      _ <- Console.printLine(trio.mkString(", "))
+      _ <- Console.printLine("Starting the app ...")
+      _ <- periodicTask.repeat(schedule)
+      _ <- Console.printLine("Finished!")
     yield ExitCode(0)
+
+  // Task to be executed periodically
+  private val periodicTask: ZIO[Any, Throwable, Unit] = for {
+      currentTime <- Clock.currentDateTime
+      _ <- runTradingLoop().provideLayer(appEnv)
+      _ <- Console.printLine(s"Task executed at: $currentTime")
+  } yield ()
 
   private def updateBalance(
       account: Account,
