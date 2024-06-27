@@ -17,10 +17,15 @@ val mysqlConnectorVersion = "8.0.30"
 //libraryDependencies += "com.interactivebrokers" % "tws-api" % "9.73.01-SNAPSHOT"
 
 libraryDependencies ++= Seq(
+  "org.apache.httpcomponents" % "httpclient" % "4.5.13",
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.0",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.0",
+
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
   "ch.qos.logback" % "logback-classic" % "1.3.5",
   "org.scalatest" %% "scalatest" % "3.2.18" % Test,
   "org.json" % "json" % "20210307",
+  "org.json4s" %% "json4s-native" % "4.0.3",
   // ZIO Core
   "dev.zio" %% "zio" % zioVersion,
   "dev.zio" %% "zio-streams" % zioVersion,
