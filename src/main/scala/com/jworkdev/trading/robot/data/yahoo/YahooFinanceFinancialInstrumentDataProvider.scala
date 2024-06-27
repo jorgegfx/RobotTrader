@@ -1,17 +1,10 @@
 package com.jworkdev.trading.robot.data.yahoo
 
-import com.jworkdev.trading.robot.data.{
-  FinancialIInstrumentDataProvider,
-  StockPrice,
-  StockQuoteFrequency,
-  StockQuoteInterval
-}
-import com.fasterxml.jackson.databind.{
-  DeserializationFeature,
-  JsonNode,
-  ObjectMapper
-}
+import com.jworkdev.trading.robot.data.{FinancialIInstrumentDataProvider, StockPrice, StockQuoteFrequency, StockQuoteInterval}
+import com.fasterxml.jackson.databind.{DeserializationFeature, JsonNode, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.jworkdev.trading.robot.data
+import com.typesafe.scalalogging.Logger
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.util.EntityUtils
@@ -29,6 +22,8 @@ class YahooFinanceFinancialInstrumentDataProvider
   val mapper: ObjectMapper = new ObjectMapper()
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     .registerModule(DefaultScalaModule)
+
+  private val logger = Logger(classOf[YahooFinanceFinancialInstrumentDataProvider])
 
   private def parse(symbol: String, response: JsonNode): List[StockPrice] =
     val res = response.get("chart").get("result").elements().next()
@@ -63,9 +58,16 @@ class YahooFinanceFinancialInstrumentDataProvider
       )
     }
 
-  private def fetchResponse(symbol: String): List[StockPrice] =
+  private def fetchResponse(symbol: String,interval: StockQuoteInterval): List[StockPrice] =
+    val internalParam = interval match
+      case data.StockQuoteInterval.OneMinute => "1m"
+      case data.StockQuoteInterval.FiveMinutes => "1m"
+      case data.StockQuoteInterval.FifteenMinutes => "5m"
+      case data.StockQuoteInterval.ThirtyMinutes => "30m"
+      case data.StockQuoteInterval.SixtyMinutes => "60m"
     val client: CloseableHttpClient = HttpClients.createDefault()
-    val url = s"$baseUrl/$symbol?interval=30m&range=1d"
+    val url = s"$baseUrl/$symbol?interval=$internalParam&range=1d"
+    logger.info(s"fetching url :$url ...")
     val request = new HttpGet(url)
     val response = client.execute(request)
     val entity = response.getEntity
@@ -77,9 +79,14 @@ class YahooFinanceFinancialInstrumentDataProvider
       symbol: String,
       interval: StockQuoteInterval
   ): Try[List[StockPrice]] =
-    Try(fetchResponse(symbol = symbol))
+    Try(fetchResponse(symbol = symbol,interval: StockQuoteInterval))
 
   def getQuotes(
       symbol: String,
       frequency: StockQuoteFrequency
   ): Try[List[StockPrice]] = ???
+
+
+object YahooFinanceFinancialInstrumentDataProvider{
+  def apply(): YahooFinanceFinancialInstrumentDataProvider = new YahooFinanceFinancialInstrumentDataProvider()
+}
