@@ -39,7 +39,7 @@ object YahooFinanceClient {
   }
 
   def getMarketData(symbol: String): Future[List[(LocalDateTime,Double)]] = Future {
-    val url = s"$baseUrl/$symbol?interval=30m&range=1d"
+    val url = s"$baseUrl/$symbol?interval=5m&range=1d"
     val request = new HttpGet(url)
     val response = client.execute(request)
     val entity = response.getEntity

@@ -1,13 +1,13 @@
 package com.jworkdev.trading.robot
 
-import com.jworkdev.trading.robot.data.StockQuoteInterval.FiveMinutes
-import com.jworkdev.trading.robot.data.alphavantage.AlphaVantageFinancialInstrumentDataProvider
+import com.jworkdev.trading.robot.data.StockQuoteInterval.OneMinute
 import com.jworkdev.trading.robot.data.signals.{MovingAverageRequest, RelativeStrengthIndexRequest, SignalFinderStrategy}
+import com.jworkdev.trading.robot.data.yahoo.YahooFinanceFinancialInstrumentDataProvider
 
 import scala.util.{Failure, Success}
 object SignalFinderApp extends App:
-  val provider = AlphaVantageFinancialInstrumentDataProvider()
-  provider.getIntradayQuotes("NVDA", FiveMinutes) match
+  val provider = YahooFinanceFinancialInstrumentDataProvider()
+  provider.getIntradayQuotes("NVDA", OneMinute) match
     case Failure(exception) => exception.printStackTrace()
     case Success(stockQuotes) =>
       println("stockQuotes")

@@ -1,15 +1,15 @@
 package com.jworkdev.trading.robot.data.yahoo
 
-import com.jworkdev.trading.robot.data.{FinancialIInstrumentDataProvider, StockPrice, StockQuoteFrequency, StockQuoteInterval}
 import com.fasterxml.jackson.databind.{DeserializationFeature, JsonNode, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.jworkdev.trading.robot.data
+import com.jworkdev.trading.robot.data.{FinancialIInstrumentDataProvider, StockPrice, StockQuoteFrequency, StockQuoteInterval}
 import com.typesafe.scalalogging.Logger
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.util.EntityUtils
 
-import java.time.{Instant, LocalDateTime, ZoneId}
+import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset}
 import scala.util.Try
 
 class YahooFinanceFinancialInstrumentDataProvider
@@ -36,6 +36,7 @@ class YahooFinanceFinancialInstrumentDataProvider
     val lowPrices = quotes.get("low").elements().asScala.toList
     val volumes = quotes.get("volume").elements().asScala.toList
     val timeStampsList = timestamps.elements().asScala.toList.map(_.asLong())
+    val zoneId = ZoneId.of("America/New_York")
     timeStampsList.zipWithIndex.map { case (timestamp: Long, index: Int) =>
       val closePrice = closePrices(index).asDouble()
       val openPrice = openPrices(index).asDouble()
@@ -44,9 +45,9 @@ class YahooFinanceFinancialInstrumentDataProvider
       val volume = volumes(index).asLong()
       val dateTime = LocalDateTime.ofInstant(
         Instant.ofEpochSecond(timestamp),
-        ZoneId.of("America/New_York")
+        zoneId
       )
-      val snapshotTime = dateTime.atZone(ZoneId.systemDefault()).toInstant
+      val snapshotTime = dateTime.toInstant(ZoneOffset.UTC)
       StockPrice(
         symbol = symbol,
         open = openPrice,
@@ -61,8 +62,8 @@ class YahooFinanceFinancialInstrumentDataProvider
   private def fetchResponse(symbol: String,interval: StockQuoteInterval): List[StockPrice] =
     val internalParam = interval match
       case data.StockQuoteInterval.OneMinute => "1m"
-      case data.StockQuoteInterval.FiveMinutes => "1m"
-      case data.StockQuoteInterval.FifteenMinutes => "5m"
+      case data.StockQuoteInterval.FiveMinutes => "5m"
+      case data.StockQuoteInterval.FifteenMinutes => "15m"
       case data.StockQuoteInterval.ThirtyMinutes => "30m"
       case data.StockQuoteInterval.SixtyMinutes => "60m"
     val client: CloseableHttpClient = HttpClients.createDefault()
