@@ -16,4 +16,5 @@ package object signals {
   sealed class SignalFinderRequest
   case class MovingAverageRequest(stockPrices: List[StockPrice]) extends SignalFinderRequest
   case class RelativeStrengthIndexRequest(stockPrices: List[StockPrice]) extends SignalFinderRequest
+  case class MACDRequest(stockPrices: List[StockPrice]) extends SignalFinderRequest
 }

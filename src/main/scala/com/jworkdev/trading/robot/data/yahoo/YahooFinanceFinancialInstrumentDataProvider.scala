@@ -67,7 +67,7 @@ class YahooFinanceFinancialInstrumentDataProvider
       case data.StockQuoteInterval.ThirtyMinutes => "30m"
       case data.StockQuoteInterval.SixtyMinutes => "60m"
     val client: CloseableHttpClient = HttpClients.createDefault()
-    val url = s"$baseUrl/$symbol?interval=$internalParam&range=1d"
+    val url = s"$baseUrl/$symbol?interval=$internalParam&range=2d"
     logger.info(s"fetching url :$url ...")
     val request = new HttpGet(url)
     val response = client.execute(request)

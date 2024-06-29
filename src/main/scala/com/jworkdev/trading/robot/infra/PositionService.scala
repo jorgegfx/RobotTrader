@@ -1,15 +1,13 @@
 package com.jworkdev.trading.robot.infra
 
-import com.jworkdev.trading.robot.{Order, OrderType}
 import com.jworkdev.trading.robot.domain.Position
-import doobie.implicits.legacy.instant.*
-import zio.*
-import zio.interop.catz.*
+import com.jworkdev.trading.robot.{Order, OrderType}
 import doobie.*
 import doobie.implicits.*
+import doobie.implicits.legacy.instant.*
 import io.github.gaelrenoux.tranzactio.DbException
 import io.github.gaelrenoux.tranzactio.doobie.*
-import zio.{Task, ULayer, ZIO, ZLayer}
+import zio.*
 
 import java.time.Instant
 import java.util.Date
