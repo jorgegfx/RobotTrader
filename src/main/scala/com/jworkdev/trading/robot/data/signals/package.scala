@@ -5,7 +5,7 @@ package object signals {
   import java.time.Instant
 
   enum SignalType:
-    case Buy, Sell
+    case Buy, Sell, Hold
 
   case class Signal(date: Instant, `type`: SignalType)
 
@@ -16,5 +16,5 @@ package object signals {
   sealed class SignalFinderRequest
   case class MovingAverageRequest(stockPrices: List[StockPrice]) extends SignalFinderRequest
   case class RelativeStrengthIndexRequest(stockPrices: List[StockPrice]) extends SignalFinderRequest
-  case class MACDRequest(stockPrices: List[StockPrice]) extends SignalFinderRequest
+  case class MACDRequest(stockPrices: List[StockPrice], validate: Boolean) extends SignalFinderRequest
 }

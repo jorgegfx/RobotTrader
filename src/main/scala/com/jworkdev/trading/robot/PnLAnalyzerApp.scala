@@ -42,7 +42,7 @@ object PnLAnalyzerApp extends App:
       println("MACD: ")
       val macdSignals =
         SignalFinderStrategy.findSignals(signalFinderRequest =
-          MACDRequest(stockPrices = stockPrices)
+          MACDRequest(stockPrices = stockPrices, validate = true)
         )
       val pnlMacd =
         pnLAnalyzer.execute(

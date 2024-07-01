@@ -8,7 +8,7 @@ object SignalFinderStrategy {
       case request: RelativeStrengthIndexRequest =>
         RelativeStrengthIndexSignalFinder().find(request = request)
       case request: MACDRequest =>
-        MovingAverageConvergenceDivergenceSignalFinder().find(request = request)
+        MACDValidatedSignalFinder().find(request = request)
       case _ => List.empty
   }
 }
