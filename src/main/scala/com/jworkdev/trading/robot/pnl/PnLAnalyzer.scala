@@ -1,7 +1,7 @@
 package com.jworkdev.trading.robot.pnl
 
 import com.jworkdev.trading.robot.{Order, OrderType}
-import com.jworkdev.trading.robot.data.StockPrice
+import com.jworkdev.trading.robot.market.data.StockPrice
 import com.jworkdev.trading.robot.data.signals.Signal
 import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
 import com.typesafe.scalalogging.Logger

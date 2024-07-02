@@ -2,8 +2,8 @@ package com.jworkdev.trading.robot.infra
 
 import com.jworkdev.trading.robot.Order
 import com.jworkdev.trading.robot.OrderType.{Buy, Sell}
-import com.jworkdev.trading.robot.data.FinancialIInstrumentDataProvider
-import com.jworkdev.trading.robot.data.StockQuoteInterval.FiveMinutes
+import com.jworkdev.trading.robot.market.data.MarketDataProvider
+import com.jworkdev.trading.robot.market.data.SnapshotInterval.FiveMinutes
 import com.jworkdev.trading.robot.data.signals.{MovingAverageRequest, SignalFinderStrategy, SignalType}
 import com.jworkdev.trading.robot.domain.{FinInstrumentConfig, Position}
 import com.typesafe.scalalogging.Logger
@@ -20,7 +20,7 @@ trait TradingExecutorService:
   ): Task[List[Order]]
 
 class TradingExecutorServiceImpl(
-    financialIInstrumentDataProvider: FinancialIInstrumentDataProvider
+                                  marketDataProvider: MarketDataProvider
 ) extends TradingExecutorService:
   private val logger = Logger(classOf[TradingExecutorServiceImpl])
   private def execute(
@@ -32,7 +32,7 @@ class TradingExecutorServiceImpl(
     val symbolOpenPosition = openPositions.find(position =>
       finInstrumentConfig.symbol == position.symbol
     )
-    val res = financialIInstrumentDataProvider.getIntradayQuotes(
+    val res = marketDataProvider.getIntradayQuotes(
       symbol = finInstrumentConfig.symbol,
       FiveMinutes
     ) match
@@ -106,5 +106,5 @@ class TradingExecutorServiceImpl(
 
 object TradingExecutorService:
   def apply(): TradingExecutorService = new TradingExecutorServiceImpl(
-    FinancialIInstrumentDataProvider()
+    MarketDataProvider()
   )

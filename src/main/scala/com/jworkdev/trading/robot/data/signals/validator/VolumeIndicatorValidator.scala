@@ -1,6 +1,6 @@
 package com.jworkdev.trading.robot.data.signals.validator
 
-import com.jworkdev.trading.robot.data
+import com.jworkdev.trading.robot.market.data
 
 import java.time.Instant
 

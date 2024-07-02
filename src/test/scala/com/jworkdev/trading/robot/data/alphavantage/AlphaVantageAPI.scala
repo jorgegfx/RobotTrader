@@ -1,8 +1,10 @@
-package com.jworkdev.trading.robot.data.alphavantage
+package market.data.alphavantage
+
+import com.jworkdev.trading.robot.market
 
 import java.net.URI
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 import org.json.JSONObject
 
 object AlphaVantageAPI:

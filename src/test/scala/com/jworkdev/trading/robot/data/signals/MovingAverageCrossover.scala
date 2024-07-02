@@ -1,5 +1,7 @@
 package com.jworkdev.trading.robot.data.signals
 
+import com.jworkdev.trading.robot.market.data
+
 case class StockPrice(
     date: String,
     open: Double,

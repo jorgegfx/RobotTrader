@@ -1,11 +1,13 @@
 package com.jworkdev.trading.robot.data
 
+import com.jworkdev.trading.robot.market.data.StockPrice
+
 package object signals {
 
   import java.time.Instant
 
   enum SignalType:
-    case Buy, Sell, Hold
+    case Buy, Sell
 
   case class Signal(date: Instant, `type`: SignalType)
 

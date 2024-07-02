@@ -1,6 +1,7 @@
-package com.jworkdev.trading.robot.data.alphavantage
+package com.jworkdev.trading.robot.market.data.alphavantage
 
-import com.jworkdev.trading.robot.data.{FinancialIInstrumentDataProvider, StockPrice, StockQuoteFrequency, StockQuoteInterval}
+import com.jworkdev.trading.robot.market.data
+import com.jworkdev.trading.robot.market.data.{MarketDataProvider, StockPrice, SnapshotFrequency, SnapshotInterval}
 import com.typesafe.scalalogging.Logger
 import org.json.JSONObject
 
@@ -10,8 +11,8 @@ import java.time.{LocalDateTime, ZoneId}
 import java.time.format.DateTimeFormatter
 import scala.util.{Failure, Try}
 
-class AlphaVantageFinancialInstrumentDataProvider extends FinancialIInstrumentDataProvider:
-  private val logger = Logger(classOf[AlphaVantageFinancialInstrumentDataProvider])
+class AlphaVantageFinancialMarketDataProvider extends MarketDataProvider:
+  private val logger = Logger(classOf[AlphaVantageFinancialMarketDataProvider])
   import scala.jdk.CollectionConverters.*
   private val baseUrl = "https://www.alphavantage.co/query"
   private val apiKey = "TMNOJBPZ86A9UL98"
@@ -70,30 +71,32 @@ class AlphaVantageFinancialInstrumentDataProvider extends FinancialIInstrumentDa
       entries.sortBy(_.snapshotTime)
     }
 
-  def getIntradayQuotes(
+  override def getIntradayQuotes(
       symbol: String,
-      interval: StockQuoteInterval
+      interval: SnapshotInterval
   ): Try[List[StockPrice]] = {
     val function = "TIME_SERIES_INTRADAY"
     val strInterval = interval match
-      case StockQuoteInterval.OneMinute => "1min"
-      case StockQuoteInterval.FiveMinutes => "5min"
-      case StockQuoteInterval.FifteenMinutes => "15min"
-      case StockQuoteInterval.ThirtyMinutes => "30min"
-      case StockQuoteInterval.SixtyMinutes => "60min"
+      case SnapshotInterval.OneMinute => "1min"
+      case SnapshotInterval.FiveMinutes => "5min"
+      case SnapshotInterval.FifteenMinutes => "15min"
+      case SnapshotInterval.ThirtyMinutes => "30min"
+      case SnapshotInterval.SixtyMinutes => "60min"
     val url =
       s"$baseUrl?function=$function&symbol=$symbol&interval=$strInterval&apikey=$apiKey&outputsize=full"
     fetchResponse(url = url)
   }
 
-  def getQuotes(
+  override def getIntradayQuotesDaysRange(symbol: String, interval: SnapshotInterval, daysRange: Int): Try[List[StockPrice]] = ???
+  
+  override def getQuotes(
       symbol: String,
-      frequency: StockQuoteFrequency
+      frequency: SnapshotFrequency
   ): Try[List[StockPrice]] = {
     val function = frequency match
-      case StockQuoteFrequency.Daily => "TIME_SERIES_DAILY"
-      case StockQuoteFrequency.Weekly => "TIME_SERIES_WEEKLY"
-      case StockQuoteFrequency.Monthly => "TIME_SERIES_MONTHLY"
+      case SnapshotFrequency.Daily => "TIME_SERIES_DAILY"
+      case SnapshotFrequency.Weekly => "TIME_SERIES_WEEKLY"
+      case SnapshotFrequency.Monthly => "TIME_SERIES_MONTHLY"
     val url =
       s"$baseUrl?function=$function&symbol=$symbol&apikey=$apiKey&outputsize=full"
     fetchResponse(url = url)

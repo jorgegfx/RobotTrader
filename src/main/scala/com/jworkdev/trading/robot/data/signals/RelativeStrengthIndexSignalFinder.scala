@@ -1,6 +1,8 @@
 package com.jworkdev.trading.robot.data.signals
 
-import com.jworkdev.trading.robot.data.StockPrice
+import com.jworkdev.trading.robot.data.signals.{RelativeStrengthIndexRequest, Signal, SignalFinder}
+import com.jworkdev.trading.robot.market
+import com.jworkdev.trading.robot.market.data.StockPrice
 import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
 
 class RelativeStrengthIndexSignalFinder(period: Int) extends SignalFinder[RelativeStrengthIndexRequest]{

@@ -20,6 +20,9 @@ package object domain:
   enum FinInstrumentType:
     case Stock, Crypto
 
+  enum TradingStrategyType:
+    case OpenGap, MACD
+
   case class FinInstrumentConfig(
       symbol: String,
       pnl: Option[Double],

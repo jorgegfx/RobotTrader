@@ -1,9 +1,19 @@
-package com.jworkdev.trading.robot.data.yahoo
+package com.jworkdev.trading.robot.market.data.yahoo
 
-import com.fasterxml.jackson.databind.{DeserializationFeature, JsonNode, ObjectMapper}
+import com.fasterxml.jackson.databind.{
+  DeserializationFeature,
+  JsonNode,
+  ObjectMapper
+}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.jworkdev.trading.robot.data
-import com.jworkdev.trading.robot.data.{FinancialIInstrumentDataProvider, StockPrice, StockQuoteFrequency, StockQuoteInterval}
+import com.jworkdev.trading.robot.market
+import com.jworkdev.trading.robot.market.data.{
+  MarketDataProvider,
+  StockPrice,
+  SnapshotFrequency,
+  SnapshotInterval
+}
+import com.jworkdev.trading.robot.market.data
 import com.typesafe.scalalogging.Logger
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
@@ -12,8 +22,8 @@ import org.apache.http.util.EntityUtils
 import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset}
 import scala.util.Try
 
-class YahooFinanceFinancialInstrumentDataProvider
-    extends FinancialIInstrumentDataProvider:
+class YahooFinanceMarketDataProvider
+    extends MarketDataProvider:
 
   import scala.jdk.CollectionConverters.*
 
@@ -23,7 +33,9 @@ class YahooFinanceFinancialInstrumentDataProvider
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     .registerModule(DefaultScalaModule)
 
-  private val logger = Logger(classOf[YahooFinanceFinancialInstrumentDataProvider])
+  private val logger = Logger(
+    classOf[YahooFinanceMarketDataProvider]
+  )
 
   private def parse(symbol: String, response: JsonNode): List[StockPrice] =
     val res = response.get("chart").get("result").elements().next()
@@ -59,15 +71,19 @@ class YahooFinanceFinancialInstrumentDataProvider
       )
     }
 
-  private def fetchResponse(symbol: String,interval: StockQuoteInterval): List[StockPrice] =
+  private def fetchResponse(
+      symbol: String,
+      interval: SnapshotInterval,
+      daysRange: Int = 1
+  ): List[StockPrice] =
     val internalParam = interval match
-      case data.StockQuoteInterval.OneMinute => "1m"
-      case data.StockQuoteInterval.FiveMinutes => "5m"
-      case data.StockQuoteInterval.FifteenMinutes => "15m"
-      case data.StockQuoteInterval.ThirtyMinutes => "30m"
-      case data.StockQuoteInterval.SixtyMinutes => "60m"
+      case data.SnapshotInterval.OneMinute      => "1m"
+      case data.SnapshotInterval.FiveMinutes    => "5m"
+      case data.SnapshotInterval.FifteenMinutes => "15m"
+      case data.SnapshotInterval.ThirtyMinutes  => "30m"
+      case data.SnapshotInterval.SixtyMinutes   => "60m"
     val client: CloseableHttpClient = HttpClients.createDefault()
-    val url = s"$baseUrl/$symbol?interval=$internalParam&range=1d"
+    val url = s"$baseUrl/$symbol?interval=$internalParam&range=${daysRange}d"
     logger.info(s"fetching url :$url ...")
     val request = new HttpGet(url)
     val response = client.execute(request)
@@ -78,16 +94,22 @@ class YahooFinanceFinancialInstrumentDataProvider
 
   override def getIntradayQuotes(
       symbol: String,
-      interval: StockQuoteInterval
+      interval: SnapshotInterval
   ): Try[List[StockPrice]] =
-    Try(fetchResponse(symbol = symbol,interval: StockQuoteInterval))
+    Try(fetchResponse(symbol = symbol, interval = interval))
+
+  override def getIntradayQuotesDaysRange(
+      symbol: String,
+      interval: SnapshotInterval,
+      daysRange: Int
+  ): Try[List[StockPrice]] =
+    Try(fetchResponse(symbol = symbol, interval = interval, daysRange = daysRange))
 
   def getQuotes(
       symbol: String,
-      frequency: StockQuoteFrequency
+      frequency: SnapshotFrequency
   ): Try[List[StockPrice]] = ???
 
-
-object YahooFinanceFinancialInstrumentDataProvider{
-  def apply(): YahooFinanceFinancialInstrumentDataProvider = new YahooFinanceFinancialInstrumentDataProvider()
-}
+object YahooFinanceMarketDataProvider:
+  def apply(): YahooFinanceMarketDataProvider =
+    new YahooFinanceMarketDataProvider()

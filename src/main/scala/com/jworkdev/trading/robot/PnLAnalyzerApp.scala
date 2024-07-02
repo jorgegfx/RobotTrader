@@ -1,13 +1,13 @@
 package com.jworkdev.trading.robot
 
-import com.jworkdev.trading.robot.data.StockQuoteInterval.{FiveMinutes, OneMinute}
+import com.jworkdev.trading.robot.market.data.SnapshotInterval.{FiveMinutes, OneMinute}
 import com.jworkdev.trading.robot.data.signals.{MACDRequest, MovingAverageRequest, RelativeStrengthIndexRequest, SignalFinderStrategy}
-import com.jworkdev.trading.robot.data.yahoo.YahooFinanceFinancialInstrumentDataProvider
+import com.jworkdev.trading.robot.market.data.yahoo.YahooFinanceMarketDataProvider
 import com.jworkdev.trading.robot.pnl.{PnLAnalysis, PnLAnalyzer}
 
 import scala.util.{Failure, Success}
 object PnLAnalyzerApp extends App:
-  val provider = YahooFinanceFinancialInstrumentDataProvider()
+  val provider = YahooFinanceMarketDataProvider()
   private val pnLAnalyzer = PnLAnalyzer()
   val initialCash = 100000.0
   provider.getIntradayQuotes("NVDA", OneMinute) match

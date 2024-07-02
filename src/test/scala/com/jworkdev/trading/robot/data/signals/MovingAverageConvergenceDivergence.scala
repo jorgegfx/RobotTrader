@@ -1,4 +1,6 @@
-package com.jworkdev.trading.robot.data.signals
+package market.data.signals
+import com.jworkdev.trading.robot.market
+
 import java.time.LocalDate
 
 object MACD {

@@ -1,10 +1,10 @@
 package com.jworkdev.trading.robot.data.signals
 
-import com.jworkdev.trading.robot.data.StockPrice
+import com.jworkdev.trading.robot.market
+import com.jworkdev.trading.robot.market.data.StockPrice
 import org.scalatest.flatspec.AnyFlatSpec
 
-import java.time.{Instant, LocalDateTime, ZoneOffset}
-import java.time.format.DateTimeFormatter
+import java.time.Instant
 import java.time.temporal.ChronoUnit
 import scala.util.Random
 

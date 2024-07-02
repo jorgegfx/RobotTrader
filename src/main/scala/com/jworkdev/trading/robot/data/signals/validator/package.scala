@@ -1,6 +1,7 @@
 package com.jworkdev.trading.robot.data.signals
 
-import com.jworkdev.trading.robot.data.StockPrice
+import com.jworkdev.trading.robot.market
+import com.jworkdev.trading.robot.market.data.StockPrice
 
 import java.time.Instant
 

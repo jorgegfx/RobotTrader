@@ -1,6 +1,6 @@
 package com.jworkdev.trading.robot.data.signals
 
-import com.jworkdev.trading.robot.data.signals.SignalType.{Sell,Buy}
+import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
 
 import java.time.Instant
 
