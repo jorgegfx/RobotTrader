@@ -9,6 +9,8 @@ object SignalFinderStrategy {
         RelativeStrengthIndexSignalFinder().find(request = request)
       case request: MACDRequest =>
         MACDValidatedSignalFinder().find(request = request)
+      case request: OpenGapRequest =>
+        OpenGapSignalFinder().find(request = request)
       case _ => List.empty
   }
 }

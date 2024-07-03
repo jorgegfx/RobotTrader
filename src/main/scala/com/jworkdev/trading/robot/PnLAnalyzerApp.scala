@@ -18,7 +18,7 @@ object PnLAnalyzerApp extends App:
   val initialCash = 100000.0
   val cfg = StrategyConfigurations(
     macd = Some(MACDStrategyConfiguration(snapshotInterval = OneMinute)),
-    openGap = Some(OpenGapStrategyConfiguration(signalCount = 5))
+    openGap = Some(OpenGapStrategyConfiguration(signalCount = 15))
   )
   val tests  = List(("NVDA",MACD),("NVDA",OpenGap))
   tests.foreach{ case (symbol: String, tradingStrategyType: TradingStrategyType) =>
