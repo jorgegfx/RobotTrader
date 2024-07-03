@@ -1,9 +1,8 @@
 package com.jworkdev.trading.robot.pnl
 
-import com.jworkdev.trading.robot.{Order, OrderType}
-import com.jworkdev.trading.robot.market.data.StockPrice
 import com.jworkdev.trading.robot.data.signals.Signal
 import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
+import com.jworkdev.trading.robot.{Order, OrderType}
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable
@@ -11,14 +10,13 @@ import scala.collection.mutable
 case class PnLAnalysis(pnl: Double, orders: List[Order])
 
 trait PnLAnalyzer:
-  def execute(initialCash: Double,prices: List[StockPrice], signals: List[Signal]): PnLAnalysis
+  def execute(initialCash: Double, signals: List[Signal]): PnLAnalysis
 
 class PnLAnalyzerImpl extends PnLAnalyzer:
   private val logger = Logger(classOf[PnLAnalyzerImpl])
 
   override def execute(
       initialCash: Double,
-      prices: List[StockPrice],
       signals: List[Signal]
   ): PnLAnalysis =
     logger.info(s"Starting execution initialCash:$initialCash")
@@ -29,35 +27,32 @@ class PnLAnalyzerImpl extends PnLAnalyzer:
     val orders = mutable.ListBuffer.empty[Order]
 
     signals.foreach { signal =>
-      prices.find(_.snapshotTime == signal.date) match
-        case Some(stockPrice) =>
-          val orderPrice = stockPrice.close
-          signal.`type` match
-            case Buy if cash >= orderPrice =>
-              val sharesToBuy = (cash / orderPrice).toInt
-              cash -= sharesToBuy * orderPrice
-              currentPosition = (currentPosition._1+sharesToBuy,orderPrice)
-              orders += Order(
-                `type` = OrderType.Buy,
-                symbol = stockPrice.symbol,
-                dateTime = signal.date,
-                shares = sharesToBuy,
-                price = orderPrice
-              )
+      val orderPrice = signal.stockPrice.close
+      signal.`type` match
+        case Buy if cash >= orderPrice =>
+          val sharesToBuy = (cash / orderPrice).toInt
+          cash -= sharesToBuy * orderPrice
+          currentPosition = (currentPosition._1+sharesToBuy,orderPrice)
+          orders += Order(
+            `type` = OrderType.Buy,
+            symbol = signal.stockPrice.symbol,
+            dateTime = signal.date,
+            shares = sharesToBuy,
+            price = orderPrice
+          )
 
-            case Sell if currentPosition._1 > 0 =>
-              cash += currentPosition._1 * orderPrice
-              totalGain += currentPosition._1*(orderPrice-currentPosition._2)
-              orders += Order(
-                `type` = OrderType.Sell,
-                symbol = stockPrice.symbol,
-                dateTime = signal.date,
-                shares = position,
-                price = orderPrice
-              )
-              currentPosition = (0,0.0D)
-            case _ =>
-        case None =>
+        case Sell if currentPosition._1 > 0 =>
+          cash += currentPosition._1 * orderPrice
+          totalGain += currentPosition._1*(orderPrice-currentPosition._2)
+          orders += Order(
+            `type` = OrderType.Sell,
+            symbol = signal.stockPrice.symbol,
+            dateTime = signal.date,
+            shares = position,
+            price = orderPrice
+          )
+          currentPosition = (0,0.0D)
+        case _ =>
     }
     val pnl = totalGain
     logger.info(s"Final Cash: $$${cash.formatted("%.2f")}")

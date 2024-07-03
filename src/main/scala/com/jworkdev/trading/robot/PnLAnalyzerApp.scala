@@ -1,61 +1,43 @@
 package com.jworkdev.trading.robot
 
-import com.jworkdev.trading.robot.market.data.SnapshotInterval.{FiveMinutes, OneMinute}
-import com.jworkdev.trading.robot.data.signals.{MACDRequest, MovingAverageRequest, RelativeStrengthIndexRequest, SignalFinderStrategy}
-import com.jworkdev.trading.robot.market.data.yahoo.YahooFinanceMarketDataProvider
+import com.jworkdev.trading.robot.config.{MACDStrategyConfiguration, StrategyConfigurations}
+import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy}
+import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequestFactory}
+import com.jworkdev.trading.robot.domain.TradingStrategyType
+import com.jworkdev.trading.robot.domain.TradingStrategyType.MACD
+import com.jworkdev.trading.robot.market.data.SnapshotInterval.OneMinute
 import com.jworkdev.trading.robot.pnl.{PnLAnalysis, PnLAnalyzer}
 
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 object PnLAnalyzerApp extends App:
-  val provider = YahooFinanceMarketDataProvider()
   private val pnLAnalyzer = PnLAnalyzer()
   val initialCash = 100000.0
-  provider.getIntradayQuotes("NVDA", OneMinute) match
+  val cfg = StrategyConfigurations(macd = Some(MACDStrategyConfiguration(snapshotInterval = OneMinute)))
+  executeStrategy(symbol = "NVDA", tradingStrategyType = MACD, strategyConfigurations = cfg) match
     case Failure(exception) => exception.printStackTrace()
-    case Success(stockPrices) =>
-      println("stockQuotes")
-      stockPrices.foreach(println)
-
-      println("MovingAverage: ")
-      val movingAvgSignals =
-        SignalFinderStrategy.findSignals(signalFinderRequest =
-          MovingAverageRequest(stockPrices = stockPrices)
-        )
-      val pnlMovingAvg =
-        pnLAnalyzer.execute(
-          initialCash = initialCash,
-          prices = stockPrices,
-          signals = movingAvgSignals
-        )
-      printPnlAnalysis(pnLAnalysis = pnlMovingAvg)
-      val rsiSignals = SignalFinderStrategy.findSignals(signalFinderRequest =
-        RelativeStrengthIndexRequest(stockPrices = stockPrices)
+    case Success(signals) =>
+      val res = pnLAnalyzer.execute(
+        initialCash = initialCash,
+        signals = signals
       )
-      println("RSI: ")
-      val pnlRsi =
-        pnLAnalyzer.execute(
-          initialCash = initialCash,
-          prices = stockPrices,
-          signals = rsiSignals
-        )
-      printPnlAnalysis(pnLAnalysis = pnlRsi)
-      println("MACD: ")
-      val macdSignals =
-        SignalFinderStrategy.findSignals(signalFinderRequest =
-          MACDRequest(stockPrices = stockPrices, validate = true)
-        )
-      val pnlMacd =
-        pnLAnalyzer.execute(
-          initialCash = initialCash,
-          prices = stockPrices,
-          signals = macdSignals
-        )
-      printPnlAnalysis(pnLAnalysis = pnlMacd)
+      printPnlAnalysis(pnLAnalysis = res)
 
-def printPnlAnalysis(pnLAnalysis: PnLAnalysis): Unit =
-  println(s"PNL: ${pnLAnalysis.pnl}")
-  pnLAnalysis.orders
-    .map { order =>
-      s"${order.`type`},${order.symbol},${order.dateTime},${order.shares},${order.price}"
-    }
-    .foreach(println)
+  private def executeStrategy(
+      symbol: String,
+      tradingStrategyType: TradingStrategyType,
+      strategyConfigurations: StrategyConfigurations
+  ): Try[List[Signal]] =
+    MarketDataStrategyRequestFactory.createMarketDataStrategyRequest(
+      symbol = symbol,
+      tradingStrategyType = tradingStrategyType,
+      strategyConfigurations = strategyConfigurations
+    ).map(MarketDataStrategyProvider.provide).flatMap(_.map(_.buildSignalFinderRequest()))
+      .map(SignalFinderStrategy.findSignals)
+
+  private def printPnlAnalysis(pnLAnalysis: PnLAnalysis): Unit =
+    println(s"PNL: ${pnLAnalysis.pnl}")
+    pnLAnalysis.orders
+      .map { order =>
+        s"${order.`type`},${order.symbol},${order.dateTime},${order.shares},${order.price}"
+      }
+      .foreach(println)

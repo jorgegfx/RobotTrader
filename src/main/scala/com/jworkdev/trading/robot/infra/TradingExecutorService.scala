@@ -3,17 +3,15 @@ package com.jworkdev.trading.robot.infra
 import com.jworkdev.trading.robot.Order
 import com.jworkdev.trading.robot.OrderType.{Buy, Sell}
 import com.jworkdev.trading.robot.config.StrategyConfigurations
+import com.jworkdev.trading.robot.data.signals.{SignalFinderStrategy, SignalType}
+import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequestFactory}
+import com.jworkdev.trading.robot.domain.{FinInstrumentConfig, Position}
 import com.jworkdev.trading.robot.market.data.MarketDataProvider
-import com.jworkdev.trading.robot.market.data.SnapshotInterval.FiveMinutes
-import com.jworkdev.trading.robot.data.signals.{MovingAverageRequest, SignalFinderStrategy, SignalType}
-import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest}
-import com.jworkdev.trading.robot.data.strategy.macd.MACDMarketDataStrategyRequest
-import com.jworkdev.trading.robot.domain.{FinInstrumentConfig, Position, TradingStrategyType}
 import com.typesafe.scalalogging.Logger
 import zio.{Console, Task, ZIO}
 
 import java.time.Instant
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
 trait TradingExecutorService:
   def execute(
@@ -28,20 +26,6 @@ class TradingExecutorServiceImpl(
 ) extends TradingExecutorService:
   private val logger = Logger(classOf[TradingExecutorServiceImpl])
 
-  private def createMarketDataStrategyRequest(
-      symbol: String,
-      tradingStrategyType: TradingStrategyType,
-      strategyConfigurations: StrategyConfigurations
-  ): Try[MarketDataStrategyRequest] =
-    tradingStrategyType match
-      case TradingStrategyType.OpenGap =>
-        Failure(new IllegalStateException("No OpenGap configuration found!"))
-      case TradingStrategyType.MACD =>
-        strategyConfigurations.macd match
-          case Some(macdCfg) =>
-            Success(MACDMarketDataStrategyRequest(symbol = symbol, snapshotInterval = macdCfg.snapshotInterval))
-          case None => Failure(new IllegalStateException("No MACD configuration found!"))
-
   private def execute(
       balancePerFinInst: Double,
       finInstrumentConfig: FinInstrumentConfig,
@@ -50,7 +34,7 @@ class TradingExecutorServiceImpl(
   ): Task[Option[Order]] =
     logger.info(s"Trading on  $finInstrumentConfig")
     val symbolOpenPosition = openPositions.find(position => finInstrumentConfig.symbol == position.symbol)
-    val res = createMarketDataStrategyRequest(
+    val res = MarketDataStrategyRequestFactory.createMarketDataStrategyRequest(
       symbol = finInstrumentConfig.symbol,
       tradingStrategyType = finInstrumentConfig.strategy,
       strategyConfigurations = strategyConfigurations
