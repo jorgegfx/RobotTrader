@@ -7,23 +7,24 @@ import java.time.Instant
 
 class RSIIndicatorValidator(period: Int) extends IndicatorValidator:
   private def calculate(prices: Seq[Double], period: Int): Seq[Option[Double]] =
-    require(prices.length >= period, "Not enough data points to calculate RSI")
+    if(prices.length < period)
+      Seq.fill(prices.length)(None)
+    else
+      val changes = prices.sliding(2).map { case Seq(prev, curr) => curr - prev }.toSeq
+      val gains = changes.map(change => if (change > 0) change else 0.0)
+      val losses = changes.map(change => if (change < 0) -change else 0.0)
 
-    val changes = prices.sliding(2).map { case Seq(prev, curr) => curr - prev }.toSeq
-    val gains = changes.map(change => if (change > 0) change else 0.0)
-    val losses = changes.map(change => if (change < 0) -change else 0.0)
+      val avgGains = calculateSMA(gains, period)
+      val avgLosses = calculateSMA(losses, period)
 
-    val avgGains = calculateSMA(gains, period)
-    val avgLosses = calculateSMA(losses, period)
+      val rs = avgGains.zip(avgLosses).map { case (avgGain, avgLoss) =>
+        if (avgLoss == 0) Double.PositiveInfinity else avgGain / avgLoss
+      }
 
-    val rs = avgGains.zip(avgLosses).map { case (avgGain, avgLoss) =>
-      if (avgLoss == 0) Double.PositiveInfinity else avgGain / avgLoss
-    }
+      val rsi = rs.map(r => 100 - (100 / (1 + r)))
+      val rsiWithPlaceholders = Seq.fill(period - 1)(None) ++ rsi.map(Some(_))
 
-    val rsi = rs.map(r => 100 - (100 / (1 + r)))
-    val rsiWithPlaceholders = Seq.fill(period - 1)(None) ++ rsi.map(Some(_))
-
-    rsiWithPlaceholders
+      rsiWithPlaceholders
 
   private def calculateSMA(data: Seq[Double], period: Int): Seq[Double] =
     val initialSMA = data.take(period).sum / period
