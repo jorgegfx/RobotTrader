@@ -26,6 +26,7 @@ package object domain:
   case class FinInstrumentConfig(
       symbol: String,
       pnl: Option[Double],
+      strategy: TradingStrategyType,
       finInstrumentType: FinInstrumentType,
       lastPnlUpdate: Option[Instant],
   )

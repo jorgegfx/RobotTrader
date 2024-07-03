@@ -1,5 +1,6 @@
 package com.jworkdev.trading.robot
 
+import com.jworkdev.trading.robot.config.{ApplicationConfiguration, DataBaseConfig}
 import com.zaxxer.hikari.HikariDataSource
 import doobie.util.transactor
 import io.github.gaelrenoux.tranzactio.doobie.Database
@@ -7,26 +8,16 @@ import io.github.gaelrenoux.tranzactio.{DatabaseOps, ErrorStrategies}
 import zio.config.magnolia.*
 import zio.config.typesafe.*
 import zio.{Config, ConfigProvider, IO}
-
+import com.jworkdev.trading.robot.config.appConfig
 import javax.sql.DataSource
 
 package object infra:
-
-  private case class DbConfig(
-      url: String,
-      user: String,
-      password: String,
-      driver: String
-  )
-  private val dbConfig: IO[Config.Error, DbConfig] = ConfigProvider
-    .fromHoconFile(new java.io.File("config/application.conf"))
-    .load(deriveConfig[DbConfig])
 
   import com.zaxxer.hikari.HikariConfig
   import zio.*
   object DatabaseConfig:
 
-    private def hikariConfig(dbConfig: DbConfig): HikariConfig =
+    private def hikariConfig(dbConfig: DataBaseConfig): HikariConfig =
       val hikariConfig = new HikariConfig()
       hikariConfig.setJdbcUrl(dbConfig.url)
       hikariConfig.setUsername(dbConfig.user)
@@ -37,7 +28,7 @@ package object infra:
 
     val layer: ZLayer[Any, Throwable, DataSource] = ZLayer.scoped {
       for
-        cfg <- dbConfig.map(dbCfg => hikariConfig(dbConfig = dbCfg))
+        cfg <- appConfig.map(appCfg => hikariConfig(dbConfig = appCfg.dataBaseConfig))
         ds <- ZIO.attemptBlocking {
           val ds: DataSource = new HikariDataSource(cfg)
           ds

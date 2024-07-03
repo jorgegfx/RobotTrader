@@ -11,3 +11,7 @@ class MACDMarketDataStrategyProvider
   override def provide(request: MACDMarketDataStrategyRequest): Try[MACDMarketDataStrategyResponse] =
     val prices = marketDataProvider.getIntradayQuotes(symbol = request.symbol, interval = request.snapshotInterval)
     prices.map(MACDMarketDataStrategyResponse.apply)
+    
+
+object MACDMarketDataStrategyProvider:
+  def apply(): MACDMarketDataStrategyProvider = new MACDMarketDataStrategyProvider()

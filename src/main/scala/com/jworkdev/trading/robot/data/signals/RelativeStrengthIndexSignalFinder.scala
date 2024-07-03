@@ -31,11 +31,16 @@ class RelativeStrengthIndexSignalFinder(period: Int) extends SignalFinder[Relati
   }
 
   private def detectRSISignals(prices: List[StockPrice], rsi: List[Option[Double]]): List[Signal] = {
+    val priceMap = prices.groupBy(_.snapshotTime).view.mapValues(values => values.head).toMap
     (for {
       i <- rsi.indices
       signal <- rsi(i) match {
-        case Some(rsiValue) if rsiValue < 30 => Some(Signal(prices(i).snapshotTime , Buy))
-        case Some(rsiValue) if rsiValue > 70 => Some(Signal(prices(i).snapshotTime , Sell))
+        case Some(rsiValue) if rsiValue < 30 =>
+          val date = prices(i).snapshotTime
+          Some(Signal(date = date,`type`=Buy,stockPrice = priceMap(date)))
+        case Some(rsiValue) if rsiValue > 70 =>
+          val date = prices(i).snapshotTime
+          Some(Signal(date = date,`type`=Sell,stockPrice = priceMap(date)))
         case _ => None
       }
     } yield signal).toList

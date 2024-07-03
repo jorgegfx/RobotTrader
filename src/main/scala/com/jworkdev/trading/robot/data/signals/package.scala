@@ -9,7 +9,7 @@ package object signals {
   enum SignalType:
     case Buy, Sell
 
-  case class Signal(date: Instant, `type`: SignalType)
+  case class Signal(date: Instant, `type`: SignalType, stockPrice: StockPrice)
 
   trait SignalFinder[RequestType] {
     def find(request: RequestType): List[Signal]
@@ -17,6 +17,7 @@ package object signals {
 
   sealed class SignalFinderRequest
   case class MovingAverageRequest(stockPrices: List[StockPrice]) extends SignalFinderRequest
+  class OpenGapRequest extends SignalFinderRequest
   case class RelativeStrengthIndexRequest(stockPrices: List[StockPrice]) extends SignalFinderRequest
   case class MACDRequest(stockPrices: List[StockPrice], validate: Boolean) extends SignalFinderRequest
 }

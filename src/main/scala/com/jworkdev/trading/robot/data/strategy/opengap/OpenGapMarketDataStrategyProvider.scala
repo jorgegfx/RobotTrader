@@ -12,3 +12,7 @@ class OpenGapMarketDataStrategyProvider
   override def provide(
       request: OpenGapMarketDataStrategyRequest
   ): Try[OpenGapMarketDataStrategyResponse] = ???
+
+
+object OpenGapMarketDataStrategyProvider:
+  def apply(): OpenGapMarketDataStrategyProvider = new OpenGapMarketDataStrategyProvider()

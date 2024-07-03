@@ -1,7 +1,6 @@
 package com.jworkdev.trading.robot.infra
 
-import com.jworkdev.trading.robot.domain.FinInstrumentConfig
-import com.jworkdev.trading.robot.domain.FinInstrumentType.Stock
+import com.jworkdev.trading.robot.domain.{FinInstrumentConfig, FinInstrumentType, TradingStrategyType}
 import doobie.implicits.*
 import doobie.implicits.legacy.instant.*
 import io.github.gaelrenoux.tranzactio.doobie
@@ -19,12 +18,14 @@ class FinInstrumentConfigServiceImpl extends FinInstrumentConfigService:
       symbol: String,
       pnl: Option[Double],
       finInstrumentType: String,
+      strategy: String,
       lastPnlUpdate: Option[Instant]
   ):
     def toDomain: FinInstrumentConfig = FinInstrumentConfig(
       symbol = symbol,
       pnl = pnl,
-      Stock,
+      strategy = TradingStrategyType.valueOf(strategy),
+      finInstrumentType = FinInstrumentType.valueOf(finInstrumentType),
       lastPnlUpdate = lastPnlUpdate
     )
 
@@ -33,6 +34,7 @@ class FinInstrumentConfigServiceImpl extends FinInstrumentConfigService:
              symbol,
              pnl,
              type,
+             strategy,
              last_pnl_update FROM fin_instr_config"""
       .query[FinInstrumentConfigDB]
       .to[List]

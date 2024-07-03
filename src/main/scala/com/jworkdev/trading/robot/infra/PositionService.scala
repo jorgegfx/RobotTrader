@@ -103,7 +103,7 @@ class PositionServiceImpl extends PositionService:
       val closingOrder = orders.find(order=>order.`type`==OrderType.Sell && order.positionId.getOrElse(-1) == openPosition.id)
       closingOrder.map(order=>(openPosition.id,order.totalPrice - openPosition.openPricePerShare, order.dateTime))
     })
-    val sql = """UPDATE position WHERE id=? SET close_date=?, pnl=? """
+    val sql = """UPDATE position SET close_date=?, pnl=? WHERE id=?"""
     val params: List[(Long,Instant,Double)] = closingPositions.
         map { case (id: Long, pnl: Double, dateTime: Instant) => (id,dateTime,pnl) }
     val update: Update[(Long,Instant,Double)] = Update[(Long,Instant,Double)](sql)

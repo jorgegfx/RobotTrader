@@ -2,52 +2,69 @@ package com.jworkdev.trading.robot.infra
 
 import com.jworkdev.trading.robot.Order
 import com.jworkdev.trading.robot.OrderType.{Buy, Sell}
+import com.jworkdev.trading.robot.config.StrategyConfigurations
 import com.jworkdev.trading.robot.market.data.MarketDataProvider
 import com.jworkdev.trading.robot.market.data.SnapshotInterval.FiveMinutes
 import com.jworkdev.trading.robot.data.signals.{MovingAverageRequest, SignalFinderStrategy, SignalType}
-import com.jworkdev.trading.robot.domain.{FinInstrumentConfig, Position}
+import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest}
+import com.jworkdev.trading.robot.data.strategy.macd.MACDMarketDataStrategyRequest
+import com.jworkdev.trading.robot.domain.{FinInstrumentConfig, Position, TradingStrategyType}
 import com.typesafe.scalalogging.Logger
 import zio.{Console, Task, ZIO}
 
 import java.time.Instant
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 trait TradingExecutorService:
   def execute(
       balancePerFinInst: Double,
       finInstrumentConfigs: List[FinInstrumentConfig],
-      openPositions: List[Position]
+      openPositions: List[Position],
+      strategyConfigurations: StrategyConfigurations
   ): Task[List[Order]]
 
 class TradingExecutorServiceImpl(
-                                  marketDataProvider: MarketDataProvider
+    marketDataProvider: MarketDataProvider
 ) extends TradingExecutorService:
   private val logger = Logger(classOf[TradingExecutorServiceImpl])
+
+  private def createMarketDataStrategyRequest(
+      symbol: String,
+      tradingStrategyType: TradingStrategyType,
+      strategyConfigurations: StrategyConfigurations
+  ): Try[MarketDataStrategyRequest] =
+    tradingStrategyType match
+      case TradingStrategyType.OpenGap =>
+        Failure(new IllegalStateException("No OpenGap configuration found!"))
+      case TradingStrategyType.MACD =>
+        strategyConfigurations.macd match
+          case Some(macdCfg) =>
+            Success(MACDMarketDataStrategyRequest(symbol = symbol, snapshotInterval = macdCfg.snapshotInterval))
+          case None => Failure(new IllegalStateException("No MACD configuration found!"))
+
   private def execute(
       balancePerFinInst: Double,
       finInstrumentConfig: FinInstrumentConfig,
-      openPositions: List[Position]
+      openPositions: List[Position],
+      strategyConfigurations: StrategyConfigurations
   ): Task[Option[Order]] =
     logger.info(s"Trading on  $finInstrumentConfig")
-    val symbolOpenPosition = openPositions.find(position =>
-      finInstrumentConfig.symbol == position.symbol
-    )
-    val res = marketDataProvider.getIntradayQuotes(
+    val symbolOpenPosition = openPositions.find(position => finInstrumentConfig.symbol == position.symbol)
+    val res = createMarketDataStrategyRequest(
       symbol = finInstrumentConfig.symbol,
-      FiveMinutes
-    ) match
+      tradingStrategyType = finInstrumentConfig.strategy,
+      strategyConfigurations = strategyConfigurations
+    ).flatMap(request => MarketDataStrategyProvider.provide(request)) match
       case Failure(exception) =>
         logger.error("Error", exception)
         None
-      case Success(stockPrices) =>
-        val signals = SignalFinderStrategy.findSignals(signalFinderRequest =
-          MovingAverageRequest(stockPrices = stockPrices)
-        )
+      case Success(marketDataResponse) =>
+        val signals =
+          SignalFinderStrategy.findSignals(signalFinderRequest = marketDataResponse.buildSignalFinderRequest())
         signals.lastOption match
           case Some(lastSignal) =>
             logger.info(s"Last Signal: $lastSignal")
-            val orderPrice =
-              stockPrices.find(_.snapshotTime == lastSignal.date).head.close
+            val orderPrice = lastSignal.stockPrice.close
             symbolOpenPosition match
               case Some(position) =>
                 // Trying to make a Sell
@@ -91,14 +108,16 @@ class TradingExecutorServiceImpl(
   override def execute(
       balancePerFinInst: Double,
       finInstrumentConfigs: List[FinInstrumentConfig],
-      openPositions: List[Position]
+      openPositions: List[Position],
+      strategyConfigurations: StrategyConfigurations
   ): Task[List[Order]] = for
     _ <- Console.printLine(s"Trading on  $finInstrumentConfigs")
     fibers <- ZIO.foreach(finInstrumentConfigs)(finInstrumentConfig =>
       execute(
         balancePerFinInst = balancePerFinInst,
         finInstrumentConfig = finInstrumentConfig,
-        openPositions = openPositions
+        openPositions = openPositions,
+        strategyConfigurations = strategyConfigurations
       ).fork
     )
     results <- ZIO.foreach(fibers)(_.join)

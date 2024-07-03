@@ -1,4 +1,5 @@
 package com.jworkdev.trading.robot.data.strategy
+import com.jworkdev.trading.robot.data.signals
 
 package object opengap {
   case class OpenGapMarketDataStrategyRequest(signalCount: Int) extends MarketDataStrategyRequest
@@ -9,7 +10,9 @@ package object opengap {
                                 currentVolume: Double)
   case class OpenGapMarketDataStrategyResponse(
                                                 signalInputs: List[OpenGapSignalInput]
-                                              ) extends MarketDataStrategyResponse
+                                              ) extends MarketDataStrategyResponse{
+    override def buildSignalFinderRequest(): signals.SignalFinderRequest = ???
+  }
 
 
 }

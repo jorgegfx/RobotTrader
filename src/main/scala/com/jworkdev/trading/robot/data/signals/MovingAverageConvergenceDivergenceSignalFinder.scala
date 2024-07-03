@@ -1,6 +1,7 @@
 package com.jworkdev.trading.robot.data.signals
 
 import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
+import com.jworkdev.trading.robot.market.data.StockPrice
 
 import java.time.Instant
 
@@ -8,8 +9,9 @@ class MovingAverageConvergenceDivergenceSignalFinder extends SignalFinder[MACDRe
   def find(request: MACDRequest): List[Signal] = {
     val dates = request.stockPrices.map(_.snapshotTime)
     val prices = request.stockPrices.map(_.close)
+    val priceMap = request.stockPrices.groupBy(_.snapshotTime).view.mapValues(values=>values.head).toMap
     val (macdLine, signalLine, histogram) = calculateMACD(prices)
-    generateSignals(dates, macdLine, signalLine)
+    generateSignals(dates, macdLine, signalLine, priceMap)
   }
 
   // Helper function to calculate EMA
@@ -33,11 +35,11 @@ class MovingAverageConvergenceDivergenceSignalFinder extends SignalFinder[MACDRe
     (macdLine, signalLine, histogram)
   }
 
-  def generateSignals(dates: Seq[Instant], macdLine: Seq[Double], signalLine: Seq[Double]): List[Signal] =
+  def generateSignals(dates: Seq[Instant], macdLine: Seq[Double], signalLine: Seq[Double], priceMap: Map[Instant,StockPrice]): List[Signal] =
     macdLine.zip(signalLine).sliding(2).zip(dates.drop(1)).collect {
       case (Seq((prevMacd, prevSignal), (currMacd, currSignal)), date) =>
-        if prevMacd <= prevSignal && currMacd > currSignal then Some(Signal(date, Buy))
-        else if prevMacd >= prevSignal && currMacd < currSignal then Some(Signal(date, Sell))
+        if prevMacd <= prevSignal && currMacd > currSignal then Some(Signal(date = date,`type`= Buy,stockPrice = priceMap(date)))
+        else if prevMacd >= prevSignal && currMacd < currSignal then Some(Signal(date = date,`type`= Sell,stockPrice = priceMap(date)))
         else None
     }.toList.flatten
 

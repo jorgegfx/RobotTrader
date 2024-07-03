@@ -35,27 +35,29 @@ class MovingAverageSignalFinder(
                              stockQuotes: List[StockPrice],
                              shortTermMA: List[Option[Double]],
                              longTermMA: List[Option[Double]]
-  ): List[Signal] =
+  ): List[Signal] = 
+    val priceMap = stockQuotes.groupBy(_.snapshotTime).view.mapValues(values => values.head).toMap
     (for i <- 1 until stockQuotes.length
-    yield (
-      shortTermMA(i),
-      longTermMA(i),
-      shortTermMA(i - 1),
-      longTermMA(i - 1)
-    ) match
-      case (
-            Some(shortCurrent),
-            Some(longCurrent),
-            Some(shortPrevious),
-            Some(longPrevious)
+      yield (
+        shortTermMA(i),
+        longTermMA(i),
+        shortTermMA(i - 1),
+        longTermMA(i - 1)
+      ) match
+        case (
+          Some(shortCurrent),
+          Some(longCurrent),
+          Some(shortPrevious),
+          Some(longPrevious)
           ) =>
-        if shortPrevious <= longPrevious && shortCurrent > longCurrent then
-          Some(Signal(stockQuotes(i).snapshotTime, Buy))
-        else if shortPrevious >= longPrevious && shortCurrent < longCurrent then
-          Some(Signal(stockQuotes(i).snapshotTime, Sell))
-        else None
-      case _ => None
-    ).flatten.toList
+          val date = stockQuotes(i).snapshotTime
+          if shortPrevious <= longPrevious && shortCurrent > longCurrent then
+            Some(Signal(date = date,`type`=Buy,stockPrice = priceMap(date)))
+          else if shortPrevious >= longPrevious && shortCurrent < longCurrent then
+            Some(Signal(date = date,`type`=Sell,stockPrice = priceMap(date)))
+          else None
+        case _ => None
+      ).flatten.toList
 
 object MovingAverageSignalFinder:
   def apply(): MovingAverageSignalFinder = new MovingAverageSignalFinder(50, 200)

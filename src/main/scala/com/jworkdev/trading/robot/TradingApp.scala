@@ -1,5 +1,6 @@
 package com.jworkdev.trading.robot
 
+import com.jworkdev.trading.robot.config.appConfig
 import com.jworkdev.trading.robot.domain.{Account, FinInstrumentConfig, Position}
 import com.jworkdev.trading.robot.infra.*
 import doobie.util.log.LogHandler
@@ -97,10 +98,12 @@ object TradingApp extends zio.ZIOAppDefault:
       positionService <- ZIO.service[PositionService]
       openPositions <- positionService.findAllOpen()
       _ <- Console.printLine("Executing orders ...")
+      strategyCfgs <- appConfig.map(appCfg => appCfg.strategyConfigurations)
       orders <- tradingExecutorService.execute(
         balancePerFinInst = balancePerFinInst,
         finInstrumentConfigs = finInstrumentConfigs,
-        openPositions = openPositions
+        openPositions = openPositions,
+        strategyConfigurations = strategyCfgs
       )
       _ <- applyOrders(
         account = account,
