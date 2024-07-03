@@ -2,6 +2,7 @@ package com.jworkdev.trading.robot.data.strategy
 
 import com.jworkdev.trading.robot.config.StrategyConfigurations
 import com.jworkdev.trading.robot.data.strategy.macd.MACDMarketDataStrategyRequest
+import com.jworkdev.trading.robot.data.strategy.opengap.OpenGapMarketDataStrategyRequest
 import com.jworkdev.trading.robot.domain.TradingStrategyType
 
 import scala.util.{Failure, Success, Try}
@@ -14,7 +15,9 @@ object MarketDataStrategyRequestFactory {
                                      ): Try[MarketDataStrategyRequest] =
     tradingStrategyType match
       case TradingStrategyType.OpenGap =>
-        Failure(new IllegalStateException("No OpenGap configuration found!"))
+        strategyConfigurations.openGap match
+          case Some(openGapCfg) => Success(OpenGapMarketDataStrategyRequest(symbol=symbol,signalCount = openGapCfg.signalCount))
+          case None => Failure(new IllegalStateException("No OpenGap configuration found!"))
       case TradingStrategyType.MACD =>
         strategyConfigurations.macd match
           case Some(macdCfg) =>

@@ -35,8 +35,10 @@ class MovingAverageSignalFinder(
                              stockQuotes: List[StockPrice],
                              shortTermMA: List[Option[Double]],
                              longTermMA: List[Option[Double]]
-  ): List[Signal] = 
-    val priceMap = stockQuotes.groupBy(_.snapshotTime).view.mapValues(values => values.head).toMap
+  ): List[Signal] =
+    val priceMap = stockQuotes.groupBy(_.snapshotTime).flatMap {
+      case (key,value) => value.headOption.map(value=>(key,value))
+    }
     (for i <- 1 until stockQuotes.length
       yield (
         shortTermMA(i),

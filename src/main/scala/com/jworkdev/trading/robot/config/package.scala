@@ -13,7 +13,9 @@ package object config {
                        driver: String
                      )
   case class MACDStrategyConfiguration(snapshotInterval: SnapshotInterval)
-  case class StrategyConfigurations(macd: Option[MACDStrategyConfiguration])
+  case class OpenGapStrategyConfiguration(signalCount: Int)
+  case class StrategyConfigurations(macd: Option[MACDStrategyConfiguration] = None,
+                                    openGap: Option[OpenGapStrategyConfiguration] = None)
   case class ApplicationConfiguration(dataBaseConfig: DataBaseConfig,
                                       strategyConfigurations: StrategyConfigurations)
 

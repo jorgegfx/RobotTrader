@@ -2,7 +2,7 @@ package com.jworkdev.trading.robot.data.signals
 
 import com.jworkdev.trading.robot.market.data
 
-case class StockPrice(
+case class StockQuote(
     date: String,
     open: Double,
     close: Double,
@@ -13,11 +13,11 @@ case class StockPrice(
 
 object MovingAverage:
   def calculateSMA(
-      prices: List[StockPrice],
-      period: Int,
-      priceType: String
+                    prices: List[StockQuote],
+                    period: Int,
+                    priceType: String
   ): List[Option[Double]] =
-    def getPriceByType(stockPrice: StockPrice, priceType: String): Double =
+    def getPriceByType(stockPrice: StockQuote, priceType: String): Double =
       priceType.toLowerCase match
         case "open"    => stockPrice.open
         case "close"   => stockPrice.close
@@ -38,16 +38,16 @@ object MovingAverage:
 
 object MovingAverageCrossover extends App:
   val prices = List(
-    StockPrice("2023-06-01", 148, 150, 151, 147),
-    StockPrice("2023-06-02", 151, 152, 153, 150),
-    StockPrice("2023-06-03", 152, 153, 154, 151),
-    StockPrice("2023-06-04", 150, 151, 152, 149),
-    StockPrice("2023-06-05", 154, 155, 156, 153),
-    StockPrice("2023-06-06", 156, 157, 158, 155),
-    StockPrice("2023-06-07", 158, 159, 160, 157),
-    StockPrice("2023-06-08", 157, 158, 159, 156),
-    StockPrice("2023-06-09", 159, 160, 161, 158),
-    StockPrice("2023-06-10", 161, 162, 163, 160)
+    StockQuote("2023-06-01", 148, 150, 151, 147),
+    StockQuote("2023-06-02", 151, 152, 153, 150),
+    StockQuote("2023-06-03", 152, 153, 154, 151),
+    StockQuote("2023-06-04", 150, 151, 152, 149),
+    StockQuote("2023-06-05", 154, 155, 156, 153),
+    StockQuote("2023-06-06", 156, 157, 158, 155),
+    StockQuote("2023-06-07", 158, 159, 160, 157),
+    StockQuote("2023-06-08", 157, 158, 159, 156),
+    StockQuote("2023-06-09", 159, 160, 161, 158),
+    StockQuote("2023-06-10", 161, 162, 163, 160)
   )
 
   val shortTermPeriod = 3 // Short-term moving average period
@@ -65,9 +65,9 @@ object MovingAverageCrossover extends App:
   signals.foreach(println)
 
   def detectSignals(
-      prices: List[StockPrice],
-      shortTermMA: List[Option[Double]],
-      longTermMA: List[Option[Double]]
+                     prices: List[StockQuote],
+                     shortTermMA: List[Option[Double]],
+                     longTermMA: List[Option[Double]]
   ): List[(String, String)] =
     (for
       i <- shortTermMA.indices

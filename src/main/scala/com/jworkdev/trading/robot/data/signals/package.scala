@@ -1,5 +1,6 @@
 package com.jworkdev.trading.robot.data
 
+import com.jworkdev.trading.robot.data.strategy.opengap.OpenGapSignalInput
 import com.jworkdev.trading.robot.market.data.StockPrice
 
 package object signals {
@@ -17,7 +18,7 @@ package object signals {
 
   sealed class SignalFinderRequest
   case class MovingAverageRequest(stockPrices: List[StockPrice]) extends SignalFinderRequest
-  class OpenGapRequest extends SignalFinderRequest
+  case class OpenGapRequest(signalInputs: List[OpenGapSignalInput]) extends SignalFinderRequest
   case class RelativeStrengthIndexRequest(stockPrices: List[StockPrice]) extends SignalFinderRequest
   case class MACDRequest(stockPrices: List[StockPrice], validate: Boolean) extends SignalFinderRequest
 }
