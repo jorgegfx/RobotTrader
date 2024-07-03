@@ -45,12 +45,12 @@ class OpenGapMarketDataStrategyProvider
             for
               closingPrice <- priceMap(previous).lastOption.map(_.close)
               openingPrice <- priceMap(current).headOption.map(_.open)
-              currentPrice <- priceMap(current).lastOption
+              currentPrices <- priceMap.get(current)
             yield OpenGapSignalInput(
               closingPrice = closingPrice,
               openingPrice = openingPrice,
               volumeAvg = avgVol,
-              currentPrice = currentPrice
+              currentPrices = currentPrices
             )
           }
         OpenGapMarketDataStrategyResponse(signalInputs = res.toList)

@@ -8,7 +8,7 @@ package object opengap {
   case class OpenGapSignalInput(closingPrice: Double,
                                 openingPrice: Double,
                                 volumeAvg: Double,
-                                currentPrice: StockPrice)
+                                currentPrices: List[StockPrice])
   case class OpenGapMarketDataStrategyResponse(
                                                 signalInputs: List[OpenGapSignalInput]
                                               ) extends MarketDataStrategyResponse{
