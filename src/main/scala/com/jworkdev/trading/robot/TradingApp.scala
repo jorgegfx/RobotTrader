@@ -39,13 +39,21 @@ object TradingApp extends zio.ZIOAppDefault:
       _ <- Console.printLine(s"Task executed at: $currentTime")
   } yield ()
 
+
+  private def totalBalance(currentBalance: Double, orders: List[Order]): Double = {
+    val gain = orders.filter(_.`type`==OrderType.Sell).map(_.totalPrice).sum
+    val loss = orders.filter(_.`type`==OrderType.Buy).map(_.totalPrice).sum
+    (currentBalance + gain) - loss
+  }
+
   private def updateBalance(
       account: Account,
       orders: List[Order]
   ): ZIO[Connection & AppEnv, Throwable, Option[Unit]] =
-    val newBalance = orders.map(_.totalPrice).sum
+    val newBalance = totalBalance(currentBalance = account.balance, orders = orders)
     ZIO.when(orders.nonEmpty)(ZIO.scoped {
       for
+        _ <- Console.printLine(s"Balance updated to $newBalance !")
         accountService <- ZIO.service[AccountService]
         _ <- accountService.updateBalance(
           id = account.id,
@@ -60,19 +68,18 @@ object TradingApp extends zio.ZIOAppDefault:
       orders: List[Order]
   ): ZIO[Connection & AppEnv, Throwable, Unit] =
     for
-      _ <- Console.printLine(s"Orders:$orders")
-      newBalance <- ZIO.succeed(
-        orders.map(_.totalPrice).sum
-      )
+      _ <- Console.printLine(s"Orders created :$orders")
       _ <- updateBalance(account = account, orders = orders)
       positionService <- ZIO.service[PositionService]
       _ <- positionService.closeOpenPositions(
         openPositions = openPositions,
         orders = orders
       )
+      _ <- Console.printLine(s"Positions closed!")
       _ <- positionService.createOpenPositionsFromOrders(
         orders = orders
       )
+      _ <- Console.printLine(s"Positions opened!")
     yield ()
 
   private def getBalancePerFinInst(
