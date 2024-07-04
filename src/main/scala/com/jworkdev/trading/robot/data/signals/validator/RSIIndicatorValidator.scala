@@ -22,7 +22,7 @@ class RSIIndicatorValidator(period: Int) extends IndicatorValidator:
       }
 
       val rsi = rs.map(r => 100 - (100 / (1 + r)))
-      val rsiWithPlaceholders = Seq.fill(period - 1)(None) ++ rsi.map(Some(_))
+      val rsiWithPlaceholders = Seq.fill(prices.length - rsi.length)(None) ++ rsi.map(Some(_))
 
       rsiWithPlaceholders
 

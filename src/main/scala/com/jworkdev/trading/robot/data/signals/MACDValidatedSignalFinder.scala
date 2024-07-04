@@ -10,10 +10,12 @@ class MACDValidatedSignalFinder extends SignalFinder[MACDRequest]:
       val volumeValidations = IndicatorValidator.validate(stockPrices = request.stockPrices,Volume)
       val rsiValidations = IndicatorValidator.validate(stockPrices = request.stockPrices,RSI)
       signals.filter(signal=>
-        if(signal.`type`==SignalType.Buy)
-          volumeValidations(signal.date).buyValidation && rsiValidations(signal.date).buyValidation
-        else
-          volumeValidations(signal.date).sellValidation && rsiValidations(signal.date).sellValidation
+        if(volumeValidations.contains(signal.date) && rsiValidations.contains(signal.date))
+          if(signal.`type`==SignalType.Buy)
+            volumeValidations(signal.date).buyValidation && rsiValidations(signal.date).buyValidation
+          else
+            volumeValidations(signal.date).sellValidation && rsiValidations(signal.date).sellValidation
+        else false
       )
     }else signals
   }
