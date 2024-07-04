@@ -17,8 +17,7 @@ object TradingApp extends zio.ZIOAppDefault:
   private val positionService = PositionService.layer
   private val finInstrumentConfigService = FinInstrumentConfigService.layer
   private val tradingExecutorService = TradingExecutorService()
-  type AppEnv = Database & AccountService & PositionService &
-    FinInstrumentConfigService
+  type AppEnv = Database & AccountService & PositionService & FinInstrumentConfigService
   private val appEnv =
     DatabaseConfig.database ++ accountService ++ positionService ++ finInstrumentConfigService
   // Define the interval in minutes
@@ -33,18 +32,16 @@ object TradingApp extends zio.ZIOAppDefault:
     yield ExitCode(0)
 
   // Task to be executed periodically
-  private val periodicTask: ZIO[Any, Throwable, Unit] = for {
-      currentTime <- Clock.currentDateTime
-      _ <- runTradingLoop().provideLayer(appEnv)
-      _ <- Console.printLine(s"Task executed at: $currentTime")
-  } yield ()
+  private val periodicTask: ZIO[Any, Throwable, Unit] = for
+    currentTime <- Clock.currentDateTime
+    _ <- runTradingLoop().provideLayer(appEnv)
+    _ <- Console.printLine(s"Task executed at: $currentTime")
+  yield ()
 
-
-  private def totalBalance(currentBalance: Double, orders: List[Order]): Double = {
-    val gain = orders.filter(_.`type`==OrderType.Sell).map(_.totalPrice).sum
-    val loss = orders.filter(_.`type`==OrderType.Buy).map(_.totalPrice).sum
+  private def totalBalance(currentBalance: Double, orders: List[Order]): Double =
+    val gain = orders.filter(_.`type` == OrderType.Sell).map(_.totalPrice).sum
+    val loss = orders.filter(_.`type` == OrderType.Buy).map(_.totalPrice).sum
     (currentBalance + gain) - loss
-  }
 
   private def updateBalance(
       account: Account,
@@ -66,21 +63,23 @@ object TradingApp extends zio.ZIOAppDefault:
       account: Account,
       openPositions: List[Position],
       orders: List[Order]
-  ): ZIO[Connection & AppEnv, Throwable, Unit] =
-    for
-      _ <- Console.printLine(s"Orders created :$orders")
-      _ <- updateBalance(account = account, orders = orders)
-      positionService <- ZIO.service[PositionService]
-      _ <- positionService.closeOpenPositions(
-        openPositions = openPositions,
-        orders = orders
-      )
-      _ <- Console.printLine(s"Positions closed!")
-      _ <- positionService.createOpenPositionsFromOrders(
-        orders = orders
-      )
-      _ <- Console.printLine(s"Positions opened!")
-    yield ()
+  ): ZIO[Connection & AppEnv, Throwable, Option[Unit]] =
+    ZIO.when(orders.nonEmpty)(ZIO.scoped {
+      for
+        _ <- Console.printLine(s"Orders created :$orders")
+        _ <- updateBalance(account = account, orders = orders)
+        positionService <- ZIO.service[PositionService]
+        _ <- positionService.closeOpenPositions(
+          openPositions = openPositions,
+          orders = orders
+        )
+        _ <- Console.printLine(s"Positions closed!")
+        _ <- positionService.createOpenPositionsFromOrders(
+          orders = orders
+        )
+        _ <- Console.printLine(s"Positions opened!")
+      yield ()
+    })
 
   private def getBalancePerFinInst(
       account: Account,
@@ -90,8 +89,7 @@ object TradingApp extends zio.ZIOAppDefault:
     else account.balance / finInstrumentConfigs.size
 
   private def runTradingLoop(): ZIO[AppEnv, Throwable, List[Order]] =
-    val executeTradingTransactions
-        : ZIO[Connection & AppEnv, Throwable, List[Order]] = for
+    val executeTradingTransactions: ZIO[Connection & AppEnv, Throwable, List[Order]] = for
       accountService <- ZIO.service[AccountService]
       account <- accountService.findByName("trading")
       finInstrumentConfigService <- ZIO.service[FinInstrumentConfigService]
