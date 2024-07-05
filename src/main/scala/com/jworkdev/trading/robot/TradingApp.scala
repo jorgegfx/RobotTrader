@@ -34,7 +34,7 @@ object TradingApp extends zio.ZIOAppDefault:
   // Task to be executed periodically
   private val periodicTask: ZIO[Any, Throwable, Unit] = for
     currentTime <- Clock.currentDateTime
-    _ <- runTradingLoop().provideLayer(appEnv)
+    _ <- runTradingLoop()
     _ <- Console.printLine(s"Task executed at: $currentTime")
   yield ()
 
@@ -88,38 +88,36 @@ object TradingApp extends zio.ZIOAppDefault:
     if finInstrumentConfigs.isEmpty then 0.0d
     else account.balance / finInstrumentConfigs.size
 
-  private def runTradingLoop(): ZIO[AppEnv, Throwable, List[Order]] =
-    val executeTradingTransactions: ZIO[Connection & AppEnv, Throwable, List[Order]] = for
-      accountService <- ZIO.service[AccountService]
-      account <- accountService.findByName("trading")
-      finInstrumentConfigService <- ZIO.service[FinInstrumentConfigService]
-      finInstrumentConfigs <- finInstrumentConfigService.findAll()
-      balancePerFinInst <- ZIO.succeed(
-        getBalancePerFinInst(
-          account = account,
-          finInstrumentConfigs = finInstrumentConfigs
-        )
-      )
-      positionService <- ZIO.service[PositionService]
-      openPositions <- positionService.findAllOpen()
-      _ <- Console.printLine("Executing orders ...")
-      strategyCfgs <- appConfig.map(appCfg => appCfg.strategyConfigurations)
-      orders <- tradingExecutorService.execute(
-        balancePerFinInst = balancePerFinInst,
-        finInstrumentConfigs = finInstrumentConfigs,
-        openPositions = openPositions,
-        strategyConfigurations = strategyCfgs
-      )
-      _ <- applyOrders(
+  private val executeTradingTransactions: ZIO[Connection & AppEnv, Throwable, List[Order]] = for
+    accountService <- ZIO.service[AccountService]
+    account <- accountService.findByName("trading")
+    finInstrumentConfigService <- ZIO.service[FinInstrumentConfigService]
+    finInstrumentConfigs <- finInstrumentConfigService.findAll()
+    balancePerFinInst <- ZIO.succeed(
+      getBalancePerFinInst(
         account = account,
-        openPositions = openPositions,
-        orders = orders
+        finInstrumentConfigs = finInstrumentConfigs
       )
-    yield orders
+    )
+    positionService <- ZIO.service[PositionService]
+    openPositions <- positionService.findAllOpen()
+    _ <- Console.printLine("Executing orders ...")
+    strategyCfgs <- appConfig.map(appCfg => appCfg.strategyConfigurations)
+    orders <- tradingExecutorService.execute(
+      balancePerFinInst = balancePerFinInst,
+      finInstrumentConfigs = finInstrumentConfigs,
+      openPositions = openPositions,
+      strategyConfigurations = strategyCfgs
+    )
+    _ <- applyOrders(
+      account = account,
+      openPositions = openPositions,
+      orders = orders
+    )
+  yield orders
 
-    ZIO.serviceWithZIO[Any] { _ =>
-      // if this implicit is not provided, tranzactio will use Conf.dbRecovery instead
-      implicit val errorRecovery: ErrorStrategiesRef =
-        DatabaseConfig.alternateDbRecovery
-      Database.transactionOrWiden(executeTradingTransactions)
-    }
+  implicit val errorRecovery: ErrorStrategiesRef =
+    DatabaseConfig.alternateDbRecovery
+
+  private def runTradingLoop(): ZIO[Any, Throwable, List[Order]] =
+    Database.transactionOrWiden(executeTradingTransactions).provideLayer(appEnv)
