@@ -25,14 +25,10 @@ object TradingApp extends zio.ZIOAppDefault:
   private val schedule: Schedule[Any, Any, Long] = Schedule.fixed(intervalMinutes.minutes)
 
   override def run: ZIO[ZIOAppArgs & Scope, Any, Any] =
-    for
-      _ <- Console.printLine("Starting the app ...")
-      _ <- periodicTask.repeat(schedule)
-      _ <- Console.printLine("Finished!")
-    yield ExitCode(0)
+    periodicTask.repeat(schedule).provideLayer(appEnv).exitCode
 
   // Task to be executed periodically
-  private val periodicTask: ZIO[Any, Throwable, Unit] = for
+  private val periodicTask: ZIO[AppEnv, Throwable, Unit] = for
     currentTime <- Clock.currentDateTime
     _ <- runTradingLoop()
     _ <- Console.printLine(s"Task executed at: $currentTime")
@@ -88,7 +84,7 @@ object TradingApp extends zio.ZIOAppDefault:
     if finInstrumentConfigs.isEmpty then 0.0d
     else account.balance / finInstrumentConfigs.size
 
-  private val executeTradingTransactions: ZIO[Connection & AppEnv, Throwable, List[Order]] = for
+  private val executeTradingTransaction: ZIO[Connection & AppEnv, Throwable, Unit] = for
     accountService <- ZIO.service[AccountService]
     account <- accountService.findByName("trading")
     finInstrumentConfigService <- ZIO.service[FinInstrumentConfigService]
@@ -114,10 +110,10 @@ object TradingApp extends zio.ZIOAppDefault:
       openPositions = openPositions,
       orders = orders
     )
-  yield orders
+  yield ()
 
   implicit val errorRecovery: ErrorStrategiesRef =
     DatabaseConfig.alternateDbRecovery
 
-  private def runTradingLoop(): ZIO[Any, Throwable, List[Order]] =
-    Database.transactionOrWiden(executeTradingTransactions).provideLayer(appEnv)
+  private def runTradingLoop(): ZIO[AppEnv, Throwable, Unit] =
+    Database.transactionOrWiden(executeTradingTransaction)
