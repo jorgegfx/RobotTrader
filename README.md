@@ -1,6 +1,6 @@
 # RobotTrader
 
-A trading application implemented in Scala 3 using ZIO, Doobie, and MySQL. This application periodically executes trading strategies and manages accounts and positions in a MySQL database.
+A trading application implemented in Scala 3 using ZIO, Doobie, and MySQL. This application periodically executes trading strategies and manages accounts and positions in a JDBC Compatible Database by default using MySQL database.
 
 ## Table of Contents
 - [Features](#features)
