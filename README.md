@@ -42,17 +42,21 @@ Create a database and update the src/main/resources/application.conf file with y
 ## Configuration
 The application uses HOCON configuration format. Update the src/main/resources/application.conf file with your database and application settings.
 ```hocon
-db {
-  url = "jdbc:mysql://localhost:3306/trading"
-  user = "trading_user"
-  password = "password"
-}
-
-app {
-  strategyConfigurations = [
-    { type = "Gap", param1 = 0.05, param2 = 0.1 },
-    { type = "MACD", shortTerm = 12, longTerm = 26, signal = 9 }
-  ]
+{
+  dataBaseConfig = {
+    url = "jdbc:mysql://localhost:3306/robot_trading"
+    user = "trading"
+    password = "trading"
+    driver = "com.mysql.cj.jdbc.Driver"
+  }
+  strategyConfigurations = {
+    macd = {
+        snapshotInterval = "OneMinute"
+    }
+    openGap = {
+        signalCount = 5
+    }
+  }
 }
 ```
 ## Trading Strategies
