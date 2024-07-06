@@ -48,7 +48,7 @@ libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-specs2" % doobieVersion % "test", // Specs2 support for typechecking statements.
   "org.tpolecat" %% "doobie-scalatest" % doobieVersion % "test",
 
-// ZIO Interop Cats
+  // ZIO Interop Cats
   "dev.zio" %% "zio-interop-cats" % "3.2.9.1",
 
   // MySQL Connector
@@ -56,7 +56,8 @@ libraryDependencies ++= Seq(
 
   // Testing
   "dev.zio" %% "zio-test" % zioVersion % Test,
-  "dev.zio" %% "zio-test-sbt" % zioVersion % Test
+  "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
+  "org.scalatestplus" %% "mockito-5-12" % "3.2.19.0" % Test
 )
 
 lazy val root = (project in file("."))

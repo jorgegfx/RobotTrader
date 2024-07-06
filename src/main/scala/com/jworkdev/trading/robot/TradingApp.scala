@@ -3,6 +3,7 @@ package com.jworkdev.trading.robot
 import com.jworkdev.trading.robot.config.appConfig
 import com.jworkdev.trading.robot.domain.{Account, FinInstrumentConfig, Position}
 import com.jworkdev.trading.robot.infra.*
+import com.jworkdev.trading.robot.service.{AccountService, FinInstrumentConfigService, PositionService, TradingExecutorService}
 import doobie.util.log.LogHandler
 import io.github.gaelrenoux.tranzactio.ErrorStrategiesRef
 import io.github.gaelrenoux.tranzactio.doobie.*

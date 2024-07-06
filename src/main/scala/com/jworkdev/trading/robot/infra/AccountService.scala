@@ -1,14 +1,12 @@
 package com.jworkdev.trading.robot.infra
 
 import com.jworkdev.trading.robot.domain.Account
+import com.jworkdev.trading.robot.service.AccountService
 import doobie.implicits.*
 import io.github.gaelrenoux.tranzactio.doobie
 import io.github.gaelrenoux.tranzactio.doobie.{TranzactIO, tzio}
 import zio.{ULayer, ZLayer}
 
-trait AccountService:
-  def findByName(name: String): TranzactIO[Account]
-  def updateBalance(id: Long, newBalance: Double): TranzactIO[Unit]
 
 class AccountServiceImpl extends AccountService:
   override def findByName(name: String): TranzactIO[Account] = tzio {

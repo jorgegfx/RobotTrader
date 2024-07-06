@@ -1,6 +1,7 @@
 package com.jworkdev.trading.robot.infra
 
 import com.jworkdev.trading.robot.domain.Position
+import com.jworkdev.trading.robot.service.PositionService
 import com.jworkdev.trading.robot.{Order, OrderType}
 import doobie.*
 import doobie.implicits.*
@@ -11,24 +12,6 @@ import zio.*
 
 import java.time.Instant
 import java.util.Date
-
-
-trait PositionService:
-  def create(position: Position): TranzactIO[Unit]
-
-  def findAll(): TranzactIO[List[Position]]
-
-  def findAllOpen(): TranzactIO[List[Position]]
-
-  def closeOpenPositions(openPositions: List[Position], orders: List[Order]): TranzactIO[Int]
-
-  def createOpenPositionsFromOrders(orders: List[Order]): TranzactIO[Int]
-
-  def findOpenBetween(from: Instant, to: Instant): TranzactIO[List[Position]]
-
-  def findCloseBetween(from: Instant, to: Instant): TranzactIO[List[Position]]
-
-  def getPnL(from: Instant, to: Instant): TranzactIO[Double]
 
 class PositionServiceImpl extends PositionService:
 

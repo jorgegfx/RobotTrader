@@ -1,10 +1,11 @@
-package com.jworkdev.trading.robot.infra
+package com.jworkdev.trading.robot.service
 
 import com.jworkdev.trading.robot.Order
 import com.jworkdev.trading.robot.OrderType.{Buy, Sell}
 import com.jworkdev.trading.robot.config.StrategyConfigurations
 import com.jworkdev.trading.robot.data.signals.{SignalFinderStrategy, SignalType}
-import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequestFactory}
+import com.jworkdev.trading.robot.data.strategy
+import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest, MarketDataStrategyRequestFactory, MarketDataStrategyResponse}
 import com.jworkdev.trading.robot.domain.{FinInstrumentConfig, Position}
 import com.jworkdev.trading.robot.market.data.MarketDataProvider
 import com.typesafe.scalalogging.Logger
@@ -22,7 +23,8 @@ trait TradingExecutorService:
   ): Task[List[Order]]
 
 class TradingExecutorServiceImpl(
-    marketDataProvider: MarketDataProvider
+    marketDataStrategyProvider: MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse],
+    marketDataStrategyRequestFactory: MarketDataStrategyRequestFactory,
 ) extends TradingExecutorService:
   private val logger = Logger(classOf[TradingExecutorServiceImpl])
 
@@ -34,11 +36,11 @@ class TradingExecutorServiceImpl(
   ): Task[Option[Order]] =
     logger.info(s"Trading on  $finInstrumentConfig")
     val symbolOpenPosition = openPositions.find(position => finInstrumentConfig.symbol == position.symbol)
-    val res = MarketDataStrategyRequestFactory.createMarketDataStrategyRequest(
+    val res = marketDataStrategyRequestFactory.createMarketDataStrategyRequest(
       symbol = finInstrumentConfig.symbol,
       tradingStrategyType = finInstrumentConfig.strategy,
       strategyConfigurations = strategyConfigurations
-    ).flatMap(request => MarketDataStrategyProvider.provide(request)) match
+    ).flatMap(request => marketDataStrategyProvider.provide(request)) match
       case Failure(exception) =>
         logger.error("Error", exception)
         None
@@ -108,6 +110,8 @@ class TradingExecutorServiceImpl(
   yield (results.flatten)
 
 object TradingExecutorService:
-  def apply(): TradingExecutorService = new TradingExecutorServiceImpl(
-    MarketDataProvider()
+  def apply():
+  TradingExecutorService = new TradingExecutorServiceImpl(
+    MarketDataStrategyProvider(),
+    MarketDataStrategyRequestFactory()
   )

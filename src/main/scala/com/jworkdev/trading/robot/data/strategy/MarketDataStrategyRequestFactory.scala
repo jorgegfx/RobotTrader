@@ -7,12 +7,20 @@ import com.jworkdev.trading.robot.domain.TradingStrategyType
 
 import scala.util.{Failure, Success, Try}
 
-object MarketDataStrategyRequestFactory {
+trait MarketDataStrategyRequestFactory{
   def createMarketDataStrategyRequest(
                                        symbol: String,
                                        tradingStrategyType: TradingStrategyType,
                                        strategyConfigurations: StrategyConfigurations
-                                     ): Try[MarketDataStrategyRequest] =
+                                     ): Try[MarketDataStrategyRequest]
+}
+
+class MarketDataStrategyRequestFactoryImpl extends MarketDataStrategyRequestFactory{
+  override def createMarketDataStrategyRequest(
+                                                symbol: String,
+                                                tradingStrategyType: TradingStrategyType,
+                                                strategyConfigurations: StrategyConfigurations
+                                              ): Try[MarketDataStrategyRequest] =
     tradingStrategyType match
       case TradingStrategyType.OpenGap =>
         strategyConfigurations.openGap match
@@ -23,4 +31,8 @@ object MarketDataStrategyRequestFactory {
           case Some(macdCfg) =>
             Success(MACDMarketDataStrategyRequest(symbol = symbol, snapshotInterval = macdCfg.snapshotInterval))
           case None => Failure(new IllegalStateException("No MACD configuration found!"))
+}
+
+object MarketDataStrategyRequestFactory {
+  def apply(): MarketDataStrategyRequestFactory = new MarketDataStrategyRequestFactoryImpl()
 }

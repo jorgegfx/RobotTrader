@@ -7,7 +7,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import scala.util.Try
 
-class OpenGapMarketDataStrategyProvider
+class OpenGapMarketDataStrategyProvider(private val marketDataProvider: MarketDataProvider)
     extends MarketDataStrategyProvider[
       OpenGapMarketDataStrategyRequest,
       OpenGapMarketDataStrategyResponse
@@ -16,7 +16,6 @@ class OpenGapMarketDataStrategyProvider
   private val dateFormatter = DateTimeFormatter
     .ofPattern(DATE_PATTERN_FORMAT)
     .withZone(ZoneId.systemDefault())
-  private val marketDataProvider = MarketDataProvider()
 
   override def provide(
       request: OpenGapMarketDataStrategyRequest
@@ -57,4 +56,5 @@ class OpenGapMarketDataStrategyProvider
       }
 
 object OpenGapMarketDataStrategyProvider:
-  def apply(): OpenGapMarketDataStrategyProvider = new OpenGapMarketDataStrategyProvider()
+  def apply(marketDataProvider: MarketDataProvider): OpenGapMarketDataStrategyProvider =
+    new OpenGapMarketDataStrategyProvider(marketDataProvider)

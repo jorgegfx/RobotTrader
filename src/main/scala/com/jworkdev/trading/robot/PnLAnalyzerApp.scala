@@ -1,20 +1,18 @@
 package com.jworkdev.trading.robot
 
-import com.jworkdev.trading.robot.config.{
-  MACDStrategyConfiguration,
-  OpenGapStrategyConfiguration,
-  StrategyConfigurations
-}
+import com.jworkdev.trading.robot.config.{MACDStrategyConfiguration, OpenGapStrategyConfiguration, StrategyConfigurations}
 import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy}
 import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequestFactory}
 import com.jworkdev.trading.robot.domain.TradingStrategyType
-import com.jworkdev.trading.robot.domain.TradingStrategyType.{MACD,OpenGap}
+import com.jworkdev.trading.robot.domain.TradingStrategyType.{MACD, OpenGap}
 import com.jworkdev.trading.robot.market.data.SnapshotInterval.OneMinute
 import com.jworkdev.trading.robot.pnl.{PnLAnalysis, PnLAnalyzer}
 
 import scala.util.{Failure, Success, Try}
 object PnLAnalyzerApp extends App:
   private val pnLAnalyzer = PnLAnalyzer()
+  private val marketDataStrategyRequestFactory = MarketDataStrategyRequestFactory()
+  private val marketDataStrategyProvider = MarketDataStrategyProvider()
   val initialCash = 100000.0
   val cfg = StrategyConfigurations(
     macd = Some(MACDStrategyConfiguration(snapshotInterval = OneMinute)),
@@ -39,13 +37,13 @@ object PnLAnalyzerApp extends App:
       strategyConfigurations: StrategyConfigurations
   ): Try[List[Signal]] =
     println(s"Executing $symbol using $tradingStrategyType with cfg ${strategyConfigurations}")
-    MarketDataStrategyRequestFactory
+    marketDataStrategyRequestFactory
       .createMarketDataStrategyRequest(
         symbol = symbol,
         tradingStrategyType = tradingStrategyType,
         strategyConfigurations = strategyConfigurations
       )
-      .map(MarketDataStrategyProvider.provide)
+      .map(marketDataStrategyProvider.provide)
       .flatMap(_.map(_.buildSignalFinderRequest()))
       .map(SignalFinderStrategy.findSignals)
 

@@ -1,6 +1,7 @@
 package com.jworkdev.trading.robot.infra
 
 import com.jworkdev.trading.robot.domain.{FinInstrumentConfig, FinInstrumentType, TradingStrategyType}
+import com.jworkdev.trading.robot.service.FinInstrumentConfigService
 import doobie.implicits.*
 import doobie.implicits.legacy.instant.*
 import io.github.gaelrenoux.tranzactio.doobie
@@ -8,9 +9,6 @@ import io.github.gaelrenoux.tranzactio.doobie.{TranzactIO, tzio}
 import zio.{ULayer, ZLayer}
 
 import java.time.Instant
-trait FinInstrumentConfigService:
-  def findAll(): TranzactIO[List[FinInstrumentConfig]]
-  def updatePnl(symbol: String, currentPnl: Double): TranzactIO[Unit]
 
 class FinInstrumentConfigServiceImpl extends FinInstrumentConfigService:
 
