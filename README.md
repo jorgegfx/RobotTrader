@@ -22,7 +22,7 @@ A trading application implemented in Scala 3 using ZIO, Doobie, and MySQL. This 
 - JDK 11 or later
 - Scala 3
 - sbt (Scala Build Tool)
-- MySQL database
+- JDBC Compatible DB (MySQL database by default)
 
 ## Installation
 1. **Clone the repository:**
