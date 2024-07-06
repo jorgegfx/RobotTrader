@@ -1,5 +1,6 @@
 package com.jworkdev.trading.robot.service
 
+import com.jworkdev.trading.robot.Order
 import com.jworkdev.trading.robot.config.{MACDStrategyConfiguration, StrategyConfigurations}
 import com.jworkdev.trading.robot.data.signals.SignalType.Buy
 import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy}
@@ -10,7 +11,8 @@ import com.jworkdev.trading.robot.market.data.SnapshotInterval.OneMinute
 import com.jworkdev.trading.robot.market.data.StockPrice
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar.mock
-import zio.test.{Spec, ZIOSpecDefault, assertTrue}
+import zio._
+import zio.test.{test, _}
 
 import java.time.Instant
 import scala.util.Success
@@ -111,6 +113,6 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           openPositions = List.empty,
           strategyConfigurations = strategyConfigurations
         )
-      yield assertTrue(orders.nonEmpty)
+      yield assert(orders)(Assertion.isNonEmpty)
     }
   )
