@@ -1,26 +1,21 @@
 package com.jworkdev.trading.robot.service
 
-import com.jworkdev.trading.robot.{Order, OrderType}
 import com.jworkdev.trading.robot.config.{MACDStrategyConfiguration, StrategyConfigurations}
-import com.jworkdev.trading.robot.data.signals.SignalType.Buy
+import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
 import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy}
 import com.jworkdev.trading.robot.data.strategy.macd.{MACDMarketDataStrategyRequest, MACDMarketDataStrategyResponse}
-import com.jworkdev.trading.robot.data.strategy.{
-  MarketDataStrategyProvider,
-  MarketDataStrategyRequest,
-  MarketDataStrategyRequestFactory,
-  MarketDataStrategyResponse
-}
-import com.jworkdev.trading.robot.domain.{FinInstrumentConfig, FinInstrumentType, TradingStrategyType}
+import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest, MarketDataStrategyRequestFactory, MarketDataStrategyResponse}
+import com.jworkdev.trading.robot.domain.{FinInstrumentConfig, FinInstrumentType, Position, TradingStrategyType}
 import com.jworkdev.trading.robot.market.data.SnapshotInterval.OneMinute
 import com.jworkdev.trading.robot.market.data.StockPrice
+import com.jworkdev.trading.robot.{Order, OrderType}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar.mock
 import zio.*
-import zio.test.Assertion.equalTo
 import zio.test.{test, *}
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import scala.util.Success
 
 object TradingExecutorServiceSpec extends ZIOSpecDefault:
@@ -121,10 +116,81 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           openPositions = List.empty,
           strategyConfigurations = strategyConfigurations
         )
-      yield assert(orders.map(order => (order.`type`, order.price, order.shares)))(
-        equalTo(
-          List((OrderType.Buy,2,balancePerFinInst/2))
+      yield assertTrue(
+        orders.map(order => (order.`type`, order.price, order.shares)) == List((OrderType.Buy, 2.0d, 500L))
+      )
+    },
+    test("Sell Signal found") {
+      val balancePerFinInst = 1000
+      val symbol = "NVDA"
+      val marketDataStrategyProvider
+          : MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse] =
+        mock[MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse]]
+      val signalFinderStrategy = mock[SignalFinderStrategy]
+      val marketDataStrategyRequestFactory: MarketDataStrategyRequestFactory = MarketDataStrategyRequestFactory()
+      val tradingExecutorService =
+        new TradingExecutorServiceImpl(
+          marketDataStrategyProvider = marketDataStrategyProvider,
+          marketDataStrategyRequestFactory = marketDataStrategyRequestFactory,
+          signalFinderStrategy = signalFinderStrategy
         )
+      val finInstrumentConfigs = List(
+        FinInstrumentConfig(
+          symbol = symbol,
+          pnl = None,
+          strategy = TradingStrategyType.MACD,
+          finInstrumentType = FinInstrumentType.Stock,
+          lastPnlUpdate = None
+        )
+      )
+      val macdMarketDataStrategyResponse = MACDMarketDataStrategyResponse(prices =
+        List(
+          StockPrice(
+            symbol = symbol,
+            open = 100,
+            close = 200,
+            high = 250,
+            low = 50,
+            volume = 10,
+            snapshotTime = Instant.now()
+          )
+        )
+      )
+      val signals = macdMarketDataStrategyResponse.prices.map(price =>
+        Signal(date = price.snapshotTime, `type` = Sell, stockPrice = price)
+      )
+      val strategyConfigurations =
+        StrategyConfigurations(macd = Some(MACDStrategyConfiguration(snapshotInterval = OneMinute)))
+      when(
+        marketDataStrategyProvider.provide(request =
+          MACDMarketDataStrategyRequest(symbol = symbol, snapshotInterval = OneMinute)
+        )
+      ).thenReturn(Success(macdMarketDataStrategyResponse))
+      when(
+        signalFinderStrategy.findSignals(signalFinderRequest =
+          macdMarketDataStrategyResponse.buildSignalFinderRequest()
+        )
+      ).thenReturn(signals)
+      for
+        orders <- tradingExecutorService.execute(
+          balancePerFinInst = balancePerFinInst,
+          finInstrumentConfigs = finInstrumentConfigs,
+          openPositions = List(
+            Position(
+              id = 1,
+              symbol = symbol,
+              numberOfShares = 2,
+              openPricePerShare = 100,
+              closePricePerShare = None,
+              openDate = Instant.now().minus(1, ChronoUnit.HOURS),
+              closeDate = None,
+              pnl = None
+            )
+          ),
+          strategyConfigurations = strategyConfigurations
+        )
+      yield assertTrue(
+        orders.map(order => (order.`type`, order.price, order.shares)) == List((OrderType.Sell, 200.0d, 2L))
       )
     }
   )
