@@ -13,6 +13,7 @@ object PnLAnalyzerApp extends App:
   private val pnLAnalyzer = PnLAnalyzer()
   private val marketDataStrategyRequestFactory = MarketDataStrategyRequestFactory()
   private val marketDataStrategyProvider = MarketDataStrategyProvider()
+  private val signalFinderStrategy = SignalFinderStrategy()
   val initialCash = 100000.0
   val cfg = StrategyConfigurations(
     macd = Some(MACDStrategyConfiguration(snapshotInterval = OneMinute)),
@@ -45,7 +46,7 @@ object PnLAnalyzerApp extends App:
       )
       .map(marketDataStrategyProvider.provide)
       .flatMap(_.map(_.buildSignalFinderRequest()))
-      .map(SignalFinderStrategy.findSignals)
+      .map(signalFinderStrategy.findSignals)
 
   private def printPnlAnalysis(pnLAnalysis: PnLAnalysis): Unit =
     println(s"PNL: ${pnLAnalysis.pnl}")

@@ -7,7 +7,6 @@ import com.jworkdev.trading.robot.data.signals.{SignalFinderStrategy, SignalType
 import com.jworkdev.trading.robot.data.strategy
 import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest, MarketDataStrategyRequestFactory, MarketDataStrategyResponse}
 import com.jworkdev.trading.robot.domain.{FinInstrumentConfig, Position}
-import com.jworkdev.trading.robot.market.data.MarketDataProvider
 import com.typesafe.scalalogging.Logger
 import zio.{Console, Task, ZIO}
 
@@ -25,6 +24,7 @@ trait TradingExecutorService:
 class TradingExecutorServiceImpl(
     marketDataStrategyProvider: MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse],
     marketDataStrategyRequestFactory: MarketDataStrategyRequestFactory,
+    signalFinderStrategy: SignalFinderStrategy
 ) extends TradingExecutorService:
   private val logger = Logger(classOf[TradingExecutorServiceImpl])
 
@@ -46,7 +46,7 @@ class TradingExecutorServiceImpl(
         None
       case Success(marketDataResponse) =>
         val signals =
-          SignalFinderStrategy.findSignals(signalFinderRequest = marketDataResponse.buildSignalFinderRequest())
+          signalFinderStrategy.findSignals(signalFinderRequest = marketDataResponse.buildSignalFinderRequest())
         signals.lastOption match
           case Some(lastSignal) =>
             logger.info(s"Last Signal: $lastSignal")
@@ -113,5 +113,6 @@ object TradingExecutorService:
   def apply():
   TradingExecutorService = new TradingExecutorServiceImpl(
     MarketDataStrategyProvider(),
-    MarketDataStrategyRequestFactory()
+    MarketDataStrategyRequestFactory(),
+    SignalFinderStrategy()
   )
