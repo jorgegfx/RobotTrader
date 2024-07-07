@@ -69,6 +69,11 @@ The MACD (Moving Average Convergence Divergence) strategy uses the difference be
 ## Architecture
 The Trading App creates orders from the execution service that relies on the input and the signals in order to generate the orders 
 
+- **TradingApp** Zio Application with the responsibility of running the trading executor service
+- **TradingExecutorService** Zio Service that will generate the orders from the Market Data and the signals
+- **MarketDataStrategyProvider** Generate the required strategy market data input 
+- **SignalFinderStrategy** From the Market Data collected will calculate the Buy/Sell signals
+
 ![Architecture](./docs/RobotTrader.components.png)
 
 ## Contributing
