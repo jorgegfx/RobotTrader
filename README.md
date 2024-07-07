@@ -66,5 +66,10 @@ The Gap trading strategy identifies gaps between the closing price of the previo
 ### MACD Strategy
 The MACD (Moving Average Convergence Divergence) strategy uses the difference between short-term and long-term exponential moving averages (EMAs) to generate buy and sell signals. It includes a signal line to identify trading signals.
 
+## Architecture
+The Trading App creates orders from the execution service that relies on the input and the signals in order to generate the orders 
+
+![Architecture](./docs/RobotTrader.components.png)
+
 ## Contributing
 Contributions are welcome! Please fork the repository and open a pull request to contribute.
