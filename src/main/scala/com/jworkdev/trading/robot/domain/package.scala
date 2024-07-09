@@ -12,23 +12,23 @@ package object domain:
       closePricePerShare: Option[Double],
       openDate: Instant,
       closeDate: Option[Instant],
-      pnl: Option[Double]
-  ){
+      pnl: Option[Double],
+      tradingStrategyType: TradingStrategyType
+  ):
     def totalOpenPrice: Double = numberOfShares * openPricePerShare
-    def totalClosePrice: Option[Double] = closePricePerShare.map(numberOfShares * _ ) 
-  }
+    def totalClosePrice: Option[Double] = closePricePerShare.map(numberOfShares * _)
+
   enum FinInstrumentType:
     case Stock, Crypto
 
   enum TradingStrategyType:
     case OpenGap, MACD
 
-  case class FinInstrumentConfig(
-      symbol: String,
-      pnl: Option[Double],
-      strategy: TradingStrategyType,
-      finInstrumentType: FinInstrumentType,
-      lastPnlUpdate: Option[Instant],
+  case class FinInstrument(symbol: String, finInstrumentType: FinInstrumentType)
+
+  case class TradingStrategy(
+      `type`: TradingStrategyType,
+      pnl: Option[Double]
   )
 
   case class Account(id: Long, name: String, balance: Double)

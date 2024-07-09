@@ -2,6 +2,7 @@ package com.jworkdev.trading.robot.pnl
 
 import com.jworkdev.trading.robot.data.signals.Signal
 import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
+import com.jworkdev.trading.robot.domain.TradingStrategyType
 import com.jworkdev.trading.robot.{Order, OrderType}
 import com.typesafe.scalalogging.Logger
 
@@ -10,14 +11,15 @@ import scala.collection.mutable
 case class PnLAnalysis(pnl: Double, orders: List[Order])
 
 trait PnLAnalyzer:
-  def execute(initialCash: Double, signals: List[Signal]): PnLAnalysis
+  def execute(initialCash: Double, signals: List[Signal], tradingStrategyType: TradingStrategyType): PnLAnalysis
 
 class PnLAnalyzerImpl extends PnLAnalyzer:
   private val logger = Logger(classOf[PnLAnalyzerImpl])
 
   override def execute(
       initialCash: Double,
-      signals: List[Signal]
+      signals: List[Signal],
+      tradingStrategyType: TradingStrategyType
   ): PnLAnalysis =
     logger.info(s"Starting execution initialCash:$initialCash")
     var cash = initialCash // Initial cash
@@ -38,7 +40,8 @@ class PnLAnalyzerImpl extends PnLAnalyzer:
             symbol = signal.stockPrice.symbol,
             dateTime = signal.date,
             shares = sharesToBuy,
-            price = orderPrice
+            price = orderPrice,
+            tradingStrategyType = tradingStrategyType
           )
 
         case Sell if currentPosition._1 > 0 =>
@@ -49,7 +52,8 @@ class PnLAnalyzerImpl extends PnLAnalyzer:
             symbol = signal.stockPrice.symbol,
             dateTime = signal.date,
             shares = position,
-            price = orderPrice
+            price = orderPrice,
+            tradingStrategyType = tradingStrategyType
           )
           currentPosition = (0,0.0D)
         case _ =>

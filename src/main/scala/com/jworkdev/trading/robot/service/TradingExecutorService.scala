@@ -5,8 +5,13 @@ import com.jworkdev.trading.robot.OrderType.{Buy, Sell}
 import com.jworkdev.trading.robot.config.StrategyConfigurations
 import com.jworkdev.trading.robot.data.signals.{SignalFinderStrategy, SignalType}
 import com.jworkdev.trading.robot.data.strategy
-import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest, MarketDataStrategyRequestFactory, MarketDataStrategyResponse}
-import com.jworkdev.trading.robot.domain.{FinInstrumentConfig, Position}
+import com.jworkdev.trading.robot.data.strategy.{
+  MarketDataStrategyProvider,
+  MarketDataStrategyRequest,
+  MarketDataStrategyRequestFactory,
+  MarketDataStrategyResponse
+}
+import com.jworkdev.trading.robot.domain.{FinInstrument, Position, TradingStrategy}
 import com.typesafe.scalalogging.Logger
 import zio.{Console, Task, ZIO}
 
@@ -16,7 +21,8 @@ import scala.util.{Failure, Success}
 trait TradingExecutorService:
   def execute(
       balancePerFinInst: Double,
-      finInstrumentConfigs: List[FinInstrumentConfig],
+      finInstruments: List[FinInstrument],
+      tradingStrategies: List[TradingStrategy],
       openPositions: List[Position],
       strategyConfigurations: StrategyConfigurations
   ): Task[List[Order]]
@@ -28,19 +34,46 @@ class TradingExecutorServiceImpl(
 ) extends TradingExecutorService:
   private val logger = Logger(classOf[TradingExecutorServiceImpl])
 
+  override def execute(
+      balancePerFinInst: Double,
+      finInstruments: List[FinInstrument],
+      tradingStrategies: List[TradingStrategy],
+      openPositions: List[Position],
+      strategyConfigurations: StrategyConfigurations
+  ): Task[List[Order]] =
+    for
+      _ <- Console.printLine(s"Trading on  $finInstruments using $tradingStrategies")
+      fibers <- ZIO.foreach(finInstruments.zip(tradingStrategies))(tradingEntry =>
+        execute(
+          balancePerFinInst = balancePerFinInst,
+          finInstrument = tradingEntry._1,
+          tradingStrategy = tradingEntry._2,
+          openPositions = openPositions,
+          strategyConfigurations = strategyConfigurations
+        ).fork
+      )
+      results <- ZIO.foreach(fibers)(_.join)
+    yield results.flatten
+
   private def execute(
       balancePerFinInst: Double,
-      finInstrumentConfig: FinInstrumentConfig,
+      finInstrument: FinInstrument,
+      tradingStrategy: TradingStrategy,
       openPositions: List[Position],
       strategyConfigurations: StrategyConfigurations
   ): Task[Option[Order]] =
-    logger.info(s"Trading on  $finInstrumentConfig")
-    val symbolOpenPosition = openPositions.find(position => finInstrumentConfig.symbol == position.symbol)
-    val res = marketDataStrategyRequestFactory.createMarketDataStrategyRequest(
-      symbol = finInstrumentConfig.symbol,
-      tradingStrategyType = finInstrumentConfig.strategy,
-      strategyConfigurations = strategyConfigurations
-    ).flatMap(request => marketDataStrategyProvider.provide(request)) match
+    logger.info(s"Trading on  $finInstrument")
+    val symbolOpenPosition = openPositions.find(position =>
+      finInstrument.symbol == position.symbol &&
+        tradingStrategy.`type` == position.tradingStrategyType
+    )
+    val res = marketDataStrategyRequestFactory
+      .createMarketDataStrategyRequest(
+        symbol = finInstrument.symbol,
+        tradingStrategyType = tradingStrategy.`type`,
+        strategyConfigurations = strategyConfigurations
+      )
+      .flatMap(request => marketDataStrategyProvider.provide(request)) match
       case Failure(exception) =>
         logger.error("Error", exception)
         None
@@ -58,11 +91,12 @@ class TradingExecutorServiceImpl(
                   val order =
                     Order(
                       `type` = Sell,
-                      symbol = finInstrumentConfig.symbol,
+                      symbol = finInstrument.symbol,
                       dateTime = Instant.now(),
                       shares = position.numberOfShares,
                       price = orderPrice,
-                      positionId = Some(position.id)
+                      positionId = Some(position.id),
+                      tradingStrategyType = tradingStrategy.`type`
                     )
                   logger.info(s"Creating Sell Order: $order")
                   Some(order)
@@ -76,10 +110,11 @@ class TradingExecutorServiceImpl(
                   val order =
                     Order(
                       `type` = Buy,
-                      symbol = finInstrumentConfig.symbol,
+                      symbol = finInstrument.symbol,
                       dateTime = Instant.now(),
                       shares = numberOfShares,
-                      price = orderPrice
+                      price = orderPrice,
+                      tradingStrategyType = tradingStrategy.`type`
                     )
                   logger.info(s"Creating Buy Order: $order")
                   Some(order)
@@ -91,27 +126,8 @@ class TradingExecutorServiceImpl(
             None
     ZIO.succeed(res)
 
-  override def execute(
-      balancePerFinInst: Double,
-      finInstrumentConfigs: List[FinInstrumentConfig],
-      openPositions: List[Position],
-      strategyConfigurations: StrategyConfigurations
-  ): Task[List[Order]] = for
-    _ <- Console.printLine(s"Trading on  $finInstrumentConfigs")
-    fibers <- ZIO.foreach(finInstrumentConfigs)(finInstrumentConfig =>
-      execute(
-        balancePerFinInst = balancePerFinInst,
-        finInstrumentConfig = finInstrumentConfig,
-        openPositions = openPositions,
-        strategyConfigurations = strategyConfigurations
-      ).fork
-    )
-    results <- ZIO.foreach(fibers)(_.join)
-  yield (results.flatten)
-
 object TradingExecutorService:
-  def apply():
-  TradingExecutorService = new TradingExecutorServiceImpl(
+  def apply(): TradingExecutorService = new TradingExecutorServiceImpl(
     MarketDataStrategyProvider(),
     MarketDataStrategyRequestFactory(),
     SignalFinderStrategy()

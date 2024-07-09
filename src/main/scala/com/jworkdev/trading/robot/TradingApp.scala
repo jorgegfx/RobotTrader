@@ -1,9 +1,9 @@
 package com.jworkdev.trading.robot
 
 import com.jworkdev.trading.robot.config.appConfig
-import com.jworkdev.trading.robot.domain.{Account, FinInstrumentConfig, Position}
-import com.jworkdev.trading.robot.infra.*
-import com.jworkdev.trading.robot.service.{AccountService, FinInstrumentConfigService, PositionService, TradingExecutorService}
+import com.jworkdev.trading.robot.domain.{Account, FinInstrument, Position}
+import com.jworkdev.trading.robot.infra.{TradingStrategyService, *}
+import com.jworkdev.trading.robot.service.{AccountService, FinInstrumentService, PositionService, TradingExecutorService, TradingStrategyService}
 import doobie.util.log.LogHandler
 import io.github.gaelrenoux.tranzactio.ErrorStrategiesRef
 import io.github.gaelrenoux.tranzactio.doobie.*
@@ -16,11 +16,12 @@ object TradingApp extends zio.ZIOAppDefault:
     DbContext(logHandler = LogHandler.jdkLogHandler[Task])
   private val accountService = AccountService.layer
   private val positionService = PositionService.layer
-  private val finInstrumentConfigService = FinInstrumentConfigService.layer
+  private val tradingStrategyService = TradingStrategyService.layer
+  private val finInstrumentService = FinInstrumentService.layer
   private val tradingExecutorService = TradingExecutorService()
-  type AppEnv = Database & AccountService & PositionService & FinInstrumentConfigService
+  type AppEnv = Database & AccountService & PositionService & FinInstrumentService & TradingStrategyService
   private val appEnv =
-    DatabaseConfig.database ++ accountService ++ positionService ++ finInstrumentConfigService
+    DatabaseConfig.database ++ accountService ++ positionService ++ finInstrumentService ++ tradingStrategyService
   // Define the interval in minutes
   private val intervalMinutes: Int = 1
   private val schedule: Schedule[Any, Any, Long] = Schedule.fixed(intervalMinutes.minutes)
@@ -80,29 +81,32 @@ object TradingApp extends zio.ZIOAppDefault:
 
   private def getBalancePerFinInst(
       account: Account,
-      finInstrumentConfigs: List[FinInstrumentConfig]
+      finInstruments: List[FinInstrument]
   ): Double =
-    if finInstrumentConfigs.isEmpty then 0.0d
-    else account.balance / finInstrumentConfigs.size
+    if finInstruments.isEmpty then 0.0d
+    else account.balance / finInstruments.size
 
   private val executeTradingTransaction: ZIO[Connection & AppEnv, Throwable, Unit] = for
     accountService <- ZIO.service[AccountService]
     account <- accountService.findByName("trading")
-    finInstrumentConfigService <- ZIO.service[FinInstrumentConfigService]
-    finInstrumentConfigs <- finInstrumentConfigService.findAll()
+    finInstrumentConfigService <- ZIO.service[FinInstrumentService]
+    finInstruments <- finInstrumentConfigService.findAll()
     balancePerFinInst <- ZIO.succeed(
       getBalancePerFinInst(
         account = account,
-        finInstrumentConfigs = finInstrumentConfigs
+        finInstruments = finInstruments
       )
     )
     positionService <- ZIO.service[PositionService]
+    strategyService <- ZIO.service[TradingStrategyService]
+    tradingStrategies <- strategyService.findAll()
     openPositions <- positionService.findAllOpen()
     _ <- Console.printLine("Executing orders ...")
     strategyCfgs <- appConfig.map(appCfg => appCfg.strategyConfigurations)
     orders <- tradingExecutorService.execute(
       balancePerFinInst = balancePerFinInst,
-      finInstrumentConfigs = finInstrumentConfigs,
+      finInstruments = finInstruments,
+      tradingStrategies = tradingStrategies,
       openPositions = openPositions,
       strategyConfigurations = strategyCfgs
     )

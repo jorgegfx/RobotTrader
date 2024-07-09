@@ -26,7 +26,8 @@ object PnLAnalyzerApp extends App:
       case Success(signals) =>
         val res = pnLAnalyzer.execute(
           initialCash = initialCash,
-          signals = signals
+          signals = signals,
+          tradingStrategyType = tradingStrategyType
         )
         printPnlAnalysis(pnLAnalysis = res)
   }

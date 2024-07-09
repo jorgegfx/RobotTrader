@@ -1,6 +1,7 @@
 package com.jworkdev.trading
 
 import com.jworkdev.trading.robot.data.signals.SignalType
+import com.jworkdev.trading.robot.domain.TradingStrategyType
 
 import java.time.Instant
 
@@ -17,6 +18,7 @@ package object robot:
       dateTime: Instant,
       shares: Long,
       price: Double,
+      tradingStrategyType: TradingStrategyType,
       positionId: Option[Long] = None 
   ){
     def totalPrice: Double = shares * price 

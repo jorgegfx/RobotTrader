@@ -1,6 +1,6 @@
 package com.jworkdev.trading.robot
 
-import com.jworkdev.trading.robot.domain.{Account, FinInstrumentConfig, Position}
+import com.jworkdev.trading.robot.domain.{Account, FinInstrument, Position, TradingStrategy, TradingStrategyType}
 import doobie.implicits.*
 import io.github.gaelrenoux.tranzactio.doobie
 import io.github.gaelrenoux.tranzactio.doobie.{TranzactIO, tzio}
@@ -14,9 +14,15 @@ package object service {
     def findByName(name: String): TranzactIO[Account]
     def updateBalance(id: Long, newBalance: Double): TranzactIO[Unit]
 
-  trait FinInstrumentConfigService:
-    def findAll(): TranzactIO[List[FinInstrumentConfig]]
-    def updatePnl(symbol: String, currentPnl: Double): TranzactIO[Unit]
+  trait TradingStrategyService:
+    def findAll(): TranzactIO[List[TradingStrategy]]
+    def updatePnl(`type`: TradingStrategyType, currentPnl: Double): TranzactIO[Unit]
+
+  trait FinInstrumentService:
+    def findAll(): TranzactIO[List[FinInstrument]]
+    def saveAll(finInstruments: List[FinInstrument]): TranzactIO[Unit]
+    def deleteAll(): TranzactIO[Unit]
+
 
   trait PositionService:
     def create(position: Position): TranzactIO[Unit]
