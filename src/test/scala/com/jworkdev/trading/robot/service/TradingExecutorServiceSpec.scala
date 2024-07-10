@@ -38,7 +38,10 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       val finInstruments = List(
         FinInstrument(
           symbol = symbol,
-          finInstrumentType = FinInstrumentType.Stock
+          `type` = FinInstrumentType.Stock,
+          exchange = "NASDAQ",
+          volatility = 10D,
+          creationDate = Instant.now()
         )
       )
       val tradingStrategies = List(TradingStrategy(`type` = TradingStrategyType.MACD, pnl = None))
@@ -82,7 +85,10 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       val finInstruments = List(
         FinInstrument(
           symbol = symbol,
-          finInstrumentType = FinInstrumentType.Stock
+          `type` = FinInstrumentType.Stock,
+          exchange = "NASDAQ",
+          volatility = 10D,
+          creationDate = Instant.now()
         )
       )
       val tradingStrategies = List(TradingStrategy(`type` = TradingStrategyType.MACD, pnl = None))
@@ -135,7 +141,10 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       val finInstruments = List(
         FinInstrument(
           symbol = symbol,
-          finInstrumentType = FinInstrumentType.Stock
+          `type` = FinInstrumentType.Stock,
+          exchange = "NASDAQ",
+          volatility = 10D,
+          creationDate = Instant.now()
         )
       )
       val tradingStrategies = List(TradingStrategy(`type` = TradingStrategyType.MACD, pnl = None))

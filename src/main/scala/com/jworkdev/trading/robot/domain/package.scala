@@ -19,12 +19,16 @@ package object domain:
     def totalClosePrice: Option[Double] = closePricePerShare.map(numberOfShares * _)
 
   enum FinInstrumentType:
-    case Stock, Crypto
+    case Stock, ETF, Crypto
 
   enum TradingStrategyType:
     case OpenGap, MACD
 
-  case class FinInstrument(symbol: String, finInstrumentType: FinInstrumentType)
+  case class FinInstrument(symbol: String,
+                           `type`: FinInstrumentType,
+                           volatility: Double,
+                           exchange: String,
+                           creationDate: Instant)
 
   case class TradingStrategy(
       `type`: TradingStrategyType,

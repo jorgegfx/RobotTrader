@@ -1,3 +1,4 @@
+use `robot_trading`;
 CREATE TABLE `position` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `symbol` varchar(10) NOT NULL,
@@ -7,8 +8,9 @@ CREATE TABLE `position` (
   `open_date` datetime NOT NULL,
   `close_date` datetime DEFAULT NULL,
   `pnl` double DEFAULT NULL,
+  `tradingStrategyType` varchar(10) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+) ENGINE=InnoDB AUTO_INCREMENT=1;
 
 
 CREATE TABLE `account` (
@@ -16,13 +18,19 @@ CREATE TABLE `account` (
   `name` varchar(45) DEFAULT NULL,
   `balance` double DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+) ENGINE=InnoDB;
 
-CREATE TABLE `fin_instr_config` (
+CREATE TABLE `fin_instrument` (
   `symbol` varchar(10) NOT NULL,
-  `pnl` double DEFAULT NULL,
   `type` varchar(10) NOT NULL,
-  `strategy` varchar(10) NOT NULL,
-  `last_pnl_update` datetime DEFAULT NULL,
+  `volatility` double NOT NULL,
+  `exchange` varchar(20) NOT NULL,
+  `creation_date` datetime NOT NULL,
   PRIMARY KEY (`symbol`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+) ENGINE=InnoDB;
+
+CREATE TABLE `trading_strategy` (
+  `type` varchar(10) NOT NULL,
+  `pnl` double DEFAULT NULL,
+  PRIMARY KEY (`type`)
+) ENGINE=InnoDB;

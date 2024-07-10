@@ -20,8 +20,8 @@ package object service {
 
   trait FinInstrumentService:
     def findAll(): TranzactIO[List[FinInstrument]]
-    def saveAll(finInstruments: List[FinInstrument]): TranzactIO[Unit]
-    def deleteAll(): TranzactIO[Unit]
+    def saveAll(finInstruments: List[FinInstrument]): TranzactIO[Int]
+    def deleteAll(): TranzactIO[Int]
 
 
   trait PositionService:

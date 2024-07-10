@@ -54,7 +54,12 @@ libraryDependencies ++= Seq(
   // MySQL Connector
   "mysql" % "mysql-connector-java" % mysqlConnectorVersion,
 
-  // Testing
+  //STTP client
+  "com.softwaremill.sttp.client3" %% "core" % "3.8.3",
+
+  "com.github.tototoshi" %% "scala-csv" % "1.3.10",
+
+// Testing
   "dev.zio" %% "zio-test" % zioVersion % Test,
   "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
   "org.scalatestplus" %% "mockito-5-12" % "3.2.19.0" % Test
