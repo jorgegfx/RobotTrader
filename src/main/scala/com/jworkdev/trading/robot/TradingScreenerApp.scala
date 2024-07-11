@@ -34,6 +34,7 @@ object TradingScreenerApp extends zio.ZIOAppDefault:
         stockScreeningService <- ZIO.service[StockScreeningService]
         finInstruments <- stockScreeningService.screenFinInstruments()
         finInstrumentService <- ZIO.service[FinInstrumentService]
+        _ <- Console.printLine(s"Saving ${finInstruments.size} finInstruments ...")
         _ <- finInstrumentService.deleteAll()
         _ <- finInstrumentService.saveAll(finInstruments = finInstruments)
       yield ()

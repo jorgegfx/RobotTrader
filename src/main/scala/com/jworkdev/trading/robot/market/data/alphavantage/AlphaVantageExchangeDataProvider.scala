@@ -1,14 +1,13 @@
 package com.jworkdev.trading.robot.market.data.alphavantage
 
+import com.github.tototoshi.csv.*
 import com.jworkdev.trading.robot.domain
 import com.jworkdev.trading.robot.market.data.ExchangeDataProvider
 import sttp.client3.*
-import com.github.tototoshi.csv.*
 import zio.{Task, ZIO}
 
 import scala.io.Source
 import scala.util.Using
-import scala.util.Try
 
 class AlphaVantageExchangeDataProvider extends ExchangeDataProvider:
   private val apiKey = "TMNOJBPZ86A9UL98"
