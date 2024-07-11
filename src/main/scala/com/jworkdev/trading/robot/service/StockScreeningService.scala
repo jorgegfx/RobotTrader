@@ -5,6 +5,7 @@ import com.jworkdev.trading.robot.domain.FinInstrument
 import com.jworkdev.trading.robot.domain.FinInstrumentType.Stock
 import com.jworkdev.trading.robot.market.data.SnapshotInterval.SixtyMinutes
 import com.jworkdev.trading.robot.market.data.{ExchangeDataProvider, MarketDataProvider, VolatilityCalculator}
+import com.typesafe.scalalogging.Logger
 import zio.{Task, ZIO, ZLayer}
 
 import java.time.Instant
@@ -20,7 +21,7 @@ class StockScreeningServiceImpl(
 ) extends StockScreeningService:
   private val exchange = "NASDAQ"
   private val finInstrumentType: domain.FinInstrumentType = Stock
-
+  private val logger = Logger(classOf[StockScreeningServiceImpl])
   private def distributeInGroups[T](list: List[T], n: Int): List[List[T]] = {
     val groupedList = list.zipWithIndex.groupBy(_._2 % n).values.map(_.map(_._1).toList).toList
     groupedList
@@ -28,7 +29,7 @@ class StockScreeningServiceImpl(
 
   override def screenFinInstruments(): Task[List[FinInstrument]] = for
     symbols <- exchangeDataProvider.
-      findAllSymbols(exchange = exchange, finInstrumentType = finInstrumentType)
+      findAllSymbols(exchange = exchange, finInstrumentType = finInstrumentType).map(_.take(100))
     batches <- ZIO.succeed(distributeInGroups(list = symbols, parallelismLevel))
     fibers <- ZIO.foreach(batches) { symbols =>
       buildFinInstruments(symbols = symbols).fork
@@ -40,15 +41,18 @@ class StockScreeningServiceImpl(
     ZIO.attemptBlocking(symbols.flatMap(buildFinInstrument))
 
   private def buildFinInstrument(symbol: String): Option[FinInstrument] =
-    calculateVolatility(symbol = symbol).map(volatility =>
-      FinInstrument(
+    calculateVolatility(symbol = symbol).fold(ex=>
+      logger.error(s"Error calculating volatility for $symbol !",ex)
+      None,
+      volatility =>
+      Some(FinInstrument(
         symbol = symbol,
         `type` = finInstrumentType,
         volatility = volatility,
         exchange = exchange,
         creationDate = Instant.now()
-      )
-    ).toOption
+      ))
+    )
 
   private def calculateVolatility(symbol: String): Try[Double] =
     marketDataProvider

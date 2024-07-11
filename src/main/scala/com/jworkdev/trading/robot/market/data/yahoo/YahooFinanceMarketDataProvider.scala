@@ -1,18 +1,9 @@
 package com.jworkdev.trading.robot.market.data.yahoo
 
-import com.fasterxml.jackson.databind.{
-  DeserializationFeature,
-  JsonNode,
-  ObjectMapper
-}
+import com.fasterxml.jackson.databind.{DeserializationFeature, JsonNode, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.jworkdev.trading.robot.market
-import com.jworkdev.trading.robot.market.data.{
-  MarketDataProvider,
-  StockPrice,
-  SnapshotFrequency,
-  SnapshotInterval
-}
+import com.jworkdev.trading.robot.market.data.{MarketDataProvider, SnapshotFrequency, SnapshotInterval, StockPrice}
 import com.jworkdev.trading.robot.market.data
 import com.typesafe.scalalogging.Logger
 import org.apache.http.client.methods.HttpGet
@@ -20,7 +11,7 @@ import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.util.EntityUtils
 
 import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset}
-import scala.util.Try
+import scala.util.{Failure, Try}
 
 class YahooFinanceMarketDataProvider
     extends MarketDataProvider:
@@ -75,7 +66,7 @@ class YahooFinanceMarketDataProvider
       symbol: String,
       interval: SnapshotInterval,
       daysRange: Int = 1
-  ): List[StockPrice] =
+  ): Try[List[StockPrice]] =
     val internalParam = interval match
       case data.SnapshotInterval.OneMinute      => "1m"
       case data.SnapshotInterval.FiveMinutes    => "5m"
@@ -87,23 +78,27 @@ class YahooFinanceMarketDataProvider
     logger.info(s"fetching url :$url ...")
     val request = new HttpGet(url)
     val response = client.execute(request)
-    val entity = response.getEntity
-    val responseString = EntityUtils.toString(entity)
-    val json = mapper.readTree(responseString)
-    parse(symbol = symbol, response = json)
+    val responseCode = response.getStatusLine.getStatusCode
+    if(responseCode != 200)
+      Failure(new IllegalStateException(s"Invalid response $responseCode"))
+    else 
+      val entity = response.getEntity
+      val responseString = EntityUtils.toString(entity)
+      val json = mapper.readTree(responseString)
+      Try(parse(symbol = symbol, response = json))
 
   override def getIntradayQuotes(
       symbol: String,
       interval: SnapshotInterval
   ): Try[List[StockPrice]] =
-    Try(fetchResponse(symbol = symbol, interval = interval))
+    fetchResponse(symbol = symbol, interval = interval)
 
   override def getIntradayQuotesDaysRange(
       symbol: String,
       interval: SnapshotInterval,
       daysRange: Int
   ): Try[List[StockPrice]] =
-    Try(fetchResponse(symbol = symbol, interval = interval, daysRange = daysRange))
+    fetchResponse(symbol = symbol, interval = interval, daysRange = daysRange)
 
   def getQuotes(
       symbol: String,

@@ -56,9 +56,11 @@ package object data:
     private def calculateReturns(prices: Seq[Double]): Seq[Double] =
       prices.sliding(2).collect { case Seq(yesterday, today) => (today - yesterday) / yesterday }.toSeq
 
-    def calculate(prices: List[StockPrice]): Double = {
-      val returns = calculateReturns(prices = prices.map(_.close))
-      val meanReturn = returns.sum / returns.size
-      val variance = returns.map(r => pow(r - meanReturn, 2)).sum / (returns.size - 1)
-      sqrt(variance)
-    }
+    def calculate(prices: List[StockPrice]): Double = 
+      if(prices.isEmpty)
+        0.0D
+      else
+        val returns = calculateReturns(prices = prices.map(_.close))
+        val meanReturn = returns.sum / returns.size
+        val variance = returns.map(r => pow(r - meanReturn, 2)).sum / (returns.size - 1)
+        sqrt(variance)
