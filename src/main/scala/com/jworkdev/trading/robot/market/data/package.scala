@@ -54,9 +54,13 @@ package object data:
 
   object VolatilityCalculator:
     private def calculateReturns(prices: Seq[Double]): Seq[Double] =
-      prices.sliding(2).collect { case Seq(yesterday, today) => (today - yesterday) / yesterday }.toSeq
+      prices.sliding(2).flatMap { case Seq(yesterday, today) =>
+        if(yesterday > 0)
+          Some((today - yesterday) / yesterday)
+        else None
+      }.toSeq
 
-    def calculate(prices: List[StockPrice]): Double = 
+    def calculate(prices: List[StockPrice]): Double =
       if(prices.isEmpty)
         0.0D
       else

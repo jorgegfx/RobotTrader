@@ -6,7 +6,7 @@ import com.jworkdev.trading.robot.domain.FinInstrumentType.Stock
 import com.jworkdev.trading.robot.market.data.SnapshotInterval.SixtyMinutes
 import com.jworkdev.trading.robot.market.data.{ExchangeDataProvider, MarketDataProvider, VolatilityCalculator}
 import com.typesafe.scalalogging.Logger
-import zio.{Task, ZIO, ZLayer}
+import zio.{Duration, Task, ZIO, ZLayer}
 
 import java.time.Instant
 import scala.util.Try
@@ -29,7 +29,7 @@ class StockScreeningServiceImpl(
 
   override def screenFinInstruments(): Task[List[FinInstrument]] = for
     symbols <- exchangeDataProvider.
-      findAllSymbols(exchange = exchange, finInstrumentType = finInstrumentType).map(_.take(100))
+      findAllSymbols(exchange = exchange, finInstrumentType = finInstrumentType)
     batches <- ZIO.succeed(distributeInGroups(list = symbols, parallelismLevel))
     fibers <- ZIO.foreach(batches) { symbols =>
       buildFinInstruments(symbols = symbols).fork
@@ -38,10 +38,17 @@ class StockScreeningServiceImpl(
   yield results.flatten
 
   private def buildFinInstruments(symbols: List[String]):Task[List[FinInstrument]] =
-    ZIO.attemptBlocking(symbols.flatMap(buildFinInstrument))
+    for
+      res <- ZIO.foreach(symbols){symbol=>
+        for
+        _ <- ZIO.sleep(Duration.fromSeconds(1))
+        r <- ZIO.attemptBlocking(buildFinInstrument(symbol = symbol))
+        yield r
+      }.map(_.flatten)
+    yield res
 
   private def buildFinInstrument(symbol: String): Option[FinInstrument] =
-    calculateVolatility(symbol = symbol).fold(ex=>
+    calculateVolatility(symbol = symbol).filter(volatility=> !volatility.isNaN).fold(ex=>
       logger.error(s"Error calculating volatility for $symbol !",ex)
       None,
       volatility =>
