@@ -26,9 +26,10 @@ package object domain:
 
   case class FinInstrument(symbol: String,
                            `type`: FinInstrumentType,
-                           volatility: Double,
+                           volatility: Option[Double],
                            exchange: String,
-                           creationDate: Instant)
+                           creationDate: Instant,
+                           lastUpdate: Option[Instant])
 
   case class TradingStrategy(
       `type`: TradingStrategyType,

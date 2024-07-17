@@ -9,7 +9,7 @@ import io.github.gaelrenoux.tranzactio.doobie.*
 import zio.*
 import zio.interop.catz.*
 
-object TradingScreenerApp extends zio.ZIOAppDefault:
+object FinInstrumentLoaderApp extends zio.ZIOAppDefault:
   implicit val dbContext: DbContext =
     DbContext(logHandler = LogHandler.jdkLogHandler[Task])
   type AppEnv = Database & StockScreeningService & FinInstrumentService
@@ -20,7 +20,7 @@ object TradingScreenerApp extends zio.ZIOAppDefault:
 
   override def run: ZIO[ZIOAppArgs & Scope, Any, Unit] =
     for
-      _ <- calculateVolatility().provide(
+      _ <- loadAllFinInstruments().provide(
         DatabaseConfig.database ++
         StockScreeningService.layer,
         FinInstrumentService.layer,
@@ -29,15 +29,14 @@ object TradingScreenerApp extends zio.ZIOAppDefault:
     yield ()
 
   /** Main code for the application. Results in a big ZIO depending on the AppEnv. */
-  private def calculateVolatility(): ZIO[AppEnv, Throwable, Unit] =
+  private def loadAllFinInstruments(): ZIO[AppEnv, Throwable, Unit] =
     val executeTradingScreening: ZIO[Connection & AppEnv, Throwable, Unit] =
       for
         finInstrumentService <- ZIO.service[FinInstrumentService]
         stockScreeningService <- ZIO.service[StockScreeningService]
-        finInstruments <- finInstrumentService.findWithoutVolatility()
+        finInstruments <- stockScreeningService.findAllFinInstrumentFromExchange(exchange = exchange)
         _ <- Console.printLine(s"Saving ${finInstruments.size} finInstruments ...")
-        volatilityMap <- stockScreeningService.calculateVolatility(finInstruments = finInstruments)
-        - <- finInstrumentService.updateVolatility(volatilityMap = volatilityMap)
+        _ <- finInstrumentService.saveNonExisting(finInstruments = finInstruments)
       yield ()
 
     ZIO.serviceWithZIO[Any] { conf =>

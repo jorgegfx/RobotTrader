@@ -12,53 +12,62 @@ import java.time.Instant
 import scala.util.Try
 
 trait StockScreeningService:
-  def screenFinInstruments(): Task[List[FinInstrument]]
+  def findAllFinInstrumentFromExchange(exchange: String): Task[List[FinInstrument]]
+  def calculateVolatility(finInstruments: List[FinInstrument]): Task[Map[String,Double]]
 
 class StockScreeningServiceImpl(
     private val exchangeDataProvider: ExchangeDataProvider,
     private val marketDataProvider: MarketDataProvider,
-    private val parallelismLevel: Int = 5
+    private val parallelismLevel: Int = 3
 ) extends StockScreeningService:
   private val exchange = "NASDAQ"
   private val finInstrumentType: domain.FinInstrumentType = Stock
   private val logger = Logger(classOf[StockScreeningServiceImpl])
+
   private def distributeInGroups[T](list: List[T], n: Int): List[List[T]] = {
     val groupedList = list.zipWithIndex.groupBy(_._2 % n).values.map(_.map(_._1).toList).toList
     groupedList
   }
 
-  override def screenFinInstruments(): Task[List[FinInstrument]] = for
-    symbols <- exchangeDataProvider.
-      findAllSymbols(exchange = exchange, finInstrumentType = finInstrumentType)
-    batches <- ZIO.succeed(distributeInGroups(list = symbols, parallelismLevel))
-    fibers <- ZIO.foreach(batches) { symbols =>
-      buildFinInstruments(symbols = symbols).fork
+  override def findAllFinInstrumentFromExchange(exchange: String): Task[List[FinInstrument]] =
+    for
+        symbols <- exchangeDataProvider.
+          findAllSymbols(exchange = exchange, finInstrumentType = finInstrumentType)
+        finInstruments <- ZIO.succeed(symbols.map(buildFinInstrument))
+    yield finInstruments
+
+  def calculateVolatility(finInstruments: List[FinInstrument]): Task[Map[String,Double]] = for
+    batches <- ZIO.succeed(distributeInGroups(list = finInstruments, parallelismLevel))
+    fibers <- ZIO.foreach(batches) { finInstruments =>
+      calculateVolatilityParallel(finInstruments = finInstruments).fork
     }
     results <- ZIO.foreach(fibers)(_.join)
-  yield results.flatten
+  yield results.flatten.toMap
 
-  private def buildFinInstruments(symbols: List[String]):Task[List[FinInstrument]] =
+  private def calculateVolatilityParallel(finInstruments: List[FinInstrument]):Task[Map[String,Double]] =
     for
-      res <- ZIO.foreach(symbols){symbol=>
+      res <- ZIO.foreach(finInstruments){finInstrument=>
         for
-        _ <- ZIO.sleep(Duration.fromSeconds(1))
-        r <- ZIO.attemptBlocking(buildFinInstrument(symbol = symbol))
+        _ <- ZIO.sleep(Duration.fromSeconds(2))
+        r <- ZIO.attemptBlocking(calculateVolatility(finInstrument = finInstrument))
         yield r
-      }.map(_.flatten)
-    yield res
+      }
+    yield res.flatten.toMap
 
-  private def buildFinInstrument(symbol: String): Option[FinInstrument] =
-    calculateVolatility(symbol = symbol).filter(volatility=> !volatility.isNaN).fold(ex=>
-      logger.error(s"Error calculating volatility for $symbol !",ex)
+  private def buildFinInstrument(symbol: String): FinInstrument = FinInstrument(
+      symbol = symbol,
+      `type` = finInstrumentType,
+      volatility = None,
+      exchange = exchange,
+      creationDate = Instant.now(),
+      lastUpdate = None
+    )
+
+  private def calculateVolatility(finInstrument: FinInstrument): Option[(String,Double)] =
+    calculateVolatility(symbol = finInstrument.symbol).filter(volatility=> !volatility.isNaN).fold(ex=>
+      logger.error(s"Error calculating volatility for ${finInstrument.symbol} !",ex)
       None,
-      volatility =>
-      Some(FinInstrument(
-        symbol = symbol,
-        `type` = finInstrumentType,
-        volatility = volatility,
-        exchange = exchange,
-        creationDate = Instant.now()
-      ))
+      volatility => Some((finInstrument.symbol,volatility))
     )
 
   private def calculateVolatility(symbol: String): Try[Double] =

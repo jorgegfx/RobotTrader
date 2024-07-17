@@ -19,8 +19,12 @@ package object service {
     def updatePnl(`type`: TradingStrategyType, currentPnl: Double): TranzactIO[Unit]
 
   trait FinInstrumentService:
+    def findBySymbol(symbol: String): TranzactIO[Option[FinInstrument]]
     def findAll(): TranzactIO[List[FinInstrument]]
-    def saveAll(finInstruments: List[FinInstrument]): TranzactIO[Int]
+    def findWithoutVolatility(): TranzactIO[List[FinInstrument]]
+    def saveNonExisting(finInstruments: List[FinInstrument]): TranzactIO[Int]
+    def updateVolatility(volatilityMap: Map[String,Double]): TranzactIO[Int]
+    def updateVolatility(symbol: String, volatility: Double): TranzactIO[Unit]
     def deleteAll(): TranzactIO[Int]
 
 
