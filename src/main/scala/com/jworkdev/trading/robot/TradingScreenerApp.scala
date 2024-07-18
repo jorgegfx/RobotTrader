@@ -20,7 +20,7 @@ object TradingScreenerApp extends zio.ZIOAppDefault:
 
   override def run: ZIO[ZIOAppArgs & Scope, Any, Unit] =
     for
-      _ <- calculateVolatility().provide(
+      _ <- calculateVolatilityLoop().provide(
         DatabaseConfig.database ++
         StockScreeningService.layer,
         FinInstrumentService.layer,
@@ -28,9 +28,22 @@ object TradingScreenerApp extends zio.ZIOAppDefault:
       )
     yield ()
 
+  private def calculateVolatilityLoop(): ZIO[AppEnv, Throwable, Unit] =
+    calculateVolatility().flatMap{ res =>
+        if(!res){
+          for
+            _ <- Console.printLine(s"Next batch ...")
+            _ <- ZIO.sleep(Duration.fromSeconds(30))
+            _ <- calculateVolatilityLoop()
+          yield ()
+        }else{
+          ZIO.succeed(())
+        }
+    }
+
   /** Main code for the application. Results in a big ZIO depending on the AppEnv. */
-  private def calculateVolatility(): ZIO[AppEnv, Throwable, Unit] =
-    val executeTradingScreening: ZIO[Connection & AppEnv, Throwable, Unit] =
+  private def calculateVolatility(): ZIO[AppEnv, Throwable, Boolean] =
+    val executeTradingScreening: ZIO[Connection & AppEnv, Throwable, Boolean] =
       for
         finInstrumentService <- ZIO.service[FinInstrumentService]
         stockScreeningService <- ZIO.service[StockScreeningService]
@@ -38,7 +51,7 @@ object TradingScreenerApp extends zio.ZIOAppDefault:
         _ <- Console.printLine(s"Saving ${finInstruments.size} finInstruments ...")
         volatilityMap <- stockScreeningService.calculateVolatility(finInstruments = finInstruments)
         - <- finInstrumentService.updateVolatility(volatilityMap = volatilityMap)
-      yield ()
+      yield finInstruments.isEmpty
 
     ZIO.serviceWithZIO[Any] { conf =>
       // if this implicit is not provided, tranzactio will use Conf.dbRecovery instead

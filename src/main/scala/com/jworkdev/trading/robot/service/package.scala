@@ -7,6 +7,7 @@ import io.github.gaelrenoux.tranzactio.doobie.{TranzactIO, tzio}
 import zio.{ULayer, ZLayer}
 
 import java.time.Instant
+import scala.util.Try
 
 
 package object service {
@@ -23,7 +24,7 @@ package object service {
     def findAll(): TranzactIO[List[FinInstrument]]
     def findWithoutVolatility(): TranzactIO[List[FinInstrument]]
     def saveNonExisting(finInstruments: List[FinInstrument]): TranzactIO[Int]
-    def updateVolatility(volatilityMap: Map[String,Double]): TranzactIO[Int]
+    def updateVolatility(volatilityMap: Map[String,Try[Double]]): TranzactIO[Int]
     def updateVolatility(symbol: String, volatility: Double): TranzactIO[Unit]
     def deleteAll(): TranzactIO[Int]
 

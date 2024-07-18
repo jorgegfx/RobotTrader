@@ -9,11 +9,11 @@ import com.typesafe.scalalogging.Logger
 import zio.{Duration, Task, ZIO, ZLayer}
 
 import java.time.Instant
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 trait StockScreeningService:
   def findAllFinInstrumentFromExchange(exchange: String): Task[List[FinInstrument]]
-  def calculateVolatility(finInstruments: List[FinInstrument]): Task[Map[String,Double]]
+  def calculateVolatility(finInstruments: List[FinInstrument]): Task[Map[String,Try[Double]]]
 
 class StockScreeningServiceImpl(
     private val exchangeDataProvider: ExchangeDataProvider,
@@ -36,7 +36,7 @@ class StockScreeningServiceImpl(
         finInstruments <- ZIO.succeed(symbols.map(buildFinInstrument))
     yield finInstruments
 
-  def calculateVolatility(finInstruments: List[FinInstrument]): Task[Map[String,Double]] = for
+  def calculateVolatility(finInstruments: List[FinInstrument]): Task[Map[String,Try[Double]]] = for
     batches <- ZIO.succeed(distributeInGroups(list = finInstruments, parallelismLevel))
     fibers <- ZIO.foreach(batches) { finInstruments =>
       calculateVolatilityParallel(finInstruments = finInstruments).fork
@@ -44,7 +44,7 @@ class StockScreeningServiceImpl(
     results <- ZIO.foreach(fibers)(_.join)
   yield results.flatten.toMap
 
-  private def calculateVolatilityParallel(finInstruments: List[FinInstrument]):Task[Map[String,Double]] =
+  private def calculateVolatilityParallel(finInstruments: List[FinInstrument]):Task[Map[String,Try[Double]]] =
     for
       res <- ZIO.foreach(finInstruments){finInstrument=>
         for
@@ -52,7 +52,7 @@ class StockScreeningServiceImpl(
         r <- ZIO.attemptBlocking(calculateVolatility(finInstrument = finInstrument))
         yield r
       }
-    yield res.flatten.toMap
+    yield res.toMap
 
   private def buildFinInstrument(symbol: String): FinInstrument = FinInstrument(
       symbol = symbol,
@@ -63,11 +63,11 @@ class StockScreeningServiceImpl(
       lastUpdate = None
     )
 
-  private def calculateVolatility(finInstrument: FinInstrument): Option[(String,Double)] =
+  private def calculateVolatility(finInstrument: FinInstrument): (String,Try[Double]) =
     calculateVolatility(symbol = finInstrument.symbol).filter(volatility=> !volatility.isNaN).fold(ex=>
       logger.error(s"Error calculating volatility for ${finInstrument.symbol} !",ex)
-      None,
-      volatility => Some((finInstrument.symbol,volatility))
+      (finInstrument.symbol,Failure(ex)),
+      volatility => (finInstrument.symbol,Success(volatility))
     )
 
   private def calculateVolatility(symbol: String): Try[Double] =

@@ -10,6 +10,7 @@ import io.github.gaelrenoux.tranzactio.doobie.*
 import zio.*
 
 import java.time.Instant
+import scala.util.Try
 
 class FinInstrumentServiceImpl extends FinInstrumentService:
 
@@ -75,7 +76,7 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
              exchange,
              creation_date,
              last_update
-             FROM fin_instrument WHERE volatility is null"""
+             FROM fin_instrument WHERE volatility is null and last_update is null LIMIT 200"""
       .query[FinInstrumentDB]
       .to[List]
       .map(_.map(_.toDomain))
@@ -98,14 +99,26 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
     } yield res
   }
 
-  override def updateVolatility(volatilityMap: Map[String, Double]): ZIO[Transactor[Task], DbException, Int] = {
-    val sql = "UPDATE fin_instrument SET volatility = ?, last_update=?  WHERE symbol=?"
+  override def updateVolatility(volatilityMap: Map[String, Try[Double]]): ZIO[Transactor[Task], DbException, Int] = {
+    val sqlUpdateSuccess = "UPDATE fin_instrument SET volatility = ?, last_update=?  WHERE symbol=?"
     val now = Instant.now()
-    val input = volatilityMap.map{case (key: String, value: Double)=> (value,now,key)}.toList
-    val update: Update[(Double,Instant,String)] = Update[(Double,Instant,String)](sql)
-    tzio {
-      update.updateMany(input)
-    }.mapError(e => DbException.Wrapped(e))
+    val success = volatilityMap.filter(entry=>entry._2.isSuccess).map(entry=>(entry._1,entry._2.get))
+    val inputSuccess = success.
+      map{case (key: String, value: Double)=> (value,now,key)}.toList
+    val updateSuccess: Update[(Double,Instant,String)] = Update[(Double,Instant,String)](sqlUpdateSuccess)
+    val sqlUpdateFailure = "UPDATE fin_instrument SET last_update=?  WHERE symbol=?"
+    val failure = volatilityMap.filter(entry => entry._2.isFailure).keys
+    val inputFailure = failure.
+      map{  symbol => ( now, symbol) }.toList
+    val updateFailure: Update[(Instant, String)] = Update[(Instant, String)](sqlUpdateFailure)
+    for
+      countSuccess <- tzio {
+        updateSuccess.updateMany(inputSuccess)
+      }.mapError(e => DbException.Wrapped(e))
+      countFailure <- tzio {
+        updateFailure.updateMany(inputFailure)
+      }.mapError(e => DbException.Wrapped(e))
+    yield countSuccess + countFailure
   }
   
   override def updateVolatility(symbol: String, volatility: Double): ZIO[Transactor[Task], DbException, Unit] = tzio {
