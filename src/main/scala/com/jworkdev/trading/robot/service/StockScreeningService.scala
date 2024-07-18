@@ -73,7 +73,7 @@ class StockScreeningServiceImpl(
   private def calculateVolatility(symbol: String): Try[Double] =
     marketDataProvider
       .getIntradayQuotesDaysRange(symbol = symbol, interval = SixtyMinutes, daysRange = 7).
-        map(VolatilityCalculator.calculate)
+        map(VolatilityCalculator.calculateFromPrices)
 
 object StockScreeningService:
   val layer: ZLayer[ExchangeDataProvider, Nothing, StockScreeningService] =

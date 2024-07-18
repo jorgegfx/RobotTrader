@@ -53,18 +53,21 @@ package object data:
     val layer: ULayer[ExchangeDataProvider] = ZLayer.succeed(new AlphaVantageExchangeDataProvider)
 
   object VolatilityCalculator:
-    private def calculateReturns(prices: Seq[Double]): Seq[Double] =
-      prices.sliding(2).flatMap { case Seq(yesterday, today) =>
+    private def calculateReturns(values: Seq[Double]): Seq[Double] =
+      values.sliding(2).flatMap { case Seq(yesterday, today) =>
         if(!today.isNaN && !yesterday.isNaN && yesterday != 0)
-          Some((today - yesterday) / yesterday)
+          Some(log(today / yesterday))
         else None
       }.toSeq
 
-    def calculate(prices: List[StockPrice]): Double =
-      if(prices.isEmpty)
+    def calculateFromPrices(prices: List[StockPrice]): Double =
+      calculate(values = prices.map(_.close))
+
+    def calculate(values: List[Double]): Double =
+      if(values.isEmpty)
         0.0D
       else
-        val returns = calculateReturns(prices = prices.map(_.close))
+        val returns = calculateReturns(values = values)
         val meanReturn = returns.sum / returns.size
         val variance = returns.map(r => pow(r - meanReturn, 2)).sum / (returns.size - 1)
         sqrt(variance)
