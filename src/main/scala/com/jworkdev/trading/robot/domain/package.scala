@@ -25,11 +25,13 @@ package object domain:
     case OpenGap, MACD
 
   case class FinInstrument(symbol: String,
+                           name: String,
                            `type`: FinInstrumentType,
                            volatility: Option[Double],
                            exchange: String,
                            creationDate: Instant,
-                           lastUpdate: Option[Instant])
+                           lastUpdate: Option[Instant],
+                           active: Boolean )
 
   case class TradingStrategy(
       `type`: TradingStrategyType,

@@ -41,17 +41,20 @@ class TradingExecutorServiceImpl(
       openPositions: List[Position],
       strategyConfigurations: StrategyConfigurations
   ): Task[List[Order]] =
+    val input = tradingStrategies.flatMap(tradingStrategy=>finInstruments.
+        map(finInstrument=>(tradingStrategy,finInstrument)))
     for
-      _ <- Console.printLine(s"Trading on  $finInstruments using $tradingStrategies")
-      fibers <- ZIO.foreach(finInstruments.zip(tradingStrategies))(tradingEntry =>
-        execute(
-          balancePerFinInst = balancePerFinInst,
-          finInstrument = tradingEntry._1,
-          tradingStrategy = tradingEntry._2,
-          openPositions = openPositions,
-          strategyConfigurations = strategyConfigurations
-        ).fork
-      )
+      _ <- Console.printLine(s"Trading on  ${finInstruments.map(_.symbol)} using $tradingStrategies")
+      fibers <- ZIO.foreach(input) {
+        case (tradingStrategy: TradingStrategy, finInstrument: FinInstrument) =>
+          execute(
+            balancePerFinInst = balancePerFinInst,
+            finInstrument = finInstrument,
+            tradingStrategy = tradingStrategy,
+            openPositions = openPositions,
+            strategyConfigurations = strategyConfigurations
+          ).fork
+      }
       results <- ZIO.foreach(fibers)(_.join)
     yield results.flatten
 

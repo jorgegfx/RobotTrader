@@ -16,40 +16,51 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
 
   private case class FinInstrumentDB(
       symbol: String,
+      name: String,
       `type`: String,
       volatility: Option[Double],
       exchange: String,
       creationDate: Instant,
-      lastUpdate: Option[Instant]
+      lastUpdate: Option[Instant],
+      active: String
   ):
     def toDomain: FinInstrument = FinInstrument(
       symbol = symbol,
+      name = name,
       `type` = FinInstrumentType.valueOf(`type`),
       volatility = volatility,
       exchange = exchange,
       creationDate = creationDate,
-      lastUpdate = lastUpdate
+      lastUpdate = lastUpdate,
+      active = "YES".equalsIgnoreCase(active)
     )
 
   private object FinInstrumentDB{
     def fromDomain(finInstrument: FinInstrument): FinInstrumentDB = FinInstrumentDB(
       symbol = finInstrument.symbol,
+      name = finInstrument.name,
       `type` = finInstrument.`type`.toString,
       volatility = finInstrument.volatility,
       exchange = finInstrument.exchange,
       creationDate = finInstrument.creationDate,
-      lastUpdate = finInstrument.lastUpdate
+      lastUpdate = finInstrument.lastUpdate,
+      active = if finInstrument.active then
+        "YES"
+      else
+        "NO"
     )
   }
 
   override def findBySymbol(symbol: String): ZIO[Transactor[Task], DbException, Option[FinInstrument]] = tzio {
     sql"""SELECT
              symbol,
+             name,
              type,
              volatility,
              exchange,
              creation_date,
-             last_update
+             last_update,
+             active
              FROM fin_instrument WHERE symbol=${symbol}"""
       .query[FinInstrumentDB].option.map(_.map(_.toDomain))
   }
@@ -57,12 +68,30 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
   override def findAll(): TranzactIO[List[FinInstrument]] = tzio {
     sql"""SELECT
              symbol,
+             name,
              type,
              volatility,
              exchange,
              creation_date,
-             last_update
+             last_update,
+             active
              FROM fin_instrument"""
+      .query[FinInstrumentDB]
+      .to[List]
+      .map(_.map(_.toDomain))
+  }
+
+  override def findTopToTrade(): TranzactIO[List[FinInstrument]] = tzio {
+    sql"""SELECT
+             symbol,
+             name,
+             type,
+             volatility,
+             exchange,
+             creation_date,
+             last_update,
+             active
+             FROM fin_instrument order by volatility desc LIMIT 10"""
       .query[FinInstrumentDB]
       .to[List]
       .map(_.map(_.toDomain))
@@ -71,11 +100,13 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
   override def findWithoutVolatility(): ZIO[Transactor[Task], DbException, List[FinInstrument]] = tzio {
     sql"""SELECT
              symbol,
+             name,
              type,
              volatility,
              exchange,
              creation_date,
-             last_update
+             last_update,
+             active
              FROM fin_instrument WHERE volatility is null and last_update is null LIMIT 200"""
       .query[FinInstrumentDB]
       .to[List]
@@ -83,7 +114,7 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
   }
 
   private def saveAll(finInstruments: List[FinInstrumentDB]): TranzactIO[Int] = {
-    val sql = "INSERT INTO fin_instrument (symbol,type,volatility,exchange,creation_date,last_update) VALUES (?,?,?,?,?,?)"
+    val sql = "INSERT INTO fin_instrument (symbol,name,type,volatility,exchange,creation_date,last_update,active) VALUES (?,?,?,?,?,?,?)"
     val update: Update[FinInstrumentDB] = Update[FinInstrumentDB](sql)
     tzio {
       update.updateMany(finInstruments)

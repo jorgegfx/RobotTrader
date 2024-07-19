@@ -31,6 +31,7 @@ object TradingApp extends zio.ZIOAppDefault:
 
   // Task to be executed periodically
   private val periodicTask: ZIO[AppEnv, Throwable, Unit] = for
+    _ <- Console.printLine(s"Starting ...")
     currentTime <- Clock.currentDateTime
     _ <- runTradingLoop()
     _ <- Console.printLine(s"Task executed at: $currentTime")
@@ -89,8 +90,10 @@ object TradingApp extends zio.ZIOAppDefault:
   private val executeTradingTransaction: ZIO[Connection & AppEnv, Throwable, Unit] = for
     accountService <- ZIO.service[AccountService]
     account <- accountService.findByName("trading")
-    finInstrumentConfigService <- ZIO.service[FinInstrumentService]
-    finInstruments <- finInstrumentConfigService.findAll()
+    _ <- Console.printLine(s"Trading with ${account.name}")
+    finInstrumentService <- ZIO.service[FinInstrumentService]
+    finInstruments <- finInstrumentService.findTopToTrade()
+    _ <- Console.printLine(s"Searching signals on ${finInstruments.map(_.symbol)}")
     balancePerFinInst <- ZIO.succeed(
       getBalancePerFinInst(
         account = account,

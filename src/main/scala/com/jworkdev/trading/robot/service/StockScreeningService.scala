@@ -56,11 +56,13 @@ class StockScreeningServiceImpl(
 
   private def buildFinInstrument(symbol: String): FinInstrument = FinInstrument(
       symbol = symbol,
+      name = "",
       `type` = finInstrumentType,
       volatility = None,
       exchange = exchange,
       creationDate = Instant.now(),
-      lastUpdate = None
+      lastUpdate = None,
+      active = true
     )
 
   private def calculateVolatility(finInstrument: FinInstrument): (String,Try[Double]) =
