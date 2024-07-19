@@ -13,8 +13,7 @@ import org.apache.http.util.EntityUtils
 import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset}
 import scala.util.{Failure, Try}
 
-class YahooFinanceMarketDataProvider
-    extends MarketDataProvider:
+class YahooFinanceMarketDataProvider extends MarketDataProvider:
 
   import scala.jdk.CollectionConverters.*
 
@@ -28,17 +27,98 @@ class YahooFinanceMarketDataProvider
     classOf[YahooFinanceMarketDataProvider]
   )
 
+  override def getIntradayQuotes(
+      symbol: String,
+      interval: SnapshotInterval
+  ): Try[List[StockPrice]] =
+    fetchResponse(symbol = symbol, interval = interval)
+
+  override def getIntradayQuotesDaysRange(
+      symbol: String,
+      interval: SnapshotInterval,
+      daysRange: Int
+  ): Try[List[StockPrice]] =
+    fetchResponse(symbol = symbol, interval = interval, daysRange = daysRange)
+
+  private def fetchResponse(
+      symbol: String,
+      interval: SnapshotInterval,
+      daysRange: Int = 1
+  ): Try[List[StockPrice]] =
+    val internalParam = interval match
+      case data.SnapshotInterval.OneMinute      => "1m"
+      case data.SnapshotInterval.FiveMinutes    => "5m"
+      case data.SnapshotInterval.FifteenMinutes => "15m"
+      case data.SnapshotInterval.ThirtyMinutes  => "30m"
+      case data.SnapshotInterval.SixtyMinutes   => "60m"
+    val client: CloseableHttpClient = HttpClients.createDefault()
+    val url = s"$baseUrl/$symbol?interval=$internalParam&range=${daysRange}d"
+    logger.info(s"fetching url :$url ...")
+    val request = new HttpGet(url)
+    val response = client.execute(request)
+    val responseCode = response.getStatusLine.getStatusCode
+    if responseCode != 200 then Failure(new IllegalStateException(s"Invalid response $responseCode"))
+    else
+      val entity = response.getEntity
+      val responseString = EntityUtils.toString(entity)
+      val json = mapper.readTree(responseString)
+      Try(parse(symbol = symbol, response = json))
+
   private def parse(symbol: String, response: JsonNode): List[StockPrice] =
-    val res = response.get("chart").get("result").elements().next()
-    val timestamps = res.get("timestamp")
-    val quotes =
-      res.get("indicators").get("quote").elements().asScala.toList.head
-    val openPrices = quotes.get("open").elements().asScala.toList
-    val closePrices = quotes.get("close").elements().asScala.toList
-    val highPrices = quotes.get("high").elements().asScala.toList
-    val lowPrices = quotes.get("low").elements().asScala.toList
-    val volumes = quotes.get("volume").elements().asScala.toList
-    val timeStampsList = timestamps.elements().asScala.toList.map(_.asLong())
+    val res = for
+      chart <- Option(response.get("chart"))
+      result <- Option(chart.get("result"))
+      elements <- Option(result.elements())
+      res <- elements.asScala.toList.headOption
+    yield res
+    res match
+      case Some(value) => parseResponse(symbol = symbol, res = value)
+      case None        => List.empty
+
+  private def parseResponse(symbol: String, res: JsonNode): List[StockPrice] =
+    val result = for
+      timestamps <- Option(res.get("timestamp"))
+      timestampsList <- Option(timestamps.elements()).map(_.asScala.toList)
+      indicators <- Option(res.get("indicators"))
+      quote <- Option(indicators.get("quote"))
+      elements <- Option(quote.elements()).map(_.asScala.toList)
+      quotes <- elements.headOption
+    yield (timestampsList, quotes)
+    result match
+      case Some(value) => parseResponse(symbol = symbol, timestamps = value._1, quotes = value._2)
+      case None        => List.empty
+
+  private def parseResponse(symbol: String, timestamps: List[JsonNode], quotes: JsonNode): List[StockPrice] =
+    val result = for
+      openPrices <- Option(quotes.get("open")).map(_.elements()).map(_.asScala.toList)
+      closePrices <- Option(quotes.get("close")).map(_.elements()).map(_.asScala.toList)
+      highPrices <- Option(quotes.get("high")).map(_.elements()).map(_.asScala.toList)
+      lowPrices <- Option(quotes.get("low")).map(_.elements()).map(_.asScala.toList)
+      volumes <- Option(quotes.get("volume")).map(_.elements()).map(_.asScala.toList)
+    yield (openPrices, closePrices, highPrices, lowPrices, volumes)
+    result match
+      case Some(value) =>
+        parseResponse(
+          symbol = symbol,
+          timestamps = timestamps,
+          openPrices = value._1,
+          closePrices = value._2,
+          highPrices = value._3,
+          lowPrices = value._4,
+          volumes = value._5
+        )
+      case None => List.empty
+
+  private def parseResponse(
+      symbol: String,
+      timestamps: List[JsonNode],
+      openPrices: List[JsonNode],
+      closePrices: List[JsonNode],
+      highPrices: List[JsonNode],
+      lowPrices: List[JsonNode],
+      volumes: List[JsonNode]
+  ): List[StockPrice] =
+    val timeStampsList = timestamps.map(_.asLong())
     val zoneId = ZoneId.of("America/New_York")
     timeStampsList.zipWithIndex.map { case (timestamp: Long, index: Int) =>
       val closePrice = closePrices(index).asDouble()
@@ -61,44 +141,6 @@ class YahooFinanceMarketDataProvider
         snapshotTime = snapshotTime
       )
     }
-
-  private def fetchResponse(
-      symbol: String,
-      interval: SnapshotInterval,
-      daysRange: Int = 1
-  ): Try[List[StockPrice]] =
-    val internalParam = interval match
-      case data.SnapshotInterval.OneMinute      => "1m"
-      case data.SnapshotInterval.FiveMinutes    => "5m"
-      case data.SnapshotInterval.FifteenMinutes => "15m"
-      case data.SnapshotInterval.ThirtyMinutes  => "30m"
-      case data.SnapshotInterval.SixtyMinutes   => "60m"
-    val client: CloseableHttpClient = HttpClients.createDefault()
-    val url = s"$baseUrl/$symbol?interval=$internalParam&range=${daysRange}d"
-    logger.info(s"fetching url :$url ...")
-    val request = new HttpGet(url)
-    val response = client.execute(request)
-    val responseCode = response.getStatusLine.getStatusCode
-    if(responseCode != 200)
-      Failure(new IllegalStateException(s"Invalid response $responseCode"))
-    else 
-      val entity = response.getEntity
-      val responseString = EntityUtils.toString(entity)
-      val json = mapper.readTree(responseString)
-      Try(parse(symbol = symbol, response = json))
-
-  override def getIntradayQuotes(
-      symbol: String,
-      interval: SnapshotInterval
-  ): Try[List[StockPrice]] =
-    fetchResponse(symbol = symbol, interval = interval)
-
-  override def getIntradayQuotesDaysRange(
-      symbol: String,
-      interval: SnapshotInterval,
-      daysRange: Int
-  ): Try[List[StockPrice]] =
-    fetchResponse(symbol = symbol, interval = interval, daysRange = daysRange)
 
   def getQuotes(
       symbol: String,
