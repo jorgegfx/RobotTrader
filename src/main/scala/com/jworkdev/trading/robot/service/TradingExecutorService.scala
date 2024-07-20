@@ -110,7 +110,7 @@ class TradingExecutorServiceImpl(
               case None =>
                 // Trying to make a Buy
                 if lastSignal.`type` == SignalType.Buy then
-                  if(lastSignal.date.isToday()) then
+                  if lastSignal.date.isToday() then
                     val numberOfShares = (balancePerFinInst / orderPrice).toLong
                     val order =
                       Order(
@@ -124,7 +124,7 @@ class TradingExecutorServiceImpl(
                     logger.info(s"Creating Buy Order: $order")
                     Some(order)
                   else
-                    logger.info(s"Last Buy signal not from today")
+                    logger.info(s"Last Buy signal '${lastSignal.date}' not from today")
                     None
                 else
                   logger.info(s"No Buy Signal")
