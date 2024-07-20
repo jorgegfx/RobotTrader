@@ -31,7 +31,7 @@ package object domain:
                            exchange: String,
                            creationDate: Instant,
                            lastUpdate: Option[Instant],
-                           active: Boolean )
+                           isActive: Boolean )
 
   case class TradingStrategy(
       `type`: TradingStrategyType,

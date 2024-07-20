@@ -32,7 +32,7 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
       exchange = exchange,
       creationDate = creationDate,
       lastUpdate = lastUpdate,
-      active = "YES".equalsIgnoreCase(active)
+      isActive = "YES".equalsIgnoreCase(active)
     )
 
   private object FinInstrumentDB{
@@ -44,7 +44,7 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
       exchange = finInstrument.exchange,
       creationDate = finInstrument.creationDate,
       lastUpdate = finInstrument.lastUpdate,
-      active = if finInstrument.active then
+      active = if finInstrument.isActive then
         "YES"
       else
         "NO"

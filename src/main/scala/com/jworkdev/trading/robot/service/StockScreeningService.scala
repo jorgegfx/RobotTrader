@@ -62,7 +62,7 @@ class StockScreeningServiceImpl(
       exchange = exchange,
       creationDate = Instant.now(),
       lastUpdate = None,
-      active = true
+      isActive = true
     )
 
   private def calculateVolatility(finInstrument: FinInstrument): (String,Try[Double]) =
