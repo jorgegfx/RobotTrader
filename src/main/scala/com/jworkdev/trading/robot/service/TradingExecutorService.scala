@@ -17,6 +17,7 @@ import zio.{Console, Task, ZIO}
 
 import java.time.Instant
 import scala.util.{Failure, Success}
+import com.jworkdev.trading.robot.time.InstantExtensions.isToday
 
 trait TradingExecutorService:
   def execute(
@@ -109,18 +110,22 @@ class TradingExecutorServiceImpl(
               case None =>
                 // Trying to make a Buy
                 if lastSignal.`type` == SignalType.Buy then
-                  val numberOfShares = (balancePerFinInst / orderPrice).toLong
-                  val order =
-                    Order(
-                      `type` = Buy,
-                      symbol = finInstrument.symbol,
-                      dateTime = Instant.now(),
-                      shares = numberOfShares,
-                      price = orderPrice,
-                      tradingStrategyType = tradingStrategy.`type`
-                    )
-                  logger.info(s"Creating Buy Order: $order")
-                  Some(order)
+                  if(lastSignal.date.isToday()) then
+                    val numberOfShares = (balancePerFinInst / orderPrice).toLong
+                    val order =
+                      Order(
+                        `type` = Buy,
+                        symbol = finInstrument.symbol,
+                        dateTime = Instant.now(),
+                        shares = numberOfShares,
+                        price = orderPrice,
+                        tradingStrategyType = tradingStrategy.`type`
+                      )
+                    logger.info(s"Creating Buy Order: $order")
+                    Some(order)
+                  else
+                    logger.info(s"Last Buy signal not from today")
+                    None
                 else
                   logger.info(s"No Buy Signal")
                   None

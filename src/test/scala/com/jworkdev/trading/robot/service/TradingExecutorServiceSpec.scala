@@ -19,7 +19,19 @@ import java.time.temporal.ChronoUnit
 import scala.util.Success
 
 object TradingExecutorServiceSpec extends ZIOSpecDefault:
-
+  private def buildFinInstrument(symbol: String) = List(
+    FinInstrument(
+      symbol = symbol,
+      name = "Nvidia",
+      `type` = FinInstrumentType.Stock,
+      exchange = "NASDAQ",
+      volatility = Some(10D),
+      creationDate = Instant.now(),
+      lastUpdate = None,
+      isActive = true
+    )
+  )
+  
   def spec: Spec[Any, Throwable] = suite("testExecute")(
     test("No prices, No signals found, empty orders") {
       val balancePerFinInst = 1000
@@ -35,16 +47,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           marketDataStrategyRequestFactory = marketDataStrategyRequestFactory,
           signalFinderStrategy = signalFinderStrategy
         )
-      val finInstruments = List(
-        FinInstrument(
-          symbol = symbol,
-          `type` = FinInstrumentType.Stock,
-          exchange = "NASDAQ",
-          volatility = Some(10D),
-          creationDate = Instant.now(),
-          lastUpdate = None
-        )
-      )
+      
       val tradingStrategies = List(TradingStrategy(`type` = TradingStrategyType.MACD, pnl = None))
       val macdMarketDataStrategyResponse = MACDMarketDataStrategyResponse(prices = List.empty)
       val strategyConfigurations =
@@ -62,7 +65,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       for
         orders <- tradingExecutorService.execute(
           balancePerFinInst = balancePerFinInst,
-          finInstruments = finInstruments,
+          finInstruments = buildFinInstrument(symbol = symbol),
           tradingStrategies = tradingStrategies,
           openPositions = List.empty,
           strategyConfigurations = strategyConfigurations
@@ -83,16 +86,6 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           marketDataStrategyRequestFactory = marketDataStrategyRequestFactory,
           signalFinderStrategy = signalFinderStrategy
         )
-      val finInstruments = List(
-        FinInstrument(
-          symbol = symbol,
-          `type` = FinInstrumentType.Stock,
-          exchange = "NASDAQ",
-          volatility = Some(10D),
-          creationDate = Instant.now(),
-          lastUpdate = None
-        )
-      )
       val tradingStrategies = List(TradingStrategy(`type` = TradingStrategyType.MACD, pnl = None))
       val macdMarketDataStrategyResponse = MACDMarketDataStrategyResponse(prices =
         List(
@@ -117,7 +110,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       for
         orders <- tradingExecutorService.execute(
           balancePerFinInst = balancePerFinInst,
-          finInstruments = finInstruments,
+          finInstruments = buildFinInstrument(symbol = symbol),
           tradingStrategies = tradingStrategies,
           openPositions = List.empty,
           strategyConfigurations = strategyConfigurations
@@ -140,16 +133,6 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           marketDataStrategyRequestFactory = marketDataStrategyRequestFactory,
           signalFinderStrategy = signalFinderStrategy
         )
-      val finInstruments = List(
-        FinInstrument(
-          symbol = symbol,
-          `type` = FinInstrumentType.Stock,
-          exchange = "NASDAQ",
-          volatility = Some(10D),
-          creationDate = Instant.now(),
-          lastUpdate = None
-        )
-      )
       val tradingStrategies = List(TradingStrategy(`type` = TradingStrategyType.MACD, pnl = None))
       val macdMarketDataStrategyResponse = MACDMarketDataStrategyResponse(prices =
         List(
@@ -182,7 +165,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       for
         orders <- tradingExecutorService.execute(
           balancePerFinInst = balancePerFinInst,
-          finInstruments = finInstruments,
+          finInstruments = buildFinInstrument(symbol = symbol),
           tradingStrategies = tradingStrategies,
           openPositions = List(
             Position(
