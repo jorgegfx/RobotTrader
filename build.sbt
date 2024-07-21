@@ -50,7 +50,7 @@ libraryDependencies ++= Seq(
 
   // ZIO Interop Cats
   "dev.zio" %% "zio-interop-cats" % "23.0.0.0",
-  "org.typelevel" %% "cats-core" % "2.6.1", // Add this line
+  "org.typelevel" %% "cats-core" % "2.6.1",
   // MySQL Connector
   "mysql" % "mysql-connector-java" % mysqlConnectorVersion,
 
