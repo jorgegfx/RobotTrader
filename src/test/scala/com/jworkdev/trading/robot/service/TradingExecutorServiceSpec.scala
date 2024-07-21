@@ -4,8 +4,20 @@ import com.jworkdev.trading.robot.config.{MACDStrategyConfiguration, StrategyCon
 import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
 import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy}
 import com.jworkdev.trading.robot.data.strategy.macd.{MACDMarketDataStrategyRequest, MACDMarketDataStrategyResponse}
-import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest, MarketDataStrategyRequestFactory, MarketDataStrategyResponse}
-import com.jworkdev.trading.robot.domain.{FinInstrument, FinInstrumentType, Position, TradingStrategy, TradingStrategyType}
+import com.jworkdev.trading.robot.data.strategy.{
+  MarketDataStrategyProvider,
+  MarketDataStrategyRequest,
+  MarketDataStrategyRequestFactory,
+  MarketDataStrategyResponse
+}
+import com.jworkdev.trading.robot.domain.{
+  FinInstrument,
+  FinInstrumentType,
+  Position,
+  TradingExchange,
+  TradingStrategy,
+  TradingStrategyType
+}
 import com.jworkdev.trading.robot.market.data.SnapshotInterval.OneMinute
 import com.jworkdev.trading.robot.market.data.StockPrice
 import com.jworkdev.trading.robot.{Order, OrderType}
@@ -14,24 +26,20 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 import zio.*
 import zio.test.{test, *}
 
-import java.time.Instant
+import java.time.{Instant, LocalTime}
 import java.time.temporal.ChronoUnit
 import scala.util.Success
 
 object TradingExecutorServiceSpec extends ZIOSpecDefault:
-  private def buildFinInstrument(symbol: String) = List(
-    FinInstrument(
-      symbol = symbol,
-      name = "Nvidia",
-      `type` = FinInstrumentType.Stock,
-      exchange = "NASDAQ",
-      volatility = Some(10D),
-      creationDate = Instant.now(),
-      lastUpdate = None,
-      isActive = true
+  private val exchangeMap = Map(
+    "NASDAQ" -> TradingExchange(
+      id = "NASDAQ",
+      name = "NASDAQ",
+      openingTime = LocalTime.now(),
+      closingTime = LocalTime.now()
     )
   )
-  
+
   def spec: Spec[Any, Throwable] = suite("testExecute")(
     test("No prices, No signals found, empty orders") {
       val balancePerFinInst = 1000
@@ -47,7 +55,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           marketDataStrategyRequestFactory = marketDataStrategyRequestFactory,
           signalFinderStrategy = signalFinderStrategy
         )
-      
+
       val tradingStrategies = List(TradingStrategy(`type` = TradingStrategyType.MACD, pnl = None))
       val macdMarketDataStrategyResponse = MACDMarketDataStrategyResponse(prices = List.empty)
       val strategyConfigurations =
@@ -68,6 +76,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           finInstruments = buildFinInstrument(symbol = symbol),
           tradingStrategies = tradingStrategies,
           openPositions = List.empty,
+          exchangeMap = exchangeMap,
           strategyConfigurations = strategyConfigurations
         )
       yield assertTrue(orders.isEmpty)
@@ -113,6 +122,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           finInstruments = buildFinInstrument(symbol = symbol),
           tradingStrategies = tradingStrategies,
           openPositions = List.empty,
+          exchangeMap = exchangeMap,
           strategyConfigurations = strategyConfigurations
         )
       yield assertTrue(
@@ -180,10 +190,24 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
               tradingStrategyType = TradingStrategyType.MACD
             )
           ),
+          exchangeMap = exchangeMap,
           strategyConfigurations = strategyConfigurations
         )
       yield assertTrue(
         orders.map(order => (order.`type`, order.price, order.shares)) == List((OrderType.Sell, 200.0d, 2L))
       )
     }
+  )
+
+  private def buildFinInstrument(symbol: String) = List(
+    FinInstrument(
+      symbol = symbol,
+      name = "Nvidia",
+      `type` = FinInstrumentType.Stock,
+      exchange = "NASDAQ",
+      volatility = Some(10d),
+      creationDate = Instant.now(),
+      lastUpdate = None,
+      isActive = true
+    )
   )

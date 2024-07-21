@@ -49,8 +49,8 @@ libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-scalatest" % doobieVersion % "test",
 
   // ZIO Interop Cats
-  "dev.zio" %% "zio-interop-cats" % "3.2.9.1",
-
+  "dev.zio" %% "zio-interop-cats" % "23.0.0.0",
+  "org.typelevel" %% "cats-core" % "2.6.1", // Add this line
   // MySQL Connector
   "mysql" % "mysql-connector-java" % mysqlConnectorVersion,
 

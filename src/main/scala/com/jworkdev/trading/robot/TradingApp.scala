@@ -1,9 +1,16 @@
 package com.jworkdev.trading.robot
 
 import com.jworkdev.trading.robot.config.appConfig
-import com.jworkdev.trading.robot.domain.{Account, FinInstrument, Position}
+import com.jworkdev.trading.robot.domain.{Account, FinInstrument, Position, TradingExchange}
 import com.jworkdev.trading.robot.infra.{TradingStrategyService, *}
-import com.jworkdev.trading.robot.service.{AccountService, FinInstrumentService, PositionService, TradingExecutorService, TradingStrategyService}
+import com.jworkdev.trading.robot.service.{
+  AccountService,
+  FinInstrumentService,
+  PositionService,
+  TradingExchangeService,
+  TradingExecutorService,
+  TradingStrategyService
+}
 import doobie.util.log.LogHandler
 import io.github.gaelrenoux.tranzactio.ErrorStrategiesRef
 import io.github.gaelrenoux.tranzactio.doobie.*
@@ -14,21 +21,20 @@ import zio.interop.catz.*
 object TradingApp extends zio.ZIOAppDefault:
   implicit val dbContext: DbContext =
     DbContext(logHandler = LogHandler.jdkLogHandler[Task])
+  type AppEnv = Database & AccountService & PositionService & FinInstrumentService & TradingStrategyService &
+    TradingExchangeService
   private val accountService = AccountService.layer
   private val positionService = PositionService.layer
   private val tradingStrategyService = TradingStrategyService.layer
   private val finInstrumentService = FinInstrumentService.layer
+  private val tradingExchangeService = TradingExchangeService.layer
   private val tradingExecutorService = TradingExecutorService()
-  type AppEnv = Database & AccountService & PositionService & FinInstrumentService & TradingStrategyService
   private val appEnv =
-    DatabaseConfig.database ++ accountService ++ positionService ++ finInstrumentService ++ tradingStrategyService
+    DatabaseConfig.database ++ accountService ++ positionService ++ finInstrumentService ++ tradingStrategyService ++
+      tradingExchangeService
   // Define the interval in minutes
   private val intervalMinutes: Int = 1
   private val schedule: Schedule[Any, Any, Long] = Schedule.fixed(intervalMinutes.minutes)
-
-  override def run: ZIO[ZIOAppArgs & Scope, Any, Any] =
-    periodicTask.repeat(schedule).provideLayer(appEnv).exitCode
-
   // Task to be executed periodically
   private val periodicTask: ZIO[AppEnv, Throwable, Unit] = for
     _ <- Console.printLine(s"Starting ...")
@@ -36,27 +42,43 @@ object TradingApp extends zio.ZIOAppDefault:
     _ <- runTradingLoop()
     _ <- Console.printLine(s"Task executed at: $currentTime")
   yield ()
+  private val executeTradingTransaction: ZIO[Connection & AppEnv, Throwable, Unit] = for
+    accountService <- ZIO.service[AccountService]
+    account <- accountService.findByName("trading")
+    _ <- Console.printLine(s"Trading with ${account.name}")
+    finInstrumentService <- ZIO.service[FinInstrumentService]
+    finInstruments <- finInstrumentService.findTopToTrade()
+    _ <- Console.printLine(s"Searching signals on ${finInstruments.map(_.symbol)}")
+    balancePerFinInst <- ZIO.succeed(
+      getBalancePerFinInst(
+        account = account,
+        finInstruments = finInstruments
+      )
+    )
+    positionService <- ZIO.service[PositionService]
+    strategyService <- ZIO.service[TradingStrategyService]
+    tradingStrategies <- strategyService.findAll()
+    openPositions <- positionService.findAllOpen()
+    exchangeMap <- getTradingExchangeMap(openPositions = openPositions)
+    _ <- Console.printLine("Executing orders ...")
+    strategyCfgs <- appConfig.map(appCfg => appCfg.strategyConfigurations)
+    orders <- tradingExecutorService.execute(
+      balancePerFinInst = balancePerFinInst,
+      finInstruments = finInstruments,
+      tradingStrategies = tradingStrategies,
+      openPositions = openPositions,
+      exchangeMap = exchangeMap,
+      strategyConfigurations = strategyCfgs
+    )
+    _ <- applyOrders(
+      account = account,
+      openPositions = openPositions,
+      orders = orders
+    )
+  yield ()
 
-  private def totalBalance(currentBalance: Double, orders: List[Order]): Double =
-    val gain = orders.filter(_.`type` == OrderType.Sell).map(_.totalPrice).sum
-    val loss = orders.filter(_.`type` == OrderType.Buy).map(_.totalPrice).sum
-    (currentBalance + gain) - loss
-
-  private def updateBalance(
-      account: Account,
-      orders: List[Order]
-  ): ZIO[Connection & AppEnv, Throwable, Option[Unit]] =
-    val newBalance = totalBalance(currentBalance = account.balance, orders = orders)
-    ZIO.when(orders.nonEmpty)(ZIO.scoped {
-      for
-        _ <- Console.printLine(s"Balance updated to $newBalance !")
-        accountService <- ZIO.service[AccountService]
-        _ <- accountService.updateBalance(
-          id = account.id,
-          newBalance = newBalance
-        )
-      yield ()
-    })
+  override def run: ZIO[ZIOAppArgs & Scope, Any, Any] =
+    periodicTask.repeat(schedule).provideLayer(appEnv).exitCode
 
   private def applyOrders(
       account: Account,
@@ -80,6 +102,27 @@ object TradingApp extends zio.ZIOAppDefault:
       yield ()
     })
 
+  private def updateBalance(
+      account: Account,
+      orders: List[Order]
+  ): ZIO[Connection & AppEnv, Throwable, Option[Unit]] =
+    val newBalance = totalBalance(currentBalance = account.balance, orders = orders)
+    ZIO.when(orders.nonEmpty)(ZIO.scoped {
+      for
+        _ <- Console.printLine(s"Balance updated to $newBalance !")
+        accountService <- ZIO.service[AccountService]
+        _ <- accountService.updateBalance(
+          id = account.id,
+          newBalance = newBalance
+        )
+      yield ()
+    })
+
+  private def totalBalance(currentBalance: Double, orders: List[Order]): Double =
+    val gain = orders.filter(_.`type` == OrderType.Sell).map(_.totalPrice).sum
+    val loss = orders.filter(_.`type` == OrderType.Buy).map(_.totalPrice).sum
+    (currentBalance + gain) - loss
+
   private def getBalancePerFinInst(
       account: Account,
       finInstruments: List[FinInstrument]
@@ -87,38 +130,17 @@ object TradingApp extends zio.ZIOAppDefault:
     if finInstruments.isEmpty then 0.0d
     else account.balance / finInstruments.size
 
-  private val executeTradingTransaction: ZIO[Connection & AppEnv, Throwable, Unit] = for
-    accountService <- ZIO.service[AccountService]
-    account <- accountService.findByName("trading")
-    _ <- Console.printLine(s"Trading with ${account.name}")
-    finInstrumentService <- ZIO.service[FinInstrumentService]
-    finInstruments <- finInstrumentService.findTopToTrade()
-    _ <- Console.printLine(s"Searching signals on ${finInstruments.map(_.symbol)}")
-    balancePerFinInst <- ZIO.succeed(
-      getBalancePerFinInst(
-        account = account,
-        finInstruments = finInstruments
-      )
-    )
-    positionService <- ZIO.service[PositionService]
-    strategyService <- ZIO.service[TradingStrategyService]
-    tradingStrategies <- strategyService.findAll()
-    openPositions <- positionService.findAllOpen()
-    _ <- Console.printLine("Executing orders ...")
-    strategyCfgs <- appConfig.map(appCfg => appCfg.strategyConfigurations)
-    orders <- tradingExecutorService.execute(
-      balancePerFinInst = balancePerFinInst,
-      finInstruments = finInstruments,
-      tradingStrategies = tradingStrategies,
-      openPositions = openPositions,
-      strategyConfigurations = strategyCfgs
-    )
-    _ <- applyOrders(
-      account = account,
-      openPositions = openPositions,
-      orders = orders
-    )
-  yield ()
+  private def getTradingExchangeMap(openPositions: List[Position]):
+    ZIO[Connection & AppEnv, Throwable, Map[String, TradingExchange]] =
+      ZIO.when(openPositions.nonEmpty)(ZIO.scoped {
+        for
+          tradingExchangeService <- ZIO.service[TradingExchangeService]
+          exchanges <- tradingExchangeService.findBySymbols(openPositions.map(_.symbol).toSet)
+        yield exchanges.groupBy(_.id).view.mapValues(_.head).toMap
+      }).map {
+        case Some(value) => value
+        case None => Map.empty
+      }
 
   implicit val errorRecovery: ErrorStrategiesRef =
     DatabaseConfig.alternateDbRecovery

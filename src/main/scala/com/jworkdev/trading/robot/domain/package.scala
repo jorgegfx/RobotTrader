@@ -1,5 +1,7 @@
 package com.jworkdev.trading.robot
 
+import java.time.LocalTime
+
 package object domain:
 
   import java.time.Instant
@@ -24,18 +26,25 @@ package object domain:
   enum TradingStrategyType:
     case OpenGap, MACD
 
-  case class FinInstrument(symbol: String,
-                           name: String,
-                           `type`: FinInstrumentType,
-                           volatility: Option[Double],
-                           exchange: String,
-                           creationDate: Instant,
-                           lastUpdate: Option[Instant],
-                           isActive: Boolean )
+  case class FinInstrument(
+      symbol: String,
+      name: String,
+      `type`: FinInstrumentType,
+      volatility: Option[Double],
+      exchange: String,
+      creationDate: Instant,
+      lastUpdate: Option[Instant],
+      isActive: Boolean
+  )
 
   case class TradingStrategy(
       `type`: TradingStrategyType,
       pnl: Option[Double]
   )
+
+  case class TradingExchange(id: String,
+                             name: String,
+                             openingTime: LocalTime,
+                             closingTime: LocalTime)
 
   case class Account(id: Long, name: String, balance: Double)

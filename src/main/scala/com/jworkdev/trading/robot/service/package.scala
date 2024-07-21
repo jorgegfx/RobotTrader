@@ -1,6 +1,6 @@
 package com.jworkdev.trading.robot
 
-import com.jworkdev.trading.robot.domain.{Account, FinInstrument, Position, TradingStrategy, TradingStrategyType}
+import com.jworkdev.trading.robot.domain.{Account, TradingExchange, FinInstrument, Position, TradingStrategy, TradingStrategyType}
 import doobie.implicits.*
 import io.github.gaelrenoux.tranzactio.doobie
 import io.github.gaelrenoux.tranzactio.doobie.{TranzactIO, tzio}
@@ -29,6 +29,10 @@ package object service {
     def updateVolatility(symbol: String, volatility: Double): TranzactIO[Unit]
     def deleteAll(): TranzactIO[Int]
 
+  trait TradingExchangeService:
+    def findById(id: String): TranzactIO[Option[TradingExchange]]
+    def findBySymbol(symbol: String): TranzactIO[Option[TradingExchange]]
+    def findBySymbols(symbols: Set[String]): TranzactIO[Set[TradingExchange]]
 
   trait PositionService:
     def create(position: Position): TranzactIO[Unit]

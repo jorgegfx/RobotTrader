@@ -5,13 +5,8 @@ import com.jworkdev.trading.robot.OrderType.{Buy, Sell}
 import com.jworkdev.trading.robot.config.StrategyConfigurations
 import com.jworkdev.trading.robot.data.signals.{SignalFinderStrategy, SignalType}
 import com.jworkdev.trading.robot.data.strategy
-import com.jworkdev.trading.robot.data.strategy.{
-  MarketDataStrategyProvider,
-  MarketDataStrategyRequest,
-  MarketDataStrategyRequestFactory,
-  MarketDataStrategyResponse
-}
-import com.jworkdev.trading.robot.domain.{FinInstrument, Position, TradingStrategy}
+import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest, MarketDataStrategyRequestFactory, MarketDataStrategyResponse}
+import com.jworkdev.trading.robot.domain.{FinInstrument, Position, TradingExchange, TradingStrategy}
 import com.typesafe.scalalogging.Logger
 import zio.{Console, Task, ZIO}
 
@@ -25,6 +20,7 @@ trait TradingExecutorService:
       finInstruments: List[FinInstrument],
       tradingStrategies: List[TradingStrategy],
       openPositions: List[Position],
+      exchangeMap : Map[String, TradingExchange],
       strategyConfigurations: StrategyConfigurations
   ): Task[List[Order]]
 
@@ -40,6 +36,7 @@ class TradingExecutorServiceImpl(
       finInstruments: List[FinInstrument],
       tradingStrategies: List[TradingStrategy],
       openPositions: List[Position],
+      exchangeMap : Map[String, TradingExchange],
       strategyConfigurations: StrategyConfigurations
   ): Task[List[Order]] =
     val input = tradingStrategies.flatMap(tradingStrategy=>finInstruments.
@@ -53,6 +50,7 @@ class TradingExecutorServiceImpl(
             finInstrument = finInstrument,
             tradingStrategy = tradingStrategy,
             openPositions = openPositions,
+            exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations
           ).fork
       }
@@ -64,6 +62,7 @@ class TradingExecutorServiceImpl(
       finInstrument: FinInstrument,
       tradingStrategy: TradingStrategy,
       openPositions: List[Position],
+      exchangeMap : Map[String, TradingExchange],
       strategyConfigurations: StrategyConfigurations
   ): Task[Option[Order]] =
     logger.info(s"Trading on  $finInstrument")
