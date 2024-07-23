@@ -19,6 +19,12 @@ package object domain:
   ):
     def totalOpenPrice: Double = numberOfShares * openPricePerShare
     def totalClosePrice: Option[Double] = closePricePerShare.map(numberOfShares * _)
+    def shouldExitForStopLoss(currentPricePerShare: Double, stopLossPercentage: Int): Boolean =
+      val gain = currentPricePerShare - openPricePerShare
+      if(gain < 0)
+        val percentageLoss = (currentPricePerShare/openPricePerShare * 100).toInt
+        percentageLoss > stopLossPercentage
+      else false
 
   enum FinInstrumentType:
     case Stock, ETF, Crypto

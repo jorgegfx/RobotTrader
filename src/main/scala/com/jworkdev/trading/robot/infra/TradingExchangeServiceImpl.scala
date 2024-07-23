@@ -17,6 +17,15 @@ import zio.interop.catz.implicits.*
 import java.time.LocalTime
 
 class TradingExchangeServiceImpl extends TradingExchangeService:
+  override def findAll(): TranzactIO[List[TradingExchange]] = tzio {
+    sql"""SELECT te.id,
+          te.name,
+          te.openingTime,
+          te.closingTime FROM trading_exchange te """
+      .query[TradingExchange]
+      .to[List]
+  }
+
   override def findById(id: String): TranzactIO[Option[TradingExchange]] = tzio {
     sql"""SELECT
           id,

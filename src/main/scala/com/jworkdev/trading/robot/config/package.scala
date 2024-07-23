@@ -17,7 +17,8 @@ package object config {
   case class StrategyConfigurations(macd: Option[MACDStrategyConfiguration] = None,
                                     openGap: Option[OpenGapStrategyConfiguration] = None)
   case class ApplicationConfiguration(dataBaseConfig: DataBaseConfig,
-                                      strategyConfigurations: StrategyConfigurations)
+                                      strategyConfigurations: StrategyConfigurations,
+                                      stopLossPercentage: Int)
 
   val appConfig: IO[Config.Error, ApplicationConfiguration] = ConfigProvider
     .fromHoconFile(new java.io.File("config/application.conf"))

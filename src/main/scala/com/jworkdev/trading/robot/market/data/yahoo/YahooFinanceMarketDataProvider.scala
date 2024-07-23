@@ -11,7 +11,7 @@ import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.util.EntityUtils
 
 import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset}
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 class YahooFinanceMarketDataProvider extends MarketDataProvider:
 
@@ -26,6 +26,32 @@ class YahooFinanceMarketDataProvider extends MarketDataProvider:
   private val logger = Logger(
     classOf[YahooFinanceMarketDataProvider]
   )
+
+  private def fetchResponse(symbol: String): Try[Double] =
+    val url = s"$baseUrl/$symbol"
+    val request = new HttpGet(url)
+    val response = client.execute(request)
+    val responseCode = response.getStatusLine.getStatusCode
+    if responseCode != 200 then
+      Failure(new IllegalStateException(s"Invalid response $responseCode"))
+    else
+      val entity = response.getEntity
+      val responseString = EntityUtils.toString(entity)
+      Try(mapper.readTree(responseString)).map(json =>
+        for
+          chart <- Option(json.get("chart"))
+          result <- Option(chart.get("result")).map(_.elements()).flatMap(_.asScala.toList.headOption)
+          meta <- Option(result.get("meta"))
+          regularMarketPrice <- Option(meta.get("regularMarketPrice")).map(_.asDouble())
+        yield regularMarketPrice
+      ) flatMap {
+        case Some(value) => Success(value)
+        case None => Failure(new IllegalStateException("No Price found!"))
+      }
+
+
+  override def getCurrentQuote(symbol: String): Try[Double] =
+    fetchResponse(symbol = symbol)
 
   override def getIntradayQuotes(
       symbol: String,

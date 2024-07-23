@@ -8,6 +8,7 @@ import com.jworkdev.trading.robot.service.{
   FinInstrumentService,
   PositionService,
   TradingExchangeService,
+  TradingExecutorRequest,
   TradingExecutorService,
   TradingStrategyService
 }
@@ -45,31 +46,40 @@ object TradingApp extends zio.ZIOAppDefault:
   private val executeTradingTransaction: ZIO[Connection & AppEnv, Throwable, Unit] = for
     accountService <- ZIO.service[AccountService]
     account <- accountService.findByName("trading")
-    _ <- Console.printLine(s"Trading with ${account.name}")
+    _ <- Console.printLine(s"Trading with account name :'${account.name}''")
     finInstrumentService <- ZIO.service[FinInstrumentService]
     finInstruments <- finInstrumentService.findTopToTrade()
     _ <- Console.printLine(s"Searching signals on ${finInstruments.map(_.symbol)}")
-    balancePerFinInst <- ZIO.succeed(
+    balancePerFinInst <- ZIO.attempt(
       getBalancePerFinInst(
         account = account,
         finInstruments = finInstruments
       )
     )
+    _ <- Console.printLine(s"balancePerFinInst : $balancePerFinInst")
     positionService <- ZIO.service[PositionService]
     strategyService <- ZIO.service[TradingStrategyService]
     tradingStrategies <- strategyService.findAll()
+    _ <- Console.printLine(s"tradingStrategies : $tradingStrategies")
     openPositions <- positionService.findAllOpen()
+    _ <- Console.printLine(s"openPositions : $openPositions")
     exchangeMap <- getTradingExchangeMap(openPositions = openPositions)
+    _ <- Console.printLine(s"exchangeMap : $exchangeMap")
+    strategyCfgs <- appConfig.map(_.strategyConfigurations)
+    stopLossPercentage <- appConfig.map(_.stopLossPercentage)
     _ <- Console.printLine("Executing orders ...")
-    strategyCfgs <- appConfig.map(appCfg => appCfg.strategyConfigurations)
     orders <- tradingExecutorService.execute(
-      balancePerFinInst = balancePerFinInst,
-      finInstruments = finInstruments,
-      tradingStrategies = tradingStrategies,
-      openPositions = openPositions,
-      exchangeMap = exchangeMap,
-      strategyConfigurations = strategyCfgs
+      TradingExecutorRequest(
+        balancePerFinInst = balancePerFinInst,
+        finInstruments = finInstruments,
+        tradingStrategies = tradingStrategies,
+        openPositions = openPositions,
+        exchangeMap = exchangeMap,
+        strategyConfigurations = strategyCfgs,
+        stopLossPercentage = stopLossPercentage
+      )
     )
+    _ <- Console.printLine(s"Orders created :$orders ...")
     _ <- applyOrders(
       account = account,
       openPositions = openPositions,
@@ -87,7 +97,7 @@ object TradingApp extends zio.ZIOAppDefault:
   ): ZIO[Connection & AppEnv, Throwable, Option[Unit]] =
     ZIO.when(orders.nonEmpty)(ZIO.scoped {
       for
-        _ <- Console.printLine(s"Orders created :$orders")
+        _ <- Console.printLine(s"Applying orders :$orders ...")
         _ <- updateBalance(account = account, orders = orders)
         positionService <- ZIO.service[PositionService]
         _ <- positionService.closeOpenPositions(
@@ -130,16 +140,23 @@ object TradingApp extends zio.ZIOAppDefault:
     if finInstruments.isEmpty then 0.0d
     else account.balance / finInstruments.size
 
-  private def getTradingExchangeMap(openPositions: List[Position]):
-    ZIO[Connection & AppEnv, Throwable, Map[String, TradingExchange]] =
-      ZIO.when(openPositions.nonEmpty)(ZIO.scoped {
+  private def getTradingExchangeMap(
+      openPositions: List[Position]
+  ): ZIO[Connection & AppEnv, Throwable, Map[String, TradingExchange]] =
+    //TODO filter by symbols
+    val symbols = openPositions.map(_.symbol).toSet
+    ZIO
+      .when(openPositions.nonEmpty)(ZIO.scoped {
         for
           tradingExchangeService <- ZIO.service[TradingExchangeService]
-          exchanges <- tradingExchangeService.findBySymbols(openPositions.map(_.symbol).toSet)
+          _ <- Console.printLine(s"Getting exchanges for symbols ${symbols}... ")
+          exchanges <- tradingExchangeService.findAll()
+          _ <- Console.printLine(s"exchanges: $exchanges")
         yield exchanges.groupBy(_.id).view.mapValues(_.head).toMap
-      }).map {
+      })
+      .map {
         case Some(value) => value
-        case None => Map.empty
+        case None        => Map.empty
       }
 
   implicit val errorRecovery: ErrorStrategiesRef =

@@ -30,6 +30,7 @@ package object service {
     def deleteAll(): TranzactIO[Int]
 
   trait TradingExchangeService:
+    def findAll(): TranzactIO[List[TradingExchange]]
     def findById(id: String): TranzactIO[Option[TradingExchange]]
     def findBySymbol(symbol: String): TranzactIO[Option[TradingExchange]]
     def findBySymbols(symbols: Set[String]): TranzactIO[Set[TradingExchange]]

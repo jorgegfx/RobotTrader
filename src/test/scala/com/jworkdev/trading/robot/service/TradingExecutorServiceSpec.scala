@@ -19,7 +19,7 @@ import com.jworkdev.trading.robot.domain.{
   TradingStrategyType
 }
 import com.jworkdev.trading.robot.market.data.SnapshotInterval.OneMinute
-import com.jworkdev.trading.robot.market.data.StockPrice
+import com.jworkdev.trading.robot.market.data.{MarketDataProvider, StockPrice}
 import com.jworkdev.trading.robot.{Order, OrderType}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -48,9 +48,11 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           : MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse] =
         mock[MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse]]
       val signalFinderStrategy = mock[SignalFinderStrategy]
+      val marketDataProvider = mock[MarketDataProvider]
       val marketDataStrategyRequestFactory: MarketDataStrategyRequestFactory = MarketDataStrategyRequestFactory()
       val tradingExecutorService =
         new TradingExecutorServiceImpl(
+          marketDataProvider = marketDataProvider,
           marketDataStrategyProvider = marketDataStrategyProvider,
           marketDataStrategyRequestFactory = marketDataStrategyRequestFactory,
           signalFinderStrategy = signalFinderStrategy
@@ -72,12 +74,15 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       ).thenReturn(List.empty)
       for
         orders <- tradingExecutorService.execute(
-          balancePerFinInst = balancePerFinInst,
-          finInstruments = buildFinInstrument(symbol = symbol),
-          tradingStrategies = tradingStrategies,
-          openPositions = List.empty,
-          exchangeMap = exchangeMap,
-          strategyConfigurations = strategyConfigurations
+          TradingExecutorRequest(
+            balancePerFinInst = balancePerFinInst,
+            finInstruments = buildFinInstrument(symbol = symbol),
+            tradingStrategies = tradingStrategies,
+            openPositions = List.empty,
+            exchangeMap = exchangeMap,
+            strategyConfigurations = strategyConfigurations,
+            stopLossPercentage = 10
+          )
         )
       yield assertTrue(orders.isEmpty)
     },
@@ -89,8 +94,10 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
         mock[MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse]]
       val signalFinderStrategy = mock[SignalFinderStrategy]
       val marketDataStrategyRequestFactory: MarketDataStrategyRequestFactory = MarketDataStrategyRequestFactory()
+      val marketDataProvider = mock[MarketDataProvider]
       val tradingExecutorService =
         new TradingExecutorServiceImpl(
+          marketDataProvider = marketDataProvider,
           marketDataStrategyProvider = marketDataStrategyProvider,
           marketDataStrategyRequestFactory = marketDataStrategyRequestFactory,
           signalFinderStrategy = signalFinderStrategy
@@ -116,14 +123,18 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(signals)
+      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(2.toDouble)
       for
         orders <- tradingExecutorService.execute(
-          balancePerFinInst = balancePerFinInst,
-          finInstruments = buildFinInstrument(symbol = symbol),
-          tradingStrategies = tradingStrategies,
-          openPositions = List.empty,
-          exchangeMap = exchangeMap,
-          strategyConfigurations = strategyConfigurations
+          TradingExecutorRequest(
+            balancePerFinInst = balancePerFinInst,
+            finInstruments = buildFinInstrument(symbol = symbol),
+            tradingStrategies = tradingStrategies,
+            openPositions = List.empty,
+            exchangeMap = exchangeMap,
+            strategyConfigurations = strategyConfigurations,
+            stopLossPercentage = 10
+          )
         )
       yield assertTrue(
         orders.map(order => (order.`type`, order.price, order.shares)) == List((OrderType.Buy, 2.0d, 500L))
@@ -137,8 +148,10 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
         mock[MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse]]
       val signalFinderStrategy = mock[SignalFinderStrategy]
       val marketDataStrategyRequestFactory: MarketDataStrategyRequestFactory = MarketDataStrategyRequestFactory()
+      val marketDataProvider = mock[MarketDataProvider]
       val tradingExecutorService =
         new TradingExecutorServiceImpl(
+          marketDataProvider = marketDataProvider,
           marketDataStrategyProvider = marketDataStrategyProvider,
           marketDataStrategyRequestFactory = marketDataStrategyRequestFactory,
           signalFinderStrategy = signalFinderStrategy
@@ -172,26 +185,30 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(signals)
+      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(200.toDouble)
       for
         orders <- tradingExecutorService.execute(
-          balancePerFinInst = balancePerFinInst,
-          finInstruments = buildFinInstrument(symbol = symbol),
-          tradingStrategies = tradingStrategies,
-          openPositions = List(
-            Position(
-              id = 1,
-              symbol = symbol,
-              numberOfShares = 2,
-              openPricePerShare = 100,
-              closePricePerShare = None,
-              openDate = Instant.now().minus(1, ChronoUnit.HOURS),
-              closeDate = None,
-              pnl = None,
-              tradingStrategyType = TradingStrategyType.MACD
-            )
-          ),
-          exchangeMap = exchangeMap,
-          strategyConfigurations = strategyConfigurations
+          TradingExecutorRequest(
+            balancePerFinInst = balancePerFinInst,
+            finInstruments = buildFinInstrument(symbol = symbol),
+            tradingStrategies = tradingStrategies,
+            openPositions = List(
+              Position(
+                id = 1,
+                symbol = symbol,
+                numberOfShares = 2,
+                openPricePerShare = 100,
+                closePricePerShare = None,
+                openDate = Instant.now().minus(1, ChronoUnit.HOURS),
+                closeDate = None,
+                pnl = None,
+                tradingStrategyType = TradingStrategyType.MACD
+              )
+            ),
+            exchangeMap = exchangeMap,
+            strategyConfigurations = strategyConfigurations,
+            stopLossPercentage = 10
+          )
         )
       yield assertTrue(
         orders.map(order => (order.`type`, order.price, order.shares)) == List((OrderType.Sell, 200.0d, 2L))
