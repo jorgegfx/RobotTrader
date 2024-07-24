@@ -67,6 +67,7 @@ object TradingApp extends zio.ZIOAppDefault:
     _ <- ZIO.logInfo(s"exchangeMap : $exchangeMap")
     strategyCfgs <- appConfig.map(_.strategyConfigurations)
     stopLossPercentage <- appConfig.map(_.stopLossPercentage)
+    tradingMode <- appConfig.map(_.tradingMode)
     _ <- ZIO.logInfo("Executing orders ...")
     orders <- tradingExecutorService.execute(
       TradingExecutorRequest(
@@ -76,7 +77,8 @@ object TradingApp extends zio.ZIOAppDefault:
         openPositions = openPositions,
         exchangeMap = exchangeMap,
         strategyConfigurations = strategyCfgs,
-        stopLossPercentage = stopLossPercentage
+        stopLossPercentage = stopLossPercentage,
+        tradingMode = tradingMode
       )
     )
     _ <- ZIO.logInfo(s"Orders created :$orders ...")

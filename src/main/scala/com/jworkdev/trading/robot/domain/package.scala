@@ -1,6 +1,6 @@
 package com.jworkdev.trading.robot
 
-import java.time.LocalTime
+import java.time.{LocalDateTime, LocalTime, ZoneId, ZoneOffset}
 
 package object domain:
 
@@ -52,6 +52,9 @@ package object domain:
   case class TradingExchange(id: String,
                              name: String,
                              openingTime: LocalTime,
-                             closingTime: LocalTime)
+                             closingTime: LocalTime):
+    def currentCloseWindow: LocalDateTime =
+      val startOfDay = LocalDateTime.now().toLocalDate.atStartOfDay()
+      startOfDay.toLocalDate.atTime(closingTime)
 
   case class Account(id: Long, name: String, balance: Double)

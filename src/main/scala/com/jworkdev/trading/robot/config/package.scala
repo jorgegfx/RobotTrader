@@ -12,13 +12,17 @@ package object config {
                        password: String,
                        driver: String
                      )
+  enum TradingMode:
+    case IntraDay, Swing
+
   case class MACDStrategyConfiguration(snapshotInterval: SnapshotInterval)
   case class OpenGapStrategyConfiguration(signalCount: Int)
   case class StrategyConfigurations(macd: Option[MACDStrategyConfiguration] = None,
                                     openGap: Option[OpenGapStrategyConfiguration] = None)
   case class ApplicationConfiguration(dataBaseConfig: DataBaseConfig,
                                       strategyConfigurations: StrategyConfigurations,
-                                      stopLossPercentage: Int)
+                                      stopLossPercentage: Int,
+                                      tradingMode: TradingMode)
 
   val appConfig: IO[Config.Error, ApplicationConfiguration] = ConfigProvider
     .fromHoconFile(new java.io.File("config/application.conf"))
