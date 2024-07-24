@@ -46,7 +46,9 @@ CREATE TABLE `fin_instrument` (
   `creation_date` datetime NOT NULL,
   `last_update` datetime DEFAULT NULL,
   `active` varchar(3) DEFAULT NULL,
-  PRIMARY KEY (`symbol`)
+  PRIMARY KEY (`symbol`),
+  KEY `exchange_fk_idx` (`exchange`),
+  CONSTRAINT `exchange_fk` FOREIGN KEY (`exchange`) REFERENCES `trading_exchange` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -66,9 +68,11 @@ CREATE TABLE `position` (
   `open_date` datetime NOT NULL,
   `close_date` datetime DEFAULT NULL,
   `pnl` double DEFAULT NULL,
-  `tradingStrategyType` varchar(10) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `trading_strategy_type` varchar(10) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `instrument_fk_idx` (`symbol`),
+  CONSTRAINT `instrument_fk` FOREIGN KEY (`symbol`) REFERENCES `fin_instrument` (`symbol`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -110,4 +114,4 @@ CREATE TABLE `trading_strategy` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-07-21  9:40:02
+-- Dump completed on 2024-07-24 13:48:44
