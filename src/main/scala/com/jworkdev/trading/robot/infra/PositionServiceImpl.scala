@@ -35,7 +35,7 @@ class PositionServiceImpl extends PositionService:
              open_date,
              close_date,
              pnl,
-             tradingStrategyType FROM position"""
+             trading_strategy_type FROM position"""
         .query[PositionDB]
         .to[List].map(_.map(_.toDomain))
     }
@@ -49,7 +49,7 @@ class PositionServiceImpl extends PositionService:
            open_date,
            close_date,
            pnl,
-           tradingStrategyType FROM position WHERE close_date is null"""
+           trading_strategy_type FROM position WHERE close_date is null"""
       .query[PositionDB]
       .to[List].map(_.map(_.toDomain))
   }
@@ -64,7 +64,7 @@ class PositionServiceImpl extends PositionService:
            open_date,
            close_date,
            pnl,
-           tradingStrategyType FROM position WHERE close_date is null AND open_date between ${Date.from(from)} AND ${Date.from(to)}"""
+           trading_strategy_type FROM position WHERE close_date is null AND open_date between ${Date.from(from)} AND ${Date.from(to)}"""
         .query[PositionDB]
         .to[List].map(_.map(_.toDomain))
     }
@@ -81,7 +81,7 @@ class PositionServiceImpl extends PositionService:
            open_date,
            close_date,
            pnl,
-           tradingStrategyType FROM position WHERE close_date is not null AND close_date between ${Date.from(from)} AND ${Date.from(to)}"""
+           trading_strategy_type FROM position WHERE close_date is not null AND close_date between ${Date.from(from)} AND ${Date.from(to)}"""
       .query[PositionDB]
       .to[List].map(_.map(_.toDomain))
   }
@@ -103,7 +103,7 @@ class PositionServiceImpl extends PositionService:
   def createOpenPositionsFromOrders(orders: List[Order]): TranzactIO[Int]={
     val positionsToOpen = orders.filter(order=> order.`type` == OrderType.Buy).
           map(order=>(order.symbol,order.shares,order.price,order.dateTime,order.tradingStrategyType.toString))
-    val sql = "INSERT INTO position (symbol,number_of_shares,open_price_per_share,open_date,tradingStrategyType) VALUES (?,?,?,?,?)"
+    val sql = "INSERT INTO position (symbol,number_of_shares,open_price_per_share,open_date,trading_strategy_type) VALUES (?,?,?,?,?)"
     val update: Update[(String,Long, Double, Instant,String)] = Update[(String,Long, Double, Instant,String)](sql)
     tzio {
       update.updateMany(positionsToOpen)
