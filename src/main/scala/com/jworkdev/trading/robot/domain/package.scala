@@ -22,7 +22,8 @@ package object domain:
     def shouldExitForStopLoss(currentPricePerShare: Double, stopLossPercentage: Int): Boolean =
       val gain = currentPricePerShare - openPricePerShare
       if(gain < 0)
-        val percentageLoss = (currentPricePerShare/openPricePerShare * 100).toInt
+        val currentPercentage = (currentPricePerShare/openPricePerShare * 100).toInt
+        val percentageLoss = 100 - currentPercentage
         percentageLoss > stopLossPercentage
       else false
 

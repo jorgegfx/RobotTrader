@@ -39,11 +39,11 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       closingTime = LocalTime.now()
     )
   )
+  val balancePerFinInst = 1000
+  val symbol = "NVDA"
 
   def spec: Spec[Any, Throwable] = suite("testExecute")(
     test("No prices, No signals found, empty orders") {
-      val balancePerFinInst = 1000
-      val symbol = "NVDA"
       val marketDataStrategyProvider
           : MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse] =
         mock[MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse]]
@@ -72,6 +72,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(List.empty)
+      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
@@ -87,8 +88,6 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       yield assertTrue(orders.isEmpty)
     },
     test("Buy Signal found") {
-      val balancePerFinInst = 1000
-      val symbol = "NVDA"
       val marketDataStrategyProvider
           : MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse] =
         mock[MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse]]
@@ -123,7 +122,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(signals)
-      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(2.toDouble)
+      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
@@ -141,8 +140,6 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       )
     },
     test("Sell Signal found") {
-      val balancePerFinInst = 1000
-      val symbol = "NVDA"
       val marketDataStrategyProvider
           : MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse] =
         mock[MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse]]
@@ -185,7 +182,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(signals)
-      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(200.toDouble)
+      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Success(200.toDouble))
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
@@ -213,6 +210,120 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       yield assertTrue(
         orders.map(order => (order.`type`, order.price, order.shares)) == List((OrderType.Sell, 200.0d, 2L))
       )
+    },
+    test("Stop loss") {
+      val marketDataStrategyProvider
+      : MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse] =
+        mock[MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse]]
+      val signalFinderStrategy = mock[SignalFinderStrategy]
+      val marketDataProvider = mock[MarketDataProvider]
+      val marketDataStrategyRequestFactory: MarketDataStrategyRequestFactory = MarketDataStrategyRequestFactory()
+      val tradingExecutorService =
+        new TradingExecutorServiceImpl(
+          marketDataProvider = marketDataProvider,
+          marketDataStrategyProvider = marketDataStrategyProvider,
+          marketDataStrategyRequestFactory = marketDataStrategyRequestFactory,
+          signalFinderStrategy = signalFinderStrategy
+        )
+
+      val tradingStrategies = List(TradingStrategy(`type` = TradingStrategyType.MACD, pnl = None))
+      val macdMarketDataStrategyResponse = MACDMarketDataStrategyResponse(prices = List.empty)
+      val strategyConfigurations =
+        StrategyConfigurations(macd = Some(MACDStrategyConfiguration(snapshotInterval = OneMinute)))
+      when(
+        marketDataStrategyProvider.provide(request =
+          MACDMarketDataStrategyRequest(symbol = symbol, snapshotInterval = OneMinute)
+        )
+      ).thenReturn(Success(macdMarketDataStrategyResponse))
+      when(
+        signalFinderStrategy.findSignals(signalFinderRequest =
+          macdMarketDataStrategyResponse.buildSignalFinderRequest()
+        )
+      ).thenReturn(List.empty)
+      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
+      for
+        orders <- tradingExecutorService.execute(
+          TradingExecutorRequest(
+            balancePerFinInst = balancePerFinInst,
+            finInstruments = buildFinInstrument(symbol = symbol),
+            tradingStrategies = tradingStrategies,
+            openPositions = List(
+              Position(
+                id = 1,
+                symbol = symbol,
+                numberOfShares = 2,
+                openPricePerShare = 100,
+                closePricePerShare = None,
+                openDate = Instant.now().minus(1, ChronoUnit.HOURS),
+                closeDate = None,
+                pnl = None,
+                tradingStrategyType = TradingStrategyType.MACD
+              )
+            ),
+            exchangeMap = exchangeMap,
+            strategyConfigurations = strategyConfigurations,
+            stopLossPercentage = 10
+          )
+        )
+      yield assertTrue(
+        orders.map(order => (order.`type`, order.price, order.shares)) == List((OrderType.Sell, 2.0d, 2L))
+      )
+    },
+    test("No Stop loss") {
+      val marketDataStrategyProvider
+      : MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse] =
+        mock[MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse]]
+      val signalFinderStrategy = mock[SignalFinderStrategy]
+      val marketDataProvider = mock[MarketDataProvider]
+      val marketDataStrategyRequestFactory: MarketDataStrategyRequestFactory = MarketDataStrategyRequestFactory()
+      val tradingExecutorService =
+        new TradingExecutorServiceImpl(
+          marketDataProvider = marketDataProvider,
+          marketDataStrategyProvider = marketDataStrategyProvider,
+          marketDataStrategyRequestFactory = marketDataStrategyRequestFactory,
+          signalFinderStrategy = signalFinderStrategy
+        )
+
+      val tradingStrategies = List(TradingStrategy(`type` = TradingStrategyType.MACD, pnl = None))
+      val macdMarketDataStrategyResponse = MACDMarketDataStrategyResponse(prices = List.empty)
+      val strategyConfigurations =
+        StrategyConfigurations(macd = Some(MACDStrategyConfiguration(snapshotInterval = OneMinute)))
+      when(
+        marketDataStrategyProvider.provide(request =
+          MACDMarketDataStrategyRequest(symbol = symbol, snapshotInterval = OneMinute)
+        )
+      ).thenReturn(Success(macdMarketDataStrategyResponse))
+      when(
+        signalFinderStrategy.findSignals(signalFinderRequest =
+          macdMarketDataStrategyResponse.buildSignalFinderRequest()
+        )
+      ).thenReturn(List.empty)
+      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Success(98.toDouble))
+      for
+        orders <- tradingExecutorService.execute(
+          TradingExecutorRequest(
+            balancePerFinInst = balancePerFinInst,
+            finInstruments = buildFinInstrument(symbol = symbol),
+            tradingStrategies = tradingStrategies,
+            openPositions = List(
+              Position(
+                id = 1,
+                symbol = symbol,
+                numberOfShares = 2,
+                openPricePerShare = 100,
+                closePricePerShare = None,
+                openDate = Instant.now().minus(1, ChronoUnit.HOURS),
+                closeDate = None,
+                pnl = None,
+                tradingStrategyType = TradingStrategyType.MACD
+              )
+            ),
+            exchangeMap = exchangeMap,
+            strategyConfigurations = strategyConfigurations,
+            stopLossPercentage = 10
+          )
+        )
+      yield assertTrue(orders.isEmpty)
     }
   )
 

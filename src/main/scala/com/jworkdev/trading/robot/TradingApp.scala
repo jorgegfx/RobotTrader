@@ -38,36 +38,36 @@ object TradingApp extends zio.ZIOAppDefault:
   private val schedule: Schedule[Any, Any, Long] = Schedule.fixed(intervalMinutes.minutes)
   // Task to be executed periodically
   private val periodicTask: ZIO[AppEnv, Throwable, Unit] = for
-    _ <- Console.printLine(s"Starting ...")
+    _ <- ZIO.logInfo(s"Starting ...")
     currentTime <- Clock.currentDateTime
     _ <- runTradingLoop()
-    _ <- Console.printLine(s"Task executed at: $currentTime")
+    _ <- ZIO.logInfo(s"Task executed at: $currentTime")
   yield ()
   private val executeTradingTransaction: ZIO[Connection & AppEnv, Throwable, Unit] = for
     accountService <- ZIO.service[AccountService]
     account <- accountService.findByName("trading")
-    _ <- Console.printLine(s"Trading with account name :'${account.name}''")
+    _ <- ZIO.logInfo(s"Trading with account name :'${account.name}''")
     finInstrumentService <- ZIO.service[FinInstrumentService]
     finInstruments <- finInstrumentService.findTopToTrade()
-    _ <- Console.printLine(s"Searching signals on ${finInstruments.map(_.symbol)}")
+    _ <- ZIO.logInfo(s"Searching signals on ${finInstruments.map(_.symbol)}")
     balancePerFinInst <- ZIO.attempt(
       getBalancePerFinInst(
         account = account,
         finInstruments = finInstruments
       )
     )
-    _ <- Console.printLine(s"balancePerFinInst : $balancePerFinInst")
+    _ <- ZIO.logInfo(s"balancePerFinInst : $balancePerFinInst")
     positionService <- ZIO.service[PositionService]
     strategyService <- ZIO.service[TradingStrategyService]
     tradingStrategies <- strategyService.findAll()
-    _ <- Console.printLine(s"tradingStrategies : $tradingStrategies")
+    _ <- ZIO.logInfo(s"tradingStrategies : $tradingStrategies")
     openPositions <- positionService.findAllOpen()
-    _ <- Console.printLine(s"openPositions : $openPositions")
+    _ <- ZIO.logInfo(s"openPositions : $openPositions")
     exchangeMap <- getTradingExchangeMap(openPositions = openPositions)
-    _ <- Console.printLine(s"exchangeMap : $exchangeMap")
+    _ <- ZIO.logInfo(s"exchangeMap : $exchangeMap")
     strategyCfgs <- appConfig.map(_.strategyConfigurations)
     stopLossPercentage <- appConfig.map(_.stopLossPercentage)
-    _ <- Console.printLine("Executing orders ...")
+    _ <- ZIO.logInfo("Executing orders ...")
     orders <- tradingExecutorService.execute(
       TradingExecutorRequest(
         balancePerFinInst = balancePerFinInst,
@@ -79,7 +79,7 @@ object TradingApp extends zio.ZIOAppDefault:
         stopLossPercentage = stopLossPercentage
       )
     )
-    _ <- Console.printLine(s"Orders created :$orders ...")
+    _ <- ZIO.logInfo(s"Orders created :$orders ...")
     _ <- applyOrders(
       account = account,
       openPositions = openPositions,
@@ -97,18 +97,18 @@ object TradingApp extends zio.ZIOAppDefault:
   ): ZIO[Connection & AppEnv, Throwable, Option[Unit]] =
     ZIO.when(orders.nonEmpty)(ZIO.scoped {
       for
-        _ <- Console.printLine(s"Applying orders :$orders ...")
+        _ <- ZIO.logInfo(s"Applying orders :$orders ...")
         _ <- updateBalance(account = account, orders = orders)
         positionService <- ZIO.service[PositionService]
         _ <- positionService.closeOpenPositions(
           openPositions = openPositions,
           orders = orders
         )
-        _ <- Console.printLine(s"Positions closed!")
+        _ <- ZIO.logInfo(s"Positions closed!")
         _ <- positionService.createOpenPositionsFromOrders(
           orders = orders
         )
-        _ <- Console.printLine(s"Positions opened!")
+        _ <- ZIO.logInfo(s"Positions opened!")
       yield ()
     })
 
@@ -119,7 +119,7 @@ object TradingApp extends zio.ZIOAppDefault:
     val newBalance = totalBalance(currentBalance = account.balance, orders = orders)
     ZIO.when(orders.nonEmpty)(ZIO.scoped {
       for
-        _ <- Console.printLine(s"Balance updated to $newBalance !")
+        _ <- ZIO.logInfo(s"Balance updated to $newBalance !")
         accountService <- ZIO.service[AccountService]
         _ <- accountService.updateBalance(
           id = account.id,
@@ -149,9 +149,9 @@ object TradingApp extends zio.ZIOAppDefault:
       .when(openPositions.nonEmpty)(ZIO.scoped {
         for
           tradingExchangeService <- ZIO.service[TradingExchangeService]
-          _ <- Console.printLine(s"Getting exchanges for symbols ${symbols}... ")
+          _ <- ZIO.logInfo(s"Getting exchanges for symbols ${symbols}... ")
           exchanges <- tradingExchangeService.findAll()
-          _ <- Console.printLine(s"exchanges: $exchanges")
+          _ <- ZIO.logInfo(s"exchanges: $exchanges")
         yield exchanges.groupBy(_.id).view.mapValues(_.head).toMap
       })
       .map {

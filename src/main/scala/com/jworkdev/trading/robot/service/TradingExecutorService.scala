@@ -50,7 +50,7 @@ class TradingExecutorServiceImpl(
       request.finInstruments.map(finInstrument => (tradingStrategy, finInstrument))
     )
     for
-      _ <- Console.printLine(
+      _ <- ZIO.logInfo(
         s"Trading on  ${request.finInstruments.map(_.symbol)} using ${request.tradingStrategies}"
       )
       fibers <- ZIO.foreach(input) { case (tradingStrategy: TradingStrategy, finInstrument: FinInstrument) =>
@@ -77,7 +77,7 @@ class TradingExecutorServiceImpl(
       stopLossPercentage: Int
   ): Task[Option[Order]] =
     val orders = for
-      _ <- Console.printLine(s"Executing ${finInstrument.symbol} ...")
+      _ <- ZIO.logInfo(s"Executing ${finInstrument.symbol} ...")
       currentPriceFiber <- ZIO.attempt(marketDataProvider.getCurrentQuote(symbol = finInstrument.symbol)).fork
       marketDataStrategyResponseFiber <- ZIO
         .attempt(
@@ -92,11 +92,12 @@ class TradingExecutorServiceImpl(
         .fork
       marketDataStrategyResponse <- marketDataStrategyResponseFiber.join
       currentPriceRes <- currentPriceFiber.join
-      _ <- Console.printLine(s"Data for ${finInstrument.symbol} fetched!")
+      _ <- ZIO.logInfo(s"Data for ${finInstrument.symbol} fetched!")
       orders <- currentPriceRes.fold(
         ex =>
-          logger.error("Error fetching current price!",ex)
-          ZIO.succeed(None),
+          logger.error("Error fetching current price!", ex)
+          ZIO.succeed(None)
+        ,
         currentPrice =>
           execute(
             balancePerFinInst = balancePerFinInst,
@@ -125,14 +126,14 @@ class TradingExecutorServiceImpl(
       marketDataStrategyResponse: Try[MarketDataStrategyResponse]
   ): Task[Option[Order]] =
     logger.info(s"Trading on  $finInstrument")
-    val symbolOpenPosition = openPositions.find(position =>
+    val openPosition = openPositions.find(position =>
       finInstrument.symbol == position.symbol &&
         tradingStrategy.`type` == position.tradingStrategyType
     )
     val res = marketDataStrategyResponse match
       case Failure(exception) =>
         logger.error("Error getting strategy market data ...", exception)
-        symbolOpenPosition.flatMap(position =>
+        openPosition.flatMap(position =>
           executeStopLoss(
             finInstrument = finInstrument,
             position = position,
@@ -148,7 +149,7 @@ class TradingExecutorServiceImpl(
         signals.lastOption match
           case Some(lastSignal) =>
             logger.info(s"Last Signal: $lastSignal")
-            symbolOpenPosition match
+            openPosition match
               case Some(position) =>
                 // Trying to make a Sell
                 if lastSignal.`type` == SignalType.Sell then
@@ -197,7 +198,15 @@ class TradingExecutorServiceImpl(
                   None
           case None =>
             logger.info(s"No Last Signal found!")
-            None
+            openPosition.flatMap(position =>
+              executeStopLoss(
+                finInstrument = finInstrument,
+                position = position,
+                currentPrice = currentPrice,
+                stopLossPercentage = stopLossPercentage,
+                tradingStrategy = tradingStrategy
+              )
+            )
     ZIO.succeed(res)
 
   private def executeStopLoss(
