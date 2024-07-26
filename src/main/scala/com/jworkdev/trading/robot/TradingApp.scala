@@ -40,7 +40,7 @@ object TradingApp extends zio.ZIOAppDefault:
   private val periodicTask: ZIO[AppEnv, Throwable, Unit] = for
     _ <- ZIO.logInfo(s"Starting ...")
     currentTime <- Clock.currentDateTime
-    _ <- runTradingLoop()
+    _ <- runTradingLoop().foldCauseZIO(cause=>ZIO.logErrorCause("Error",cause),_=>ZIO.unit)
     _ <- ZIO.logInfo(s"Task executed at: $currentTime")
   yield ()
   private val executeTradingTransaction: ZIO[Connection & AppEnv, Throwable, Unit] = for

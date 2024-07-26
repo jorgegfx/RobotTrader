@@ -24,7 +24,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       id = "NASDAQ",
       name = "NASDAQ",
       openingTime = LocalTime.now().minus(1, ChronoUnit.HOURS),
-      closingTime = LocalTime.now().plus(2, ChronoUnit.HOURS)
+      closingTime = LocalTime.now().plus(2, ChronoUnit.HOURS),
+      timezone = "America/New_York"
     )
   )
   val balancePerFinInst = 1000
@@ -215,7 +216,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           id = "NASDAQ",
           name = "NASDAQ",
           openingTime = LocalTime.now().minus(2, ChronoUnit.HOURS),
-          closingTime = LocalTime.now().minus(1, ChronoUnit.HOURS)
+          closingTime = LocalTime.now().minus(1, ChronoUnit.HOURS),
+          timezone = "America/New_York"
         )
       )
       for

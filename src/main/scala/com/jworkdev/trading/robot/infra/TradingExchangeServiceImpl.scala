@@ -21,7 +21,8 @@ class TradingExchangeServiceImpl extends TradingExchangeService:
     sql"""SELECT te.id,
           te.name,
           te.openingTime,
-          te.closingTime FROM trading_exchange te """
+          te.closingTime,
+          te.timezone FROM trading_exchange te """
       .query[TradingExchange]
       .to[List]
   }
@@ -31,7 +32,8 @@ class TradingExchangeServiceImpl extends TradingExchangeService:
           id,
           name,
           openingTime,
-          closingTime FROM exchange WHERE id = $id"""
+          closingTime,
+          timezone FROM exchange WHERE id = $id"""
       .query[TradingExchange]
       .to[List].map(_.headOption)
   }
@@ -40,7 +42,8 @@ class TradingExchangeServiceImpl extends TradingExchangeService:
     sql"""SELECT te.id,
           te.name,
           te.openingTime,
-          te.closingTime FROM fin_instrument fi
+          te.closingTime,
+          te.timezone FROM fin_instrument fi
 	      inner join trading_exchange te on fi.exchange = td.id
           WHERE symbol = $symbol"""
       .query[TradingExchange]
@@ -52,7 +55,8 @@ class TradingExchangeServiceImpl extends TradingExchangeService:
     val q = fr"""SELECT te.id,
           te.name,
           te.openingTime,
-          te.closingTime FROM fin_instrument fi
+          te.closingTime,
+          te.timezone FROM fin_instrument fi
 	      inner join trading_exchange te on fi.exchange = td.id
           WHERE """ ++ Fragments.in(fr"symbol", list)
     q.query[TradingExchange].to[Set]
