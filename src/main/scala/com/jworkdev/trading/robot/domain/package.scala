@@ -1,6 +1,6 @@
 package com.jworkdev.trading.robot
 
-import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{DayOfWeek, LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset, ZonedDateTime}
 
 package object domain:
 
@@ -48,13 +48,18 @@ package object domain:
       `type`: TradingStrategyType,
       pnl: Option[Double]
   )
+  enum TradingExchangeWindowType:
+    case BusinessDaysWeek, Always
 
   case class TradingExchange(id: String,
                              name: String,
-                             openingTime: LocalTime,
-                             closingTime: LocalTime,
-                             timezone: String):
-    private def createFromTime(localTime: LocalTime): LocalDateTime =
+                             windowType: TradingExchangeWindowType,
+                             openingTime: Option[LocalTime],
+                             closingTime: Option[LocalTime],
+                             timezone: Option[String]):
+    private val nonBusinessDays = Set(DayOfWeek.SUNDAY,DayOfWeek.SATURDAY)
+
+    private def createFromTime(localTime: LocalTime, timezone: String): LocalDateTime =
       val zoneId: ZoneId = ZoneId.of(timezone)
       val localDateTime: LocalDateTime = LocalDateTime.of(LocalDate.now(), localTime)
       val zonedDateTime: ZonedDateTime = ZonedDateTime.of(localDateTime, zoneId)
@@ -62,10 +67,21 @@ package object domain:
       val localZonedDateTime = zonedDateTime.withZoneSameInstant(localZoneId)
       localZonedDateTime.toLocalDateTime
 
-    def currentCloseWindow: LocalDateTime =
-      createFromTime(localTime = closingTime)
+    def currentCloseWindow: Option[LocalDateTime] =
+      for
+        timezone <- timezone
+        closingTime <- closingTime
+      yield createFromTime(closingTime,timezone)  
+      
 
-    def currentOpenWindow: LocalDateTime =
-      createFromTime(localTime = openingTime)
+    def currentOpenWindow: Option[LocalDateTime] =
+      for
+        timezone <- timezone
+        openingTime <- openingTime
+      yield createFromTime(openingTime,timezone)
+
+    def isTradingExchangeDay(currentLocalTime: LocalDateTime): Boolean =
+        windowType == TradingExchangeWindowType.Always ||
+          !nonBusinessDays.contains(currentLocalTime.getDayOfWeek)
 
   case class Account(id: Long, name: String, balance: Double)

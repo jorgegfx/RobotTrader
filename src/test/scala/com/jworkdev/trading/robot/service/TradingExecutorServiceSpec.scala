@@ -5,6 +5,7 @@ import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
 import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy}
 import com.jworkdev.trading.robot.data.strategy.macd.{MACDMarketDataStrategyRequest, MACDMarketDataStrategyResponse}
 import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest, MarketDataStrategyRequestFactory, MarketDataStrategyResponse}
+import com.jworkdev.trading.robot.domain.TradingExchangeWindowType.BusinessDaysWeek
 import com.jworkdev.trading.robot.domain.{FinInstrument, FinInstrumentType, Position, TradingExchange, TradingStrategy, TradingStrategyType}
 import com.jworkdev.trading.robot.market.data.SnapshotInterval.OneMinute
 import com.jworkdev.trading.robot.market.data.{MarketDataProvider, StockPrice}
@@ -23,9 +24,10 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
     "NASDAQ" -> TradingExchange(
       id = "NASDAQ",
       name = "NASDAQ",
-      openingTime = LocalTime.now().minus(1, ChronoUnit.HOURS),
-      closingTime = LocalTime.now().plus(2, ChronoUnit.HOURS),
-      timezone = "America/New_York"
+      openingTime = Some(LocalTime.now().minus(1, ChronoUnit.HOURS)),
+      closingTime = Some(LocalTime.now().plus(2, ChronoUnit.HOURS)),
+      timezone = Some("America/New_York"),
+      windowType = BusinessDaysWeek
     )
   )
   val balancePerFinInst = 1000
@@ -215,9 +217,10 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
         "NASDAQ" -> TradingExchange(
           id = "NASDAQ",
           name = "NASDAQ",
-          openingTime = LocalTime.now().minus(2, ChronoUnit.HOURS),
-          closingTime = LocalTime.now().minus(1, ChronoUnit.HOURS),
-          timezone = "America/New_York"
+          openingTime = Some(LocalTime.now().minus(2, ChronoUnit.HOURS)),
+          closingTime = Some(LocalTime.now().minus(1, ChronoUnit.HOURS)),
+          timezone = Some("America/New_York"),
+          windowType = BusinessDaysWeek
         )
       )
       for
