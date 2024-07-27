@@ -21,8 +21,8 @@ package object domain:
     def totalClosePrice: Option[Double] = closePricePerShare.map(numberOfShares * _)
     def shouldExitForStopLoss(currentPricePerShare: Double, stopLossPercentage: Int): Boolean =
       val gain = currentPricePerShare - openPricePerShare
-      if(gain < 0)
-        val currentPercentage = (currentPricePerShare/openPricePerShare * 100).toInt
+      if gain < 0 then
+        val currentPercentage = (currentPricePerShare / openPricePerShare * 100).toInt
         val percentageLoss = 100 - currentPercentage
         percentageLoss > stopLossPercentage
       else false
@@ -51,37 +51,38 @@ package object domain:
   enum TradingExchangeWindowType:
     case BusinessDaysWeek, Always
 
-  case class TradingExchange(id: String,
-                             name: String,
-                             windowType: TradingExchangeWindowType,
-                             openingTime: Option[LocalTime],
-                             closingTime: Option[LocalTime],
-                             timezone: Option[String]):
-    private val nonBusinessDays = Set(DayOfWeek.SUNDAY,DayOfWeek.SATURDAY)
+  case class TradingExchange(
+      id: String,
+      name: String,
+      windowType: TradingExchangeWindowType,
+      openingTime: Option[LocalTime],
+      closingTime: Option[LocalTime],
+      timezone: Option[String]
+  ):
+    private val nonBusinessDays = Set(DayOfWeek.SUNDAY, DayOfWeek.SATURDAY)
 
-    private def createFromTime(localTime: LocalTime, timezone: String): LocalDateTime =
+    private def createFromTime(currentDateTime: LocalDateTime, localTime: LocalTime, timezone: String): LocalDateTime =
       val zoneId: ZoneId = ZoneId.of(timezone)
-      val localDateTime: LocalDateTime = LocalDateTime.of(LocalDate.now(), localTime)
+      val localDateTime: LocalDateTime = LocalDateTime.of(currentDateTime.toLocalDate, localTime)
       val zonedDateTime: ZonedDateTime = ZonedDateTime.of(localDateTime, zoneId)
       val localZoneId: ZoneId = ZoneId.systemDefault()
       val localZonedDateTime = zonedDateTime.withZoneSameInstant(localZoneId)
       localZonedDateTime.toLocalDateTime
 
-    def currentCloseWindow: Option[LocalDateTime] =
+    def currentCloseWindow(currentDateTime: LocalDateTime): Option[LocalDateTime] =
       for
         timezone <- timezone
         closingTime <- closingTime
-      yield createFromTime(closingTime,timezone)  
-      
+      yield createFromTime(currentDateTime = currentDateTime, localTime = closingTime, timezone = timezone)
 
-    def currentOpenWindow: Option[LocalDateTime] =
+    def currentOpenWindow(currentDateTime: LocalDateTime): Option[LocalDateTime] =
       for
         timezone <- timezone
         openingTime <- openingTime
-      yield createFromTime(openingTime,timezone)
+      yield createFromTime(currentDateTime = currentDateTime, localTime = openingTime, timezone = timezone)
 
     def isTradingExchangeDay(currentLocalTime: LocalDateTime): Boolean =
-        windowType == TradingExchangeWindowType.Always ||
-          !nonBusinessDays.contains(currentLocalTime.getDayOfWeek)
+      windowType == TradingExchangeWindowType.Always ||
+        !nonBusinessDays.contains(currentLocalTime.getDayOfWeek)
 
   case class Account(id: Long, name: String, balance: Double)

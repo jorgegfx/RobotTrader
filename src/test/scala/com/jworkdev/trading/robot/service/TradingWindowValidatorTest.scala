@@ -5,40 +5,54 @@ import com.jworkdev.trading.robot.domain.TradingExchangeWindowType.{Always, Busi
 import com.jworkdev.trading.robot.domain.{FinInstrument, FinInstrumentType, TradingExchange}
 import org.scalatest.funsuite.AnyFunSuiteLike
 
-import java.time.temporal.ChronoUnit
-import java.time.{Instant, LocalDateTime, LocalTime}
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime}
 
 class TradingWindowValidatorTest extends AnyFunSuiteLike:
+  private val localTime = LocalTime.of(8, 10)
+  private val localDate = LocalDate.of(2024, 7, 27)
+  private val localDateTime = LocalDateTime.of(localDate, localTime)
 
+  private val nasdaqExchange = TradingExchange(
+    id = "NASDAQ",
+    name = "NASDAQ",
+    openingTime = Some(LocalTime.of(9, 30)),
+    closingTime = Some(LocalTime.of(16, 0)),
+    timezone = Some("America/New_York"),
+    windowType = BusinessDaysWeek
+  )
+  private val cryptoExchange = TradingExchange(
+    id = "CRYPTO",
+    name = "CRYPTO",
+    openingTime = None,
+    closingTime = None,
+    timezone = None,
+    windowType = Always
+  )
   test("is Always") {
     val res = TradingWindowValidator.
       isNotOutOfBuyingWindow(currentLocalTime = LocalDateTime.now(),
         tradingMode = IntraDay, finInstrument = FinInstrument(
-          symbol = "NVDA",
-          name = "Nvidia",
+          symbol = "BTH",
+          name = "BitCoin",
           `type` = FinInstrumentType.Stock,
-          exchange = "NASDAQ",
+          exchange = "CRYPTO",
           volatility = Some(10d),
           creationDate = Instant.now(),
           lastUpdate = None,
           isActive = true
         ),
         tradingExchangeMap = Map(
-          "NASDAQ" -> TradingExchange(
-            id = "NASDAQ",
-            name = "NASDAQ",
-            openingTime = None,
-            closingTime = None,
-            timezone = None,
-            windowType = Always
-          )
+          "CRYPTO" -> cryptoExchange
         ))
     assert(res)
   }
 
   test("is Not Business Day") {
+    val localTime = LocalTime.of(8,10)
+    val localDate =  LocalDate.of(2024,7,27)
+    val localDateTime = LocalDateTime.of(localDate,localTime)
     val res = TradingWindowValidator.
-      isNotOutOfBuyingWindow(currentLocalTime = LocalDateTime.now(),
+      isNotOutOfBuyingWindow(currentLocalTime = localDateTime,
         tradingMode = IntraDay, finInstrument = FinInstrument(
           symbol = "NVDA",
           name = "Nvidia",
@@ -50,14 +64,73 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
           isActive = true
         ),
         tradingExchangeMap = Map(
-          "NASDAQ" -> TradingExchange(
-            id = "NASDAQ",
-            name = "NASDAQ",
-            openingTime = Some(LocalTime.now().minus(1, ChronoUnit.HOURS)),
-            closingTime = Some(LocalTime.now().plus(2, ChronoUnit.HOURS)),
-            timezone = Some("America/New_York"),
-            windowType = BusinessDaysWeek
-          )
+          "NASDAQ" -> nasdaqExchange
+        ))
+    assert(!res)
+  }
+
+  test("before Trading window") {
+    val localTime = LocalTime.of(8, 10)
+    val localDate = LocalDate.of(2024, 7, 24)
+    val localDateTime = LocalDateTime.of(localDate, localTime)
+    val res = TradingWindowValidator.
+      isNotOutOfBuyingWindow(currentLocalTime = localDateTime,
+        tradingMode = IntraDay, finInstrument = FinInstrument(
+          symbol = "NVDA",
+          name = "Nvidia",
+          `type` = FinInstrumentType.Stock,
+          exchange = "NASDAQ",
+          volatility = Some(10d),
+          creationDate = Instant.now(),
+          lastUpdate = None,
+          isActive = true
+        ),
+        tradingExchangeMap = Map(
+          "NASDAQ" -> nasdaqExchange
+        ))
+    assert(!res)
+  }
+
+  test("after Trading window") {
+    val localTime = LocalTime.of(17, 10)
+    val localDate = LocalDate.of(2024, 7, 24)
+    val localDateTime = LocalDateTime.of(localDate, localTime)
+    val res = TradingWindowValidator.
+      isNotOutOfBuyingWindow(currentLocalTime = localDateTime,
+        tradingMode = IntraDay, finInstrument = FinInstrument(
+          symbol = "NVDA",
+          name = "Nvidia",
+          `type` = FinInstrumentType.Stock,
+          exchange = "NASDAQ",
+          volatility = Some(10d),
+          creationDate = Instant.now(),
+          lastUpdate = None,
+          isActive = true
+        ),
+        tradingExchangeMap = Map(
+          "NASDAQ" -> nasdaqExchange
+        ))
+    assert(!res)
+  }
+
+  test("between Trading window") {
+    val localTime = LocalTime.of(12, 10)
+    val localDate = LocalDate.of(2024, 7, 24)
+    val localDateTime = LocalDateTime.of(localDate, localTime)
+    val res = TradingWindowValidator.
+      isNotOutOfBuyingWindow(currentLocalTime = localDateTime,
+        tradingMode = IntraDay, finInstrument = FinInstrument(
+          symbol = "NVDA",
+          name = "Nvidia",
+          `type` = FinInstrumentType.Stock,
+          exchange = "NASDAQ",
+          volatility = Some(10d),
+          creationDate = Instant.now(),
+          lastUpdate = None,
+          isActive = true
+        ),
+        tradingExchangeMap = Map(
+          "NASDAQ" -> nasdaqExchange
         ))
     assert(res)
   }

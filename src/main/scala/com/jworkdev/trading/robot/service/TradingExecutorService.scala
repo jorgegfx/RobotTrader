@@ -6,14 +6,13 @@ import com.jworkdev.trading.robot.config.{StrategyConfigurations, TradingMode}
 import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy, SignalType}
 import com.jworkdev.trading.robot.data.strategy
 import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest, MarketDataStrategyRequestFactory, MarketDataStrategyResponse}
-import com.jworkdev.trading.robot.domain.{FinInstrument, Position, TradingExchange, TradingExchangeWindowType, TradingStrategy}
+import com.jworkdev.trading.robot.domain.*
 import com.jworkdev.trading.robot.market.data.MarketDataProvider
-import com.jworkdev.trading.robot.time.InstantExtensions.isToday
 import com.typesafe.scalalogging.Logger
 import zio.{Task, ZIO}
 
-import java.time.{DayOfWeek, Instant, LocalDateTime}
 import java.time.temporal.ChronoUnit
+import java.time.{Instant, LocalDateTime}
 import scala.util.{Failure, Success, Try}
 
 case class TradingExecutorRequest(
@@ -290,11 +289,11 @@ object TradingWindowValidator:
   private def isNotOutOfBuyingWindow(currentLocalTime: LocalDateTime,
                                      exchange: TradingExchange): Boolean =
     val res = for
-      limitClosingTime <- exchange.currentCloseWindow.
+      limitClosingTime <- exchange.currentCloseWindow(currentDateTime = currentLocalTime).
         map(_.minus(limitHoursBeforeCloseDay, ChronoUnit.HOURS))
-      openingTime <- exchange.openingTime
-    yield currentLocalTime.isAfter(limitClosingTime) ||
-      openingTime.isAfter(currentLocalTime.toLocalTime)
+      currentOpenWindow <- exchange.currentOpenWindow(currentDateTime = currentLocalTime)
+    yield currentLocalTime.isBefore(limitClosingTime) &&
+      currentLocalTime.isAfter(currentOpenWindow)
     res.getOrElse(false) && exchange.isTradingExchangeDay(currentLocalTime = currentLocalTime)
 
   private def isNotOutOfBuyingWindow(currentLocalTime: LocalDateTime,

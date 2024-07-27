@@ -4,7 +4,7 @@ import com.jworkdev.trading.robot.domain.TradingExchangeWindowType.BusinessDaysW
 import org.scalatest.flatspec.AnyFlatSpec
 
 import java.time.temporal.ChronoUnit
-import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZoneId, ZonedDateTime}
+import java.time.{LocalDateTime, LocalTime}
 
 class packageTest extends AnyFlatSpec:
   it should "be between the window" in {
@@ -18,7 +18,7 @@ class packageTest extends AnyFlatSpec:
       timezone = Some("America/New_York"),
       windowType = BusinessDaysWeek
     )
-    val currentCloseWindowOpt = tradingExchange.currentCloseWindow
+    val currentCloseWindowOpt = tradingExchange.currentCloseWindow(currentDateTime = now)
     assert(currentCloseWindowOpt.isDefined)
     val currentCloseWindow = currentCloseWindowOpt.get
     assert(now.isBefore(currentCloseWindow))
