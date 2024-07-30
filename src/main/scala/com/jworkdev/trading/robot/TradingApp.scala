@@ -30,6 +30,7 @@ object TradingApp extends zio.ZIOAppDefault:
   // Define the interval in minutes
   private val intervalMinutes: Int = 1
   private val schedule: Schedule[Any, Any, Long] = Schedule.fixed(intervalMinutes.minutes)
+
   // Task to be executed periodically
   private val periodicTask: ZIO[AppEnv, Throwable, Unit] = for
     _ <- ZIO.logInfo(s"Starting ...")
@@ -37,6 +38,7 @@ object TradingApp extends zio.ZIOAppDefault:
     _ <- runTradingLoop().foldCauseZIO(cause=>ZIO.logErrorCause("Error",cause),_=>ZIO.unit)
     _ <- ZIO.logInfo(s"Task executed at: $currentTime")
   yield ()
+
   private val executeTradingTransaction: ZIO[Connection & AppEnv, Throwable, Unit] = for
     accountService <- ZIO.service[AccountService]
     account <- accountService.findByName("trading")
