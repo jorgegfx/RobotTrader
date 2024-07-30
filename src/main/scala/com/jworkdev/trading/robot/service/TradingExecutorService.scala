@@ -14,6 +14,7 @@ import zio.{Task, ZIO}
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDateTime}
 import scala.util.{Failure, Success, Try}
+import com.jworkdev.trading.robot.time.InstantExtensions.isToday
 
 case class TradingExecutorRequest(
     balancePerFinInst: Double,
@@ -23,7 +24,8 @@ case class TradingExecutorRequest(
     exchangeMap: Map[String, TradingExchange],
     strategyConfigurations: StrategyConfigurations,
     stopLossPercentage: Int,
-    tradingMode: TradingMode
+    tradingMode: TradingMode,
+    currentLocalTime: LocalDateTime
 )
 
 trait TradingExecutorService:
@@ -59,7 +61,8 @@ class TradingExecutorServiceImpl(
           exchangeMap = request.exchangeMap,
           strategyConfigurations = request.strategyConfigurations,
           stopLossPercentage = request.stopLossPercentage,
-          tradingMode = request.tradingMode
+          tradingMode = request.tradingMode,
+          currentLocalTime = request.currentLocalTime
         ).fork
       }
       results <- ZIO.foreach(fibers)(_.join)
@@ -73,7 +76,8 @@ class TradingExecutorServiceImpl(
       exchangeMap: Map[String, TradingExchange],
       strategyConfigurations: StrategyConfigurations,
       stopLossPercentage: Int,
-      tradingMode: TradingMode
+      tradingMode: TradingMode,
+      currentLocalTime: LocalDateTime
   ): Task[Option[Order]] =
     for
       _ <- ZIO.logInfo(s"Executing ${finInstrument.symbol} ...")
@@ -108,6 +112,7 @@ class TradingExecutorServiceImpl(
             tradingMode = tradingMode,
             stopLossPercentage = stopLossPercentage,
             currentPrice = currentPrice,
+            currentLocalTime = currentLocalTime,
             marketDataStrategyResponse = marketDataStrategyResponse
           )
       )
@@ -123,6 +128,7 @@ class TradingExecutorServiceImpl(
       tradingMode: TradingMode,
       stopLossPercentage: Int,
       currentPrice: Double,
+      currentLocalTime: LocalDateTime,
       marketDataStrategyResponse: Try[MarketDataStrategyResponse]
   ): Task[Option[Order]] =
     logger.info(s"Trading on  $finInstrument")
@@ -168,7 +174,8 @@ class TradingExecutorServiceImpl(
                   tradingStrategy = tradingStrategy,
                   balancePerFinInst = balancePerFinInst,
                   currentPrice = currentPrice,
-                  exchangeMap = exchangeMap
+                  exchangeMap = exchangeMap,
+                  currentLocalTime = currentLocalTime
                 )
           case None =>
             logger.info(s"No Last Signal found!")
@@ -190,10 +197,12 @@ class TradingExecutorServiceImpl(
       exchangeMap: Map[String, TradingExchange],
       tradingMode: TradingMode,
       balancePerFinInst: Double,
-      currentPrice: Double
+      currentPrice: Double,
+      currentLocalTime: LocalDateTime
   ): Option[Order] =
     if signal.`type` == SignalType.Buy then
-      if TradingWindowValidator.isNotOutOfBuyingWindow(currentLocalTime = LocalDateTime.now(),
+      if signal.date.isToday() &&
+        TradingWindowValidator.isNotOutOfBuyingWindow(currentLocalTime = currentLocalTime,
           tradingMode = tradingMode,
           finInstrument = finInstrument,
           tradingExchangeMap = exchangeMap) then
