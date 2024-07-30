@@ -3,21 +3,15 @@ package com.jworkdev.trading.robot
 import com.jworkdev.trading.robot.config.appConfig
 import com.jworkdev.trading.robot.domain.{Account, FinInstrument, Position, TradingExchange}
 import com.jworkdev.trading.robot.infra.{TradingStrategyService, *}
-import com.jworkdev.trading.robot.service.{
-  AccountService,
-  FinInstrumentService,
-  PositionService,
-  TradingExchangeService,
-  TradingExecutorRequest,
-  TradingExecutorService,
-  TradingStrategyService
-}
+import com.jworkdev.trading.robot.service.{AccountService, FinInstrumentService, PositionService, TradingExchangeService, TradingExecutorRequest, TradingExecutorService, TradingStrategyService}
 import doobie.util.log.LogHandler
 import io.github.gaelrenoux.tranzactio.ErrorStrategiesRef
 import io.github.gaelrenoux.tranzactio.doobie.*
 import zio.*
 import zio.Console.*
 import zio.interop.catz.*
+
+import java.time.LocalDateTime
 
 object TradingApp extends zio.ZIOAppDefault:
   implicit val dbContext: DbContext =
@@ -78,7 +72,8 @@ object TradingApp extends zio.ZIOAppDefault:
         exchangeMap = exchangeMap,
         strategyConfigurations = strategyCfgs,
         stopLossPercentage = stopLossPercentage,
-        tradingMode = tradingMode
+        tradingMode = tradingMode,
+        currentLocalTime = LocalDateTime.now()
       )
     )
     _ <- ZIO.logInfo(s"Orders created :$orders ...")

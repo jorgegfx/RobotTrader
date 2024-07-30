@@ -6,15 +6,15 @@ import com.jworkdev.trading.robot.config.{StrategyConfigurations, TradingMode}
 import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy, SignalType}
 import com.jworkdev.trading.robot.data.strategy
 import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest, MarketDataStrategyRequestFactory, MarketDataStrategyResponse}
-import com.jworkdev.trading.robot.domain.{FinInstrument, Position, TradingExchange, TradingStrategy}
+import com.jworkdev.trading.robot.domain.*
 import com.jworkdev.trading.robot.market.data.MarketDataProvider
-import com.jworkdev.trading.robot.time.InstantExtensions.isToday
 import com.typesafe.scalalogging.Logger
 import zio.{Task, ZIO}
 
-import java.time.{Instant, LocalDateTime}
 import java.time.temporal.ChronoUnit
+import java.time.{Instant, LocalDateTime}
 import scala.util.{Failure, Success, Try}
+import com.jworkdev.trading.robot.time.InstantExtensions.isToday
 
 case class TradingExecutorRequest(
     balancePerFinInst: Double,
@@ -24,7 +24,8 @@ case class TradingExecutorRequest(
     exchangeMap: Map[String, TradingExchange],
     strategyConfigurations: StrategyConfigurations,
     stopLossPercentage: Int,
-    tradingMode: TradingMode
+    tradingMode: TradingMode,
+    currentLocalTime: LocalDateTime
 )
 
 trait TradingExecutorService:
@@ -60,7 +61,8 @@ class TradingExecutorServiceImpl(
           exchangeMap = request.exchangeMap,
           strategyConfigurations = request.strategyConfigurations,
           stopLossPercentage = request.stopLossPercentage,
-          tradingMode = request.tradingMode
+          tradingMode = request.tradingMode,
+          currentLocalTime = request.currentLocalTime
         ).fork
       }
       results <- ZIO.foreach(fibers)(_.join)
@@ -74,7 +76,8 @@ class TradingExecutorServiceImpl(
       exchangeMap: Map[String, TradingExchange],
       strategyConfigurations: StrategyConfigurations,
       stopLossPercentage: Int,
-      tradingMode: TradingMode
+      tradingMode: TradingMode,
+      currentLocalTime: LocalDateTime
   ): Task[Option[Order]] =
     for
       _ <- ZIO.logInfo(s"Executing ${finInstrument.symbol} ...")
@@ -109,6 +112,7 @@ class TradingExecutorServiceImpl(
             tradingMode = tradingMode,
             stopLossPercentage = stopLossPercentage,
             currentPrice = currentPrice,
+            currentLocalTime = currentLocalTime,
             marketDataStrategyResponse = marketDataStrategyResponse
           )
       )
@@ -124,6 +128,7 @@ class TradingExecutorServiceImpl(
       tradingMode: TradingMode,
       stopLossPercentage: Int,
       currentPrice: Double,
+      currentLocalTime: LocalDateTime,
       marketDataStrategyResponse: Try[MarketDataStrategyResponse]
   ): Task[Option[Order]] =
     logger.info(s"Trading on  $finInstrument")
@@ -169,7 +174,8 @@ class TradingExecutorServiceImpl(
                   tradingStrategy = tradingStrategy,
                   balancePerFinInst = balancePerFinInst,
                   currentPrice = currentPrice,
-                  exchangeMap = exchangeMap
+                  exchangeMap = exchangeMap,
+                  currentLocalTime = currentLocalTime
                 )
           case None =>
             logger.info(s"No Last Signal found!")
@@ -191,10 +197,12 @@ class TradingExecutorServiceImpl(
       exchangeMap: Map[String, TradingExchange],
       tradingMode: TradingMode,
       balancePerFinInst: Double,
-      currentPrice: Double
+      currentPrice: Double,
+      currentLocalTime: LocalDateTime
   ): Option[Order] =
     if signal.`type` == SignalType.Buy then
-      if TradingWindow.isNotOutOfBuyingWindow(signal = signal,
+      if signal.date.isToday() &&
+        TradingWindowValidator.isNotOutOfBuyingWindow(currentLocalTime = currentLocalTime,
           tradingMode = tradingMode,
           finInstrument = finInstrument,
           tradingExchangeMap = exchangeMap) then
@@ -284,22 +292,34 @@ object TradingExecutorService:
     SignalFinderStrategy()
   )
 
-object TradingWindow:
+object TradingWindowValidator:
   private val limitHoursBeforeCloseDay = 1
 
-  private def isNotOutOfBuyingWindow(finInstrument: FinInstrument,
-                                     tradingExchangeMap: Map[String, TradingExchange]): Boolean =
-    !tradingExchangeMap.get(finInstrument.exchange).exists(exchange => {
-      val now = LocalDateTime.now()
-      val limitClosingTime = exchange.currentCloseWindow.minus(limitHoursBeforeCloseDay, ChronoUnit.HOURS)
-      now.isAfter(limitClosingTime) || exchange.openingTime.isAfter(now.toLocalTime)
-    })
+  private def isNotOutOfBuyingWindow(currentLocalTime: LocalDateTime,
+                                     exchange: TradingExchange): Boolean =
+    val res = for
+      limitClosingTime <- exchange.currentCloseWindow(currentDateTime = currentLocalTime).
+        map(_.minus(limitHoursBeforeCloseDay, ChronoUnit.HOURS))
+      currentOpenWindow <- exchange.currentOpenWindow(currentDateTime = currentLocalTime)
+    yield currentLocalTime.isBefore(limitClosingTime) &&
+      currentLocalTime.isAfter(currentOpenWindow)
+    res.getOrElse(false) && exchange.isTradingExchangeDay(currentLocalTime = currentLocalTime)
 
-  def isNotOutOfBuyingWindow(signal: Signal,
-                                     tradingMode: TradingMode,
+  private def isNotOutOfBuyingWindow(currentLocalTime: LocalDateTime,
                                      finInstrument: FinInstrument,
                                      tradingExchangeMap: Map[String, TradingExchange]): Boolean =
+    tradingExchangeMap.get(finInstrument.exchange).exists(exchange => {
+      exchange.windowType == TradingExchangeWindowType.Always ||
+        isNotOutOfBuyingWindow(currentLocalTime = currentLocalTime, exchange = exchange)
+    })
+
+  def isNotOutOfBuyingWindow(currentLocalTime: LocalDateTime,
+                             tradingMode: TradingMode,
+                             finInstrument: FinInstrument,
+                             tradingExchangeMap: Map[String, TradingExchange]): Boolean =
     tradingMode == TradingMode.IntraDay &&
-      isNotOutOfBuyingWindow(finInstrument = finInstrument, tradingExchangeMap = tradingExchangeMap)
+      isNotOutOfBuyingWindow(currentLocalTime=currentLocalTime,
+        finInstrument = finInstrument,
+        tradingExchangeMap = tradingExchangeMap)
 
 

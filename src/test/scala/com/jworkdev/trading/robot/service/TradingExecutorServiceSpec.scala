@@ -5,6 +5,7 @@ import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
 import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy}
 import com.jworkdev.trading.robot.data.strategy.macd.{MACDMarketDataStrategyRequest, MACDMarketDataStrategyResponse}
 import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest, MarketDataStrategyRequestFactory, MarketDataStrategyResponse}
+import com.jworkdev.trading.robot.domain.TradingExchangeWindowType.BusinessDaysWeek
 import com.jworkdev.trading.robot.domain.{FinInstrument, FinInstrumentType, Position, TradingExchange, TradingStrategy, TradingStrategyType}
 import com.jworkdev.trading.robot.market.data.SnapshotInterval.OneMinute
 import com.jworkdev.trading.robot.market.data.{MarketDataProvider, StockPrice}
@@ -14,18 +15,22 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 import zio.*
 import zio.test.{test, *}
 
-import java.time.{Instant, LocalTime}
+import java.time.{Instant, LocalDateTime, LocalTime, ZoneId}
 import java.time.temporal.ChronoUnit
 import scala.util.{Failure, Success}
+import com.jworkdev.trading.robot.time.LocalDateTimeExtensions.toZonedDateTime
 
 object TradingExecutorServiceSpec extends ZIOSpecDefault:
+
+  private val localDateTime = LocalDateTime.of(2024,7,30,10,0)
   private val exchangeMap = Map(
     "NASDAQ" -> TradingExchange(
       id = "NASDAQ",
       name = "NASDAQ",
-      openingTime = LocalTime.now().minus(1, ChronoUnit.HOURS),
-      closingTime = LocalTime.now().plus(2, ChronoUnit.HOURS),
-      timezone = "America/New_York"
+      openingTime = Some(localDateTime.toLocalTime.minus(1, ChronoUnit.HOURS)),
+      closingTime = Some(localDateTime.toLocalTime.plus(2, ChronoUnit.HOURS)),
+      timezone = Some("America/New_York"),
+      windowType = BusinessDaysWeek
     )
   )
   val balancePerFinInst = 1000
@@ -72,7 +77,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
-            tradingMode = TradingMode.IntraDay
+            tradingMode = TradingMode.IntraDay,
+            currentLocalTime = localDateTime
           )
         )
       yield assertTrue(orders.isEmpty)
@@ -117,7 +123,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
-            tradingMode = TradingMode.IntraDay
+            tradingMode = TradingMode.IntraDay,
+            currentLocalTime = localDateTime
           )
         )
       yield assertTrue(orders.isEmpty)
@@ -168,7 +175,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
-            tradingMode = TradingMode.IntraDay
+            tradingMode = TradingMode.IntraDay,
+            currentLocalTime = localDateTime
           )
         )
       yield assertTrue(
@@ -215,9 +223,10 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
         "NASDAQ" -> TradingExchange(
           id = "NASDAQ",
           name = "NASDAQ",
-          openingTime = LocalTime.now().minus(2, ChronoUnit.HOURS),
-          closingTime = LocalTime.now().minus(1, ChronoUnit.HOURS),
-          timezone = "America/New_York"
+          openingTime = Some(LocalTime.now().minus(2, ChronoUnit.HOURS)),
+          closingTime = Some(LocalTime.now().minus(1, ChronoUnit.HOURS)),
+          timezone = Some("America/New_York"),
+          windowType = BusinessDaysWeek
         )
       )
       for
@@ -230,7 +239,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             exchangeMap = offExchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
-            tradingMode = TradingMode.IntraDay
+            tradingMode = TradingMode.IntraDay,
+            currentLocalTime = localDateTime
           )
         )
       yield assertTrue(
@@ -260,7 +270,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             high = 2,
             low = 1,
             volume = 10,
-            snapshotTime = Instant.now().minus(1, ChronoUnit.DAYS))
+            snapshotTime = localDateTime.minus(1, ChronoUnit.DAYS).toZonedDateTime.toInstant)
         )
       )
       val signals = macdMarketDataStrategyResponse.prices.map(price =>
@@ -289,7 +299,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
-            tradingMode = TradingMode.IntraDay
+            tradingMode = TradingMode.IntraDay,
+            currentLocalTime = localDateTime
           )
         )
       yield assertTrue(
@@ -362,7 +373,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
-            tradingMode = TradingMode.IntraDay
+            tradingMode = TradingMode.IntraDay,
+            currentLocalTime = localDateTime
           )
         )
       yield assertTrue(
@@ -421,7 +433,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
-            tradingMode = TradingMode.IntraDay
+            tradingMode = TradingMode.IntraDay,
+            currentLocalTime = localDateTime
           )
         )
       yield assertTrue(
@@ -487,7 +500,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
-            tradingMode = TradingMode.IntraDay
+            tradingMode = TradingMode.IntraDay,
+            currentLocalTime = localDateTime
           )
         )
       yield assertTrue(
@@ -546,7 +560,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
-            tradingMode = TradingMode.IntraDay
+            tradingMode = TradingMode.IntraDay,
+            currentLocalTime = localDateTime
           )
         )
       yield assertTrue(
@@ -605,7 +620,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
-            tradingMode = TradingMode.IntraDay
+            tradingMode = TradingMode.IntraDay,
+            currentLocalTime = localDateTime
           )
         )
       yield assertTrue(orders.isEmpty)
