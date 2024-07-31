@@ -1,7 +1,7 @@
 package com.jworkdev.trading.robot.data.strategy.opengap
 
 import com.jworkdev.trading.robot.data.strategy.MarketDataStrategyProvider
-import com.jworkdev.trading.robot.market.data.{MarketDataProvider, SnapshotInterval}
+import com.jworkdev.trading.robot.market.data.{MarketDataProvider, SnapshotInterval, StockPrice}
 
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -17,6 +17,44 @@ class OpenGapMarketDataStrategyProvider(private val marketDataProvider: MarketDa
     .ofPattern(DATE_PATTERN_FORMAT)
     .withZone(ZoneId.systemDefault())
 
+  private def buildPriceMap(prices: List[StockPrice]): Map[String, List[StockPrice]] =
+    prices
+      .map(price => (price, dateFormatter.format(price.snapshotTime)))
+      .groupBy(_._2).map {
+        case (key, value) => (key, value.map(_._1))
+      }
+
+  private def calculateAverageVolume(prices: List[StockPrice]): Double =
+    if prices.nonEmpty then
+      prices.map(_.volume).sum / prices.size
+    else 0.0
+
+  private def getLastPrice(prices: List[StockPrice]): Option[StockPrice] =
+    prices.sortBy(_.snapshotTime).lastOption
+
+  private def getFirstPrice(prices: List[StockPrice]): Option[StockPrice] =
+    prices.sortBy(_.snapshotTime).headOption
+
+  private def buildSignalInputs(priceMap: Map[String, List[StockPrice]]): List[OpenGapSignalInput] =
+    priceMap.keys.toList.sorted
+      .sliding(2)
+      .map { case Seq(previous, current) =>
+        (previous, current)
+      }
+      .flatMap { case (previous: String, current: String) =>
+        val avgVol = calculateAverageVolume(prices = priceMap(current))
+        for
+          closingPrice <- getLastPrice(prices = priceMap(previous)).map(_.close)
+          openingPrice <- getFirstPrice(prices = priceMap(current)).map(_.open)
+          currentPrices <- priceMap.get(current).map(_.sortBy(_.snapshotTime))
+        yield OpenGapSignalInput(
+          closingPrice = closingPrice,
+          openingPrice = openingPrice,
+          volumeAvg = avgVol,
+          currentPrices = currentPrices
+        )
+      }.toList
+
   override def provide(
       request: OpenGapMarketDataStrategyRequest
   ): Try[OpenGapMarketDataStrategyResponse] =
@@ -27,32 +65,12 @@ class OpenGapMarketDataStrategyProvider(private val marketDataProvider: MarketDa
         daysRange = request.signalCount + 1
       )
       .map { prices =>
-        val priceMap = prices
-          .map(price => (price, dateFormatter.format(price.snapshotTime)))
-          .groupBy(_._2).map {
-            case (key,value) => (key, value.map(_._1))
-          }
-        val res = priceMap.keys.toList.sorted
-          .sliding(2)
-          .map { case Seq(previous, current) =>
-            (previous, current)
-          }
-          .flatMap { case (previous: String, current: String) =>
-            val avgVol =
-              if priceMap(current).nonEmpty then priceMap(current).map(_.volume).sum / priceMap(current).size
-              else 0
-            for
-              closingPrice <- priceMap(previous).lastOption.map(_.close)
-              openingPrice <- priceMap(current).headOption.map(_.open)
-              currentPrices <- priceMap.get(current)
-            yield OpenGapSignalInput(
-              closingPrice = closingPrice,
-              openingPrice = openingPrice,
-              volumeAvg = avgVol,
-              currentPrices = currentPrices
-            )
-          }
-        OpenGapMarketDataStrategyResponse(signalInputs = res.toList)
+        val priceMap = buildPriceMap(prices = prices)
+        val signalInputs =
+          if(priceMap.nonEmpty && priceMap.size>1)
+            buildSignalInputs(priceMap = priceMap)
+          else List.empty
+        OpenGapMarketDataStrategyResponse(signalInputs = signalInputs)
       }
 
 object OpenGapMarketDataStrategyProvider:
