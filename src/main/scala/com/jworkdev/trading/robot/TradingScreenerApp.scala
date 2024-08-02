@@ -48,7 +48,7 @@ object TradingScreenerApp extends zio.ZIOAppDefault:
         finInstrumentService <- ZIO.service[FinInstrumentService]
         stockScreeningService <- ZIO.service[StockScreeningService]
         finInstruments <- finInstrumentService.findWithoutVolatility()
-        _ <- Console.printLine(s"Saving ${finInstruments.size} finInstruments ...")
+        _ <- Console.printLine(s"Updating ${finInstruments.size} finInstruments ...")
         volatilityMap <- stockScreeningService.calculateVolatility(finInstruments = finInstruments)
         - <- finInstrumentService.updateVolatility(volatilityMap = volatilityMap)
       yield finInstruments.isEmpty

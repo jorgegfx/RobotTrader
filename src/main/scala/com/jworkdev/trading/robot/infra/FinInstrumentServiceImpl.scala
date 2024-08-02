@@ -107,7 +107,7 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
              creation_date,
              last_update,
              active
-             FROM fin_instrument WHERE volatility is null and last_update is null LIMIT 200"""
+             FROM fin_instrument WHERE (volatility is null and last_update is null) or (last_update  < date_add(now(), interval -2 week) and active='YES' ) LIMIT 200"""
       .query[FinInstrumentDB]
       .to[List]
       .map(_.map(_.toDomain))
