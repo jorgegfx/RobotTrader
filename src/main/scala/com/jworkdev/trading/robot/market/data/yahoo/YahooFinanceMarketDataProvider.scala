@@ -6,22 +6,34 @@ import com.jworkdev.trading.robot.market
 import com.jworkdev.trading.robot.market.data.{MarketDataProvider, SnapshotFrequency, SnapshotInterval, StockPrice}
 import com.jworkdev.trading.robot.market.data
 import com.typesafe.scalalogging.Logger
+import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.util.EntityUtils
 
 import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset}
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success, Try, Using}
 
 class YahooFinanceMarketDataProvider extends MarketDataProvider:
 
   import scala.jdk.CollectionConverters.*
 
   val baseUrl = "https://query1.finance.yahoo.com/v8/finance/chart"
-  val client: CloseableHttpClient = HttpClients.createDefault()
   val mapper: ObjectMapper = new ObjectMapper()
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     .registerModule(DefaultScalaModule)
+
+  // Define timeout values in milliseconds
+  private val connectionTimeout = 5000
+  private val socketTimeout = 5000
+  private val requestTimeout = 5000
+
+  // Create a RequestConfig with the timeout settings
+  private val requestConfig = RequestConfig.custom()
+    .setConnectTimeout(connectionTimeout)
+    .setSocketTimeout(socketTimeout)
+    .setConnectionRequestTimeout(requestTimeout)
+    .build()
 
   private val logger = Logger(
     classOf[YahooFinanceMarketDataProvider]
@@ -29,26 +41,28 @@ class YahooFinanceMarketDataProvider extends MarketDataProvider:
 
   private def fetchResponse(symbol: String): Try[Double] =
     val url = s"$baseUrl/$symbol"
-    val request = new HttpGet(url)
-    val response = client.execute(request)
-    val responseCode = response.getStatusLine.getStatusCode
-    if responseCode != 200 then
-      Failure(new IllegalStateException(s"Invalid response $responseCode"))
-    else
-      val entity = response.getEntity
-      val responseString = EntityUtils.toString(entity)
-      Try(mapper.readTree(responseString)).map(json =>
-        for
-          chart <- Option(json.get("chart"))
-          result <- Option(chart.get("result")).map(_.elements()).flatMap(_.asScala.toList.headOption)
-          meta <- Option(result.get("meta"))
-          regularMarketPrice <- Option(meta.get("regularMarketPrice")).map(_.asDouble())
-        yield regularMarketPrice
-      ) flatMap {
-        case Some(value) => Success(value)
-        case None => Failure(new IllegalStateException("No Price found!"))
-      }
-
+    Using(HttpClients.custom().setDefaultRequestConfig(requestConfig).build()){ httpClient =>
+      val request = new HttpGet(url)
+      Using(httpClient.execute(request)){ response=>
+        val responseCode = response.getStatusLine.getStatusCode
+        if responseCode != 200 then
+          Failure(new IllegalStateException(s"Invalid response $responseCode"))
+        else
+          val entity = response.getEntity
+          val responseString = EntityUtils.toString(entity)
+          Try(mapper.readTree(responseString)).map(json =>
+            for
+              chart <- Option(json.get("chart"))
+              result <- Option(chart.get("result")).map(_.elements()).flatMap(_.asScala.toList.headOption)
+              meta <- Option(result.get("meta"))
+              regularMarketPrice <- Option(meta.get("regularMarketPrice")).map(_.asDouble())
+            yield regularMarketPrice
+          ) flatMap {
+            case Some(value) => Success(value)
+            case None => Failure(new IllegalStateException("No Price found!"))
+          }
+      }.flatten
+    }.flatten
 
   override def getCurrentQuote(symbol: String): Try[Double] =
     fetchResponse(symbol = symbol)

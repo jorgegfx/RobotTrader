@@ -62,11 +62,11 @@ class MovingAverageSignalFinderTest extends AnyFlatSpec:
     }
 
   it should "Have signals" in {
-    val movingAverageSignalFinder = MovingAverageSignalFinder()
+    val movingAverageSignalFinder = MovingAverageSignalFinder(shortTermPeriod = 10, 100)
     val start = Instant.now.minus(14, ChronoUnit.DAYS)
     val prices = List(100, 152, 115, 151, 170, 100, 120, 180, 160, 162)
     val stockPrices: List[StockPrice] = generateSinusoidalSeries(
-      numberOfDays = 100,
+      numberOfDays = 300,
       amplitude = 100,
       frequency = 10,
       phase = 10
@@ -75,5 +75,5 @@ class MovingAverageSignalFinderTest extends AnyFlatSpec:
       MovingAverageRequest(stockPrices = stockPrices)
     )
     assert(signals.isEmpty === false)
-    assert(signals.size === 2)
+    assert(signals.size === 25)
   }

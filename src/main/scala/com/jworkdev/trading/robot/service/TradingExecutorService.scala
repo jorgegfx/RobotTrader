@@ -99,7 +99,7 @@ class TradingExecutorServiceImpl(
       orders <- currentPriceRes.fold(
         ex =>
           logger.error("Error fetching current price!", ex)
-          ZIO.succeed(None)
+          ZIO.none
         ,
         currentPrice =>
           execute(

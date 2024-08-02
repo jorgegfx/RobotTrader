@@ -62,4 +62,5 @@ class MovingAverageSignalFinder(
       ).flatten.toList
 
 object MovingAverageSignalFinder:
-  def apply(): MovingAverageSignalFinder = new MovingAverageSignalFinder(50, 200)
+  def apply(shortTermPeriod: Int = 50,longTermPeriod: Int = 200): MovingAverageSignalFinder =
+    new MovingAverageSignalFinder(shortTermPeriod = shortTermPeriod, longTermPeriod = longTermPeriod)
