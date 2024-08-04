@@ -1,5 +1,5 @@
 package com.jworkdev.trading.robot.data.signals
-
+//TODO find better name
 trait SignalFinderStrategy:
   def findSignals(signalFinderRequest: SignalFinderRequest): List[Signal]
 

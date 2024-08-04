@@ -1,9 +1,8 @@
 package com.jworkdev.trading.robot.service
 
 import com.jworkdev.trading.robot.Order
-import com.jworkdev.trading.robot.OrderType.{Buy, Sell}
 import com.jworkdev.trading.robot.config.{StrategyConfigurations, TradingMode}
-import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy, SignalType}
+import com.jworkdev.trading.robot.data.signals.SignalFinderStrategy
 import com.jworkdev.trading.robot.data.strategy
 import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest, MarketDataStrategyRequestFactory, MarketDataStrategyResponse}
 import com.jworkdev.trading.robot.domain.*
@@ -11,10 +10,8 @@ import com.jworkdev.trading.robot.market.data.MarketDataProvider
 import com.typesafe.scalalogging.Logger
 import zio.{Task, ZIO}
 
-import java.time.temporal.ChronoUnit
-import java.time.{Instant, LocalDateTime}
-import scala.util.{Failure, Success, Try}
-import com.jworkdev.trading.robot.time.InstantExtensions.isToday
+import java.time.LocalDateTime
+import scala.util.Try
 
 case class TradingExecutorRequest(
     balancePerFinInst: Double,
@@ -40,7 +37,7 @@ class TradingExecutorServiceImpl(
     signalFinderStrategy: SignalFinderStrategy
 ) extends TradingExecutorService:
   private val logger = Logger(classOf[TradingExecutorServiceImpl])
-
+  private val orderFactory: OrderFactory = OrderFactory(signalFinderStrategy = signalFinderStrategy)
 
   override def execute(
       request: TradingExecutorRequest
@@ -106,7 +103,11 @@ class TradingExecutorServiceImpl(
             balancePerFinInst = balancePerFinInst,
             finInstrument = finInstrument,
             tradingStrategy = tradingStrategy,
-            openPositions = openPositions,
+            openPosition = findOpenPositionForSymbol(
+              symbol = finInstrument.symbol,
+              tradingStrategy = tradingStrategy,
+              openPositions = openPositions
+            ),
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             tradingMode = tradingMode,
@@ -118,11 +119,21 @@ class TradingExecutorServiceImpl(
       )
     yield orders
 
+  private def findOpenPositionForSymbol(
+      symbol: String,
+      tradingStrategy: TradingStrategy,
+      openPositions: List[Position]
+  ): Option[Position] =
+    openPositions.find(position =>
+      symbol == position.symbol &&
+        tradingStrategy.`type` == position.tradingStrategyType
+    )
+
   private def execute(
       balancePerFinInst: Double,
       finInstrument: FinInstrument,
       tradingStrategy: TradingStrategy,
-      openPositions: List[Position],
+      openPosition: Option[Position],
       exchangeMap: Map[String, TradingExchange],
       strategyConfigurations: StrategyConfigurations,
       tradingMode: TradingMode,
@@ -131,158 +142,23 @@ class TradingExecutorServiceImpl(
       currentLocalTime: LocalDateTime,
       marketDataStrategyResponse: Try[MarketDataStrategyResponse]
   ): Task[Option[Order]] =
-    logger.info(s"Trading on  $finInstrument")
-    val openPosition = openPositions.find(position =>
-      finInstrument.symbol == position.symbol &&
-        tradingStrategy.`type` == position.tradingStrategyType
-    )
-    val res = marketDataStrategyResponse match
-      case Failure(exception) =>
-        logger.error("Error getting strategy market data!", exception)
-        openPosition.flatMap(position =>
-          executeStopLoss(
-            finInstrument = finInstrument,
-            position = position,
-            currentPrice = currentPrice,
-            stopLossPercentage = stopLossPercentage,
-            tradingStrategy = tradingStrategy
-          )
-        )
-      case Success(marketDataResponse) =>
-        val signals =
-          signalFinderStrategy.findSignals(signalFinderRequest = marketDataResponse.buildSignalFinderRequest())
-        signals.lastOption match
-          case Some(lastSignal) =>
-            logger.info(s"Last Signal: $lastSignal")
-            openPosition match
-              case Some(position) =>
-                // Trying to make a Sell
-                executeSellSignal(
-                  signal = lastSignal,
-                  finInstrument = finInstrument,
-                  tradingStrategy = tradingStrategy,
-                  position = position,
-                  stopLossPercentage = stopLossPercentage,
-                  currentPrice = currentPrice
-                )
-              case None =>
-                // Trying to make a Buy
-                executeBuySignal(
-                  signal = lastSignal,
-                  finInstrument = finInstrument,
-                  tradingMode = tradingMode,
-                  tradingStrategy = tradingStrategy,
-                  balancePerFinInst = balancePerFinInst,
-                  currentPrice = currentPrice,
-                  exchangeMap = exchangeMap,
-                  currentLocalTime = currentLocalTime
-                )
-          case None =>
-            logger.info(s"No Last Signal found!")
-            openPosition.flatMap(position =>
-              executeStopLoss(
-                finInstrument = finInstrument,
-                position = position,
-                currentPrice = currentPrice,
-                stopLossPercentage = stopLossPercentage,
-                tradingStrategy = tradingStrategy
-              )
-            )
-    ZIO.succeed(res)
-
-  private def executeBuySignal(
-      signal: Signal,
-      finInstrument: FinInstrument,
-      tradingStrategy: TradingStrategy,
-      exchangeMap: Map[String, TradingExchange],
-      tradingMode: TradingMode,
-      balancePerFinInst: Double,
-      currentPrice: Double,
-      currentLocalTime: LocalDateTime
-  ): Option[Order] =
-    if signal.`type` == SignalType.Buy then
-      if signal.date.isToday() &&
-        TradingWindowValidator.isNotOutOfBuyingWindow(currentLocalTime = currentLocalTime,
-          tradingMode = tradingMode,
+    ZIO.attempt(
+      orderFactory.create(orderRequest =
+        OrderRequest(
+          balancePerFinInst = balancePerFinInst,
           finInstrument = finInstrument,
-          tradingExchangeMap = exchangeMap) then
-        val numberOfShares = (balancePerFinInst / currentPrice).toLong
-        val order =
-          Order(
-            `type` = Buy,
-            symbol = finInstrument.symbol,
-            dateTime = Instant.now(),
-            shares = numberOfShares,
-            price = currentPrice,
-            tradingStrategyType = tradingStrategy.`type`
-          )
-        logger.info(s"Creating Buy Order: $order")
-        Some(order)
-      else
-        logger.info(s"Is closing IntraDay signal = $signal, " +
-          s"tradingMode = $tradingMode, " +
-          s"finInstrument = $finInstrument, tradingExchangeMap = $exchangeMap")
-        None
-    else
-      logger.info(s"No Buy Signal")
-      None
-
-  private def executeSellSignal(
-      signal: Signal,
-      finInstrument: FinInstrument,
-      tradingStrategy: TradingStrategy,
-      position: Position,
-      stopLossPercentage: Int,
-      currentPrice: Double
-  ): Option[Order] =
-    if signal.`type` == SignalType.Sell then
-      val order =
-        Order(
-          `type` = Sell,
-          symbol = finInstrument.symbol,
-          dateTime = Instant.now(),
-          shares = position.numberOfShares,
-          price = currentPrice,
-          positionId = Some(position.id),
-          tradingStrategyType = tradingStrategy.`type`
-        )
-      logger.info(s"Creating Sell Order: $order")
-      Some(order)
-    else
-      logger.info(s"No Sell Signal")
-      executeStopLoss(
-        finInstrument = finInstrument,
-        position = position,
-        currentPrice = currentPrice,
-        stopLossPercentage = stopLossPercentage,
-        tradingStrategy = tradingStrategy
-      )
-
-  private def executeStopLoss(
-      finInstrument: FinInstrument,
-      position: Position,
-      currentPrice: Double,
-      stopLossPercentage: Int,
-      tradingStrategy: TradingStrategy
-  ): Option[Order] =
-    if position.shouldExitForStopLoss(
-        currentPricePerShare = currentPrice,
-        stopLossPercentage = stopLossPercentage
-      )
-    then
-      logger.info(s"Stop Loss for Position : ${position.id}!")
-      Some(
-        Order(
-          `type` = Sell,
-          symbol = finInstrument.symbol,
-          dateTime = Instant.now(),
-          shares = position.numberOfShares,
-          price = currentPrice,
-          positionId = Some(position.id),
-          tradingStrategyType = tradingStrategy.`type`
+          tradingStrategy = tradingStrategy,
+          openPosition = openPosition,
+          exchangeMap = exchangeMap,
+          strategyConfigurations = strategyConfigurations,
+          tradingMode = tradingMode,
+          stopLossPercentage = stopLossPercentage,
+          tradingPrice = currentPrice,
+          tradingTime = currentLocalTime,
+          marketDataStrategyResponse = marketDataStrategyResponse
         )
       )
-    else None
+    )
 
 object TradingExecutorService:
   def apply(): TradingExecutorService = new TradingExecutorServiceImpl(
@@ -291,35 +167,3 @@ object TradingExecutorService:
     MarketDataStrategyRequestFactory(),
     SignalFinderStrategy()
   )
-
-object TradingWindowValidator:
-  private val limitHoursBeforeCloseDay = 1
-
-  private def isNotOutOfBuyingWindow(currentLocalTime: LocalDateTime,
-                                     exchange: TradingExchange): Boolean =
-    val res = for
-      limitClosingTime <- exchange.currentCloseWindow(currentDateTime = currentLocalTime).
-        map(_.minus(limitHoursBeforeCloseDay, ChronoUnit.HOURS))
-      currentOpenWindow <- exchange.currentOpenWindow(currentDateTime = currentLocalTime)
-    yield currentLocalTime.isBefore(limitClosingTime) &&
-      currentLocalTime.isAfter(currentOpenWindow)
-    res.getOrElse(false) && exchange.isTradingExchangeDay(currentLocalTime = currentLocalTime)
-
-  private def isNotOutOfBuyingWindow(currentLocalTime: LocalDateTime,
-                                     finInstrument: FinInstrument,
-                                     tradingExchangeMap: Map[String, TradingExchange]): Boolean =
-    tradingExchangeMap.get(finInstrument.exchange).exists(exchange => {
-      exchange.windowType == TradingExchangeWindowType.Always ||
-        isNotOutOfBuyingWindow(currentLocalTime = currentLocalTime, exchange = exchange)
-    })
-
-  def isNotOutOfBuyingWindow(currentLocalTime: LocalDateTime,
-                             tradingMode: TradingMode,
-                             finInstrument: FinInstrument,
-                             tradingExchangeMap: Map[String, TradingExchange]): Boolean =
-    tradingMode == TradingMode.IntraDay &&
-      isNotOutOfBuyingWindow(currentLocalTime=currentLocalTime,
-        finInstrument = finInstrument,
-        tradingExchangeMap = tradingExchangeMap)
-
-

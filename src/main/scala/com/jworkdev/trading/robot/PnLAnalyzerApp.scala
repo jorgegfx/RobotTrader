@@ -14,12 +14,12 @@ object PnLAnalyzerApp extends App:
   private val marketDataStrategyRequestFactory = MarketDataStrategyRequestFactory()
   private val marketDataStrategyProvider = MarketDataStrategyProvider()
   private val signalFinderStrategy = SignalFinderStrategy()
-  val initialCash = 100000.0
+  val initialCash = 1000.0
   val cfg = StrategyConfigurations(
     macd = Some(MACDStrategyConfiguration(snapshotInterval = OneMinute)),
     openGap = Some(OpenGapStrategyConfiguration(signalCount = 15))
   )
-  val tests  = List(("NVDA",MACD),("NVDA",OpenGap))
+  val tests  = List(("BFI",MACD),("BFI",OpenGap))
   tests.foreach{ case (symbol: String, tradingStrategyType: TradingStrategyType) =>
     executeStrategy(symbol = symbol, tradingStrategyType = tradingStrategyType, strategyConfigurations = cfg) match
       case Failure(exception) => exception.printStackTrace()
