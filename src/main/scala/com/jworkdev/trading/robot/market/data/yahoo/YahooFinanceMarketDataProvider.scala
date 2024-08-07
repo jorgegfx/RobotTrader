@@ -64,7 +64,7 @@ class YahooFinanceMarketDataProvider extends MarketDataProvider:
       }.flatten
     }.flatten
 
-  override def getCurrentQuote(symbol: String): Try[Double] =
+  override def getCurrentMarketPriceQuote(symbol: String): Try[Double] =
     fetchResponse(symbol = symbol)
 
   override def getIntradayQuotes(

@@ -66,7 +66,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(List.empty)
-      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
+      when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
@@ -112,7 +112,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(List.empty)
-      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Failure(new IllegalStateException("Some Error")))
+      when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Failure(new IllegalStateException("Some Error")))
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
@@ -164,7 +164,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(signals)
-      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
+      when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
@@ -218,7 +218,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(signals)
-      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
+      when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
       val offExchangeMap = Map(
         "NASDAQ" -> TradingExchange(
           id = "NASDAQ",
@@ -288,7 +288,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(signals)
-      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
+      when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
@@ -350,7 +350,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(signals)
-      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Success(200.toDouble))
+      when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(200.toDouble))
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
@@ -410,7 +410,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(List.empty)
-      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
+      when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
@@ -477,7 +477,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(signals)
-      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
+      when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
@@ -537,7 +537,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(List.empty)
-      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
+      when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
@@ -597,7 +597,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           macdMarketDataStrategyResponse.buildSignalFinderRequest()
         )
       ).thenReturn(List.empty)
-      when(marketDataProvider.getCurrentQuote(symbol = symbol)).thenReturn(Success(98.toDouble))
+      when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(98.toDouble))
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(

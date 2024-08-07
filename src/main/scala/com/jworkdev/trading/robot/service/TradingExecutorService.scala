@@ -78,7 +78,7 @@ class TradingExecutorServiceImpl(
   ): Task[Option[Order]] =
     for
       _ <- ZIO.logInfo(s"Executing ${finInstrument.symbol} ...")
-      currentPriceFiber <- ZIO.attempt(marketDataProvider.getCurrentQuote(symbol = finInstrument.symbol)).fork
+      currentPriceFiber <- ZIO.attempt(marketDataProvider.getCurrentMarketPriceQuote(symbol = finInstrument.symbol)).fork
       marketDataStrategyResponseFiber <- ZIO
         .attempt(
           marketDataStrategyRequestFactory

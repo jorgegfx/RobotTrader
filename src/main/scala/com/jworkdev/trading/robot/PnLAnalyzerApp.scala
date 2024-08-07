@@ -5,6 +5,7 @@ import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy}
 import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequestFactory}
 import com.jworkdev.trading.robot.domain.TradingStrategyType
 import com.jworkdev.trading.robot.domain.TradingStrategyType.{MACD, OpenGap}
+import com.jworkdev.trading.robot.market.data.MarketDataProvider
 import com.jworkdev.trading.robot.market.data.SnapshotInterval.OneMinute
 import com.jworkdev.trading.robot.pnl.{PnLAnalysis, PnLAnalyzer}
 
@@ -13,13 +14,17 @@ object PnLAnalyzerApp extends App:
   private val pnLAnalyzer = PnLAnalyzer()
   private val marketDataStrategyRequestFactory = MarketDataStrategyRequestFactory()
   private val marketDataStrategyProvider = MarketDataStrategyProvider()
+  private val marketDataProvider = MarketDataProvider()
   private val signalFinderStrategy = SignalFinderStrategy()
+  private val sampleCount = 15
+  private val symbol = "BFI"
   val initialCash = 1000.0
   val cfg = StrategyConfigurations(
     macd = Some(MACDStrategyConfiguration(snapshotInterval = OneMinute)),
-    openGap = Some(OpenGapStrategyConfiguration(signalCount = 15))
+    openGap = Some(OpenGapStrategyConfiguration(signalCount = sampleCount))
   )
-  val tests  = List(("BFI",MACD),("BFI",OpenGap))
+  val tests  = List((symbol,MACD),(symbol,OpenGap))
+  
   tests.foreach{ case (symbol: String, tradingStrategyType: TradingStrategyType) =>
     executeStrategy(symbol = symbol, tradingStrategyType = tradingStrategyType, strategyConfigurations = cfg) match
       case Failure(exception) => exception.printStackTrace()

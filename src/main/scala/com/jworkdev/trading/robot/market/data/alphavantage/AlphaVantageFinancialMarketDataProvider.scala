@@ -87,7 +87,7 @@ class AlphaVantageFinancialMarketDataProvider extends MarketDataProvider:
     fetchResponse(url = url)
   }
 
-  override def getCurrentQuote(symbol: String): Try[Double] = ???
+  override def getCurrentMarketPriceQuote(symbol: String): Try[Double] = ???
 
   override def getIntradayQuotesDaysRange(symbol: String, interval: SnapshotInterval, daysRange: Int): Try[List[StockPrice]] = ???
   

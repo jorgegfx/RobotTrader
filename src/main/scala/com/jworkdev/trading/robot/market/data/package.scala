@@ -26,7 +26,7 @@ package object data:
     case Daily, Weekly, Monthly
 
   trait MarketDataProvider:
-    def getCurrentQuote(symbol: String): Try[Double]
+    def getCurrentMarketPriceQuote(symbol: String): Try[Double]
 
     def getIntradayQuotes(
         symbol: String,
