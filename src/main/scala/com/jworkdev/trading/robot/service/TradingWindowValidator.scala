@@ -9,29 +9,29 @@ import java.time.temporal.ChronoUnit
 object TradingWindowValidator:
   private val limitHoursBeforeCloseDay = 1
 
-  def isNotOutOfBuyingWindow(currentLocalTime: LocalDateTime,
+  def isNotOutOfBuyingWindow(tradingDateTime: LocalDateTime,
                              tradingMode: TradingMode,
                              finInstrument: FinInstrument,
                              tradingExchangeMap: Map[String, TradingExchange]): Boolean =
-    tradingMode == TradingMode.IntraDay &&
-      isNotOutOfBuyingWindow(currentLocalTime=currentLocalTime,
+    (tradingMode == TradingMode.IntraDay &&
+      isNotOutOfBuyingWindow(tradingDateTime=tradingDateTime,
         finInstrument = finInstrument,
-        tradingExchangeMap = tradingExchangeMap)
+        tradingExchangeMap = tradingExchangeMap)) || (tradingMode == TradingMode.Swing)
 
-  private def isNotOutOfBuyingWindow(currentLocalTime: LocalDateTime,
+  private def isNotOutOfBuyingWindow(tradingDateTime: LocalDateTime,
                                      finInstrument: FinInstrument,
                                      tradingExchangeMap: Map[String, TradingExchange]): Boolean =
     tradingExchangeMap.get(finInstrument.exchange).exists(exchange => {
       exchange.windowType == TradingExchangeWindowType.Always ||
-        isNotOutOfBuyingWindow(currentLocalTime = currentLocalTime, exchange = exchange)
+        isNotOutOfBuyingWindow(tradingDateTime = tradingDateTime, exchange = exchange)
     })
 
-  private def isNotOutOfBuyingWindow(currentLocalTime: LocalDateTime,
+  private def isNotOutOfBuyingWindow(tradingDateTime: LocalDateTime,
                                      exchange: TradingExchange): Boolean =
     val res = for
-      limitClosingTime <- exchange.currentCloseWindow(currentDateTime = currentLocalTime).
+      limitClosingTime <- exchange.closeWindow(tradingDateTime = tradingDateTime).
         map(_.minus(limitHoursBeforeCloseDay, ChronoUnit.HOURS))
-      currentOpenWindow <- exchange.currentOpenWindow(currentDateTime = currentLocalTime)
-    yield currentLocalTime.isBefore(limitClosingTime) &&
-      currentLocalTime.isAfter(currentOpenWindow)
-    res.getOrElse(false) && exchange.isTradingExchangeDay(currentLocalTime = currentLocalTime)
+      currentOpenWindow <- exchange.openWindow(tradingDateTime = tradingDateTime)
+    yield tradingDateTime.isBefore(limitClosingTime) &&
+      tradingDateTime.isAfter(currentOpenWindow)
+    res.getOrElse(false) && exchange.isTradingExchangeDay(tradingDateTime = tradingDateTime)

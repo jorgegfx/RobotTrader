@@ -30,7 +30,7 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
   )
   test("is Always") {
     val res = TradingWindowValidator.
-      isNotOutOfBuyingWindow(currentLocalTime = LocalDateTime.now(),
+      isNotOutOfBuyingWindow(tradingDateTime = LocalDateTime.now(),
         tradingMode = IntraDay, finInstrument = FinInstrument(
           symbol = "BTH",
           name = "BitCoin",
@@ -52,7 +52,7 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
     val localDate =  LocalDate.of(2024,7,27)
     val localDateTime = LocalDateTime.of(localDate,localTime)
     val res = TradingWindowValidator.
-      isNotOutOfBuyingWindow(currentLocalTime = localDateTime,
+      isNotOutOfBuyingWindow(tradingDateTime = localDateTime,
         tradingMode = IntraDay, finInstrument = FinInstrument(
           symbol = "NVDA",
           name = "Nvidia",
@@ -74,7 +74,7 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
     val localDate = LocalDate.of(2024, 7, 24)
     val localDateTime = LocalDateTime.of(localDate, localTime)
     val res = TradingWindowValidator.
-      isNotOutOfBuyingWindow(currentLocalTime = localDateTime,
+      isNotOutOfBuyingWindow(tradingDateTime = localDateTime,
         tradingMode = IntraDay, finInstrument = FinInstrument(
           symbol = "NVDA",
           name = "Nvidia",
@@ -96,7 +96,7 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
     val localDate = LocalDate.of(2024, 7, 24)
     val localDateTime = LocalDateTime.of(localDate, localTime)
     val res = TradingWindowValidator.
-      isNotOutOfBuyingWindow(currentLocalTime = localDateTime,
+      isNotOutOfBuyingWindow(tradingDateTime = localDateTime,
         tradingMode = IntraDay, finInstrument = FinInstrument(
           symbol = "NVDA",
           name = "Nvidia",
@@ -118,7 +118,7 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
     val localDate = LocalDate.of(2024, 7, 24)
     val localDateTime = LocalDateTime.of(localDate, localTime)
     val res = TradingWindowValidator.
-      isNotOutOfBuyingWindow(currentLocalTime = localDateTime,
+      isNotOutOfBuyingWindow(tradingDateTime = localDateTime,
         tradingMode = IntraDay, finInstrument = FinInstrument(
           symbol = "NVDA",
           name = "Nvidia",

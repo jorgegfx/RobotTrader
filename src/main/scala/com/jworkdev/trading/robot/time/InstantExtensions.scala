@@ -9,6 +9,13 @@ object InstantExtensions:
       val currentDate = LocalDate.now(zoneId)
       instantDate == currentDate
 
+    def isSameDay(zoneId: ZoneId = ZoneId.systemDefault(),localDateTime: LocalDateTime): Boolean =
+      val instantDate = instant.atZone(zoneId).toLocalDate
+      localDateTime.toLocalDate.equals(instantDate)
+      
+    def toLocalDateTime(zoneId: ZoneId = ZoneId.systemDefault()): LocalDateTime =
+      instant.atZone(zoneId).toLocalDateTime
+
 object LocalDateTimeExtensions:
   extension(localDateTime: LocalDateTime)
     def toZonedDateTime: ZonedDateTime =

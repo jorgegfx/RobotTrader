@@ -78,7 +78,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
             tradingMode = TradingMode.IntraDay,
-            currentLocalTime = localDateTime
+            tradingDateTime = localDateTime
           )
         )
       yield assertTrue(orders.isEmpty)
@@ -124,7 +124,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
             tradingMode = TradingMode.IntraDay,
-            currentLocalTime = localDateTime
+            tradingDateTime = localDateTime
           )
         )
       yield assertTrue(orders.isEmpty)
@@ -176,7 +176,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
             tradingMode = TradingMode.IntraDay,
-            currentLocalTime = localDateTime
+            tradingDateTime = localDateTime
           )
         )
       yield assertTrue(
@@ -240,7 +240,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
             tradingMode = TradingMode.IntraDay,
-            currentLocalTime = localDateTime
+            tradingDateTime = localDateTime
           )
         )
       yield assertTrue(
@@ -300,7 +300,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
             tradingMode = TradingMode.IntraDay,
-            currentLocalTime = localDateTime
+            tradingDateTime = localDateTime
           )
         )
       yield assertTrue(
@@ -374,7 +374,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
             tradingMode = TradingMode.IntraDay,
-            currentLocalTime = localDateTime
+            tradingDateTime = localDateTime
           )
         )
       yield assertTrue(
@@ -434,7 +434,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
             tradingMode = TradingMode.IntraDay,
-            currentLocalTime = localDateTime
+            tradingDateTime = localDateTime
           )
         )
       yield assertTrue(
@@ -501,7 +501,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
             tradingMode = TradingMode.IntraDay,
-            currentLocalTime = localDateTime
+            tradingDateTime = localDateTime
           )
         )
       yield assertTrue(
@@ -561,7 +561,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
             tradingMode = TradingMode.IntraDay,
-            currentLocalTime = localDateTime
+            tradingDateTime = localDateTime
           )
         )
       yield assertTrue(
@@ -621,7 +621,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
             tradingMode = TradingMode.IntraDay,
-            currentLocalTime = localDateTime
+            tradingDateTime = localDateTime
           )
         )
       yield assertTrue(orders.isEmpty)

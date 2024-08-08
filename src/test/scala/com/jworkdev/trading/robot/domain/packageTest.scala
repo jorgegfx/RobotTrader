@@ -18,7 +18,7 @@ class packageTest extends AnyFlatSpec:
       timezone = Some("America/New_York"),
       windowType = BusinessDaysWeek
     )
-    val currentCloseWindowOpt = tradingExchange.currentCloseWindow(currentDateTime = now)
+    val currentCloseWindowOpt = tradingExchange.closeWindow(tradingDateTime = now)
     assert(currentCloseWindowOpt.isDefined)
     val currentCloseWindow = currentCloseWindowOpt.get
     assert(now.isBefore(currentCloseWindow))

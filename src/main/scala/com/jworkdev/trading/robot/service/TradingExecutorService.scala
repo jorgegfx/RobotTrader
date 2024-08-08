@@ -4,7 +4,12 @@ import com.jworkdev.trading.robot.Order
 import com.jworkdev.trading.robot.config.{StrategyConfigurations, TradingMode}
 import com.jworkdev.trading.robot.data.signals.SignalFinderStrategy
 import com.jworkdev.trading.robot.data.strategy
-import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest, MarketDataStrategyRequestFactory, MarketDataStrategyResponse}
+import com.jworkdev.trading.robot.data.strategy.{
+  MarketDataStrategyProvider,
+  MarketDataStrategyRequest,
+  MarketDataStrategyRequestFactory,
+  MarketDataStrategyResponse
+}
 import com.jworkdev.trading.robot.domain.*
 import com.jworkdev.trading.robot.market.data.MarketDataProvider
 import com.typesafe.scalalogging.Logger
@@ -22,7 +27,7 @@ case class TradingExecutorRequest(
     strategyConfigurations: StrategyConfigurations,
     stopLossPercentage: Int,
     tradingMode: TradingMode,
-    currentLocalTime: LocalDateTime
+    tradingDateTime: LocalDateTime
 )
 
 trait TradingExecutorService:
@@ -59,7 +64,7 @@ class TradingExecutorServiceImpl(
           strategyConfigurations = request.strategyConfigurations,
           stopLossPercentage = request.stopLossPercentage,
           tradingMode = request.tradingMode,
-          currentLocalTime = request.currentLocalTime
+          currentLocalTime = request.tradingDateTime
         ).fork
       }
       results <- ZIO.foreach(fibers)(_.join)
@@ -78,7 +83,9 @@ class TradingExecutorServiceImpl(
   ): Task[Option[Order]] =
     for
       _ <- ZIO.logInfo(s"Executing ${finInstrument.symbol} ...")
-      currentPriceFiber <- ZIO.attempt(marketDataProvider.getCurrentMarketPriceQuote(symbol = finInstrument.symbol)).fork
+      currentPriceFiber <- ZIO
+        .attempt(marketDataProvider.getCurrentMarketPriceQuote(symbol = finInstrument.symbol))
+        .fork
       marketDataStrategyResponseFiber <- ZIO
         .attempt(
           marketDataStrategyRequestFactory

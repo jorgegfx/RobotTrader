@@ -9,7 +9,8 @@ import java.time.{Instant, LocalDateTime}
 import scala.util.{Failure, Success, Try}
 import com.jworkdev.trading.robot.Order
 import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy, SignalType}
-import com.jworkdev.trading.robot.time.InstantExtensions.isToday
+import com.jworkdev.trading.robot.time.InstantExtensions.isSameDay
+import com.jworkdev.trading.robot.time.LocalDateTimeExtensions.toZonedDateTime
 import com.typesafe.scalalogging.Logger
 case class OrderRequest(
                          balancePerFinInst: Double,
@@ -97,11 +98,11 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
                                 tradingMode: TradingMode,
                                 balancePerFinInst: Double,
                                 currentPrice: Double,
-                                currentLocalTime: LocalDateTime
+                                tradingDateTime: LocalDateTime
                               ): Option[Order] =
     if signal.`type` == SignalType.Buy then
-      if signal.date.isToday() &&
-        TradingWindowValidator.isNotOutOfBuyingWindow(currentLocalTime = currentLocalTime,
+      if signal.date.isSameDay(localDateTime = tradingDateTime) &&
+        TradingWindowValidator.isNotOutOfBuyingWindow(tradingDateTime = tradingDateTime,
           tradingMode = tradingMode,
           finInstrument = finInstrument,
           tradingExchangeMap = exchangeMap) then
@@ -110,7 +111,7 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
           Order(
             `type` = Buy,
             symbol = finInstrument.symbol,
-            dateTime = Instant.now(),
+            dateTime = tradingDateTime.toZonedDateTime.toInstant,
             shares = numberOfShares,
             price = currentPrice,
             tradingStrategyType = tradingStrategy.`type`
@@ -150,7 +151,7 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
             balancePerFinInst = orderRequest.balancePerFinInst,
             currentPrice = orderRequest.tradingPrice,
             exchangeMap = orderRequest.exchangeMap,
-            currentLocalTime = orderRequest.tradingTime
+            tradingDateTime = orderRequest.tradingTime
           )
     case None =>
       logger.info(s"No Last Signal found!")

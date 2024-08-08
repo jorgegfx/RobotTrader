@@ -3,7 +3,7 @@ package com.jworkdev.trading.robot.data.strategy.opengap
 import com.jworkdev.trading.robot.data.strategy.MarketDataStrategyProvider
 import com.jworkdev.trading.robot.market.data.{MarketDataProvider, SnapshotInterval, StockPrice}
 import com.typesafe.scalalogging.Logger
-
+import com.jworkdev.trading.robot.time.InstantExtensions.toLocalDateTime
 import java.time.{LocalDate, LocalDateTime, ZoneId}
 import java.time.format.DateTimeFormatter
 import scala.util.Try
@@ -57,13 +57,7 @@ class OpenGapMarketDataStrategyProvider(private val marketDataProvider: MarketDa
         for
           closingPrice <- getLastPrice(prices = previousPrices).map(_.close)
           openingPrice <- getFirstPrice(prices = currentPrices).map(_.open)
-          tradingDateTime <- Try(LocalDate.parse(current, dateFormatter).atStartOfDay()).fold(
-            ex =>
-              logger.error("Error", ex)
-              None
-            ,
-            value => Some(value)
-          )
+          tradingDateTime <- currentPrices.lastOption.map(_.snapshotTime).map(_.toLocalDateTime())
         yield OpenGapSignalInput(
           tradingDateTime = tradingDateTime,
           closingPrice = closingPrice,

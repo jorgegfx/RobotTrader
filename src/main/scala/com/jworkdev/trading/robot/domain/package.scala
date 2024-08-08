@@ -61,28 +61,28 @@ package object domain:
   ):
     private val nonBusinessDays = Set(DayOfWeek.SUNDAY, DayOfWeek.SATURDAY)
 
-    private def createFromTime(currentDateTime: LocalDateTime, localTime: LocalTime, timezone: String): LocalDateTime =
+    private def createFromTime(tradingDateTime: LocalDateTime, localTime: LocalTime, timezone: String): LocalDateTime =
       val zoneId: ZoneId = ZoneId.of(timezone)
-      val localDateTime: LocalDateTime = LocalDateTime.of(currentDateTime.toLocalDate, localTime)
+      val localDateTime: LocalDateTime = LocalDateTime.of(tradingDateTime.toLocalDate, localTime)
       val zonedDateTime: ZonedDateTime = ZonedDateTime.of(localDateTime, zoneId)
       val localZoneId: ZoneId = ZoneId.systemDefault()
       val localZonedDateTime = zonedDateTime.withZoneSameInstant(localZoneId)
       localZonedDateTime.toLocalDateTime
 
-    def currentCloseWindow(currentDateTime: LocalDateTime): Option[LocalDateTime] =
+    def closeWindow(tradingDateTime: LocalDateTime): Option[LocalDateTime] =
       for
         timezone <- timezone
         closingTime <- closingTime
-      yield createFromTime(currentDateTime = currentDateTime, localTime = closingTime, timezone = timezone)
+      yield createFromTime(tradingDateTime = tradingDateTime, localTime = closingTime, timezone = timezone)
 
-    def currentOpenWindow(currentDateTime: LocalDateTime): Option[LocalDateTime] =
+    def openWindow(tradingDateTime: LocalDateTime): Option[LocalDateTime] =
       for
         timezone <- timezone
         openingTime <- openingTime
-      yield createFromTime(currentDateTime = currentDateTime, localTime = openingTime, timezone = timezone)
+      yield createFromTime(tradingDateTime = tradingDateTime, localTime = openingTime, timezone = timezone)
 
-    def isTradingExchangeDay(currentLocalTime: LocalDateTime): Boolean =
+    def isTradingExchangeDay(tradingDateTime: LocalDateTime): Boolean =
       windowType == TradingExchangeWindowType.Always ||
-        !nonBusinessDays.contains(currentLocalTime.getDayOfWeek)
+        !nonBusinessDays.contains(tradingDateTime.getDayOfWeek)
 
   case class Account(id: Long, name: String, balance: Double)

@@ -75,7 +75,7 @@ object TradingApp extends zio.ZIOAppDefault:
         strategyConfigurations = strategyCfgs,
         stopLossPercentage = stopLossPercentage,
         tradingMode = tradingMode,
-        currentLocalTime = LocalDateTime.now()
+        tradingDateTime = LocalDateTime.now()
       )
     )
     _ <- ZIO.logInfo(s"Orders created :$orders ...")
