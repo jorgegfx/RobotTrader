@@ -51,11 +51,12 @@ class OpenGapMarketDataStrategyProvider(private val marketDataProvider: MarketDa
         (previous, current)
       }
       .flatMap { case (previous: String, current: String) =>
-        val avgVol = calculateAverageVolume(prices = priceMap(current))
+        val currentPrices = priceMap(current).sortBy(_.snapshotTime)
+        val previousPrices = priceMap(previous).sortBy(_.snapshotTime)
+        val avgVol = calculateAverageVolume(prices = currentPrices)
         for
-          closingPrice <- getLastPrice(prices = priceMap(previous)).map(_.close)
-          openingPrice <- getFirstPrice(prices = priceMap(current)).map(_.open)
-          currentPrices <- priceMap.get(current).map(_.sortBy(_.snapshotTime))
+          closingPrice <- getLastPrice(prices = previousPrices).map(_.close)
+          openingPrice <- getFirstPrice(prices = currentPrices).map(_.open)
           tradingDateTime <- Try(LocalDate.parse(current, dateFormatter).atStartOfDay()).fold(
             ex =>
               logger.error("Error", ex)
