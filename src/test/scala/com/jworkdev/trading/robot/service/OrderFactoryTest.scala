@@ -81,7 +81,6 @@ class OrderFactoryTest extends AnyFunSuiteLike:
         tradingStrategy = TradingStrategy(`type` = tradingStrategyType, pnl = None),
         openPosition = None,
         exchangeMap = Map(exchangeName -> exchange),
-        strategyConfigurations = cfg,
         tradingMode = IntraDay,
         stopLossPercentage = stopLossPercentage,
         tradingPrice = tradingPrice,
@@ -116,7 +115,6 @@ class OrderFactoryTest extends AnyFunSuiteLike:
           tradingStrategyType = TradingStrategyType.MACD
         )),
         exchangeMap = Map(exchangeName -> exchange),
-        strategyConfigurations = cfg,
         tradingMode = IntraDay,
         stopLossPercentage = stopLossPercentage,
         tradingPrice = tradingPrice,

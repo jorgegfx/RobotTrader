@@ -157,7 +157,6 @@ class TradingExecutorServiceImpl(
           tradingStrategy = tradingStrategy,
           openPosition = openPosition,
           exchangeMap = exchangeMap,
-          strategyConfigurations = strategyConfigurations,
           tradingMode = tradingMode,
           stopLossPercentage = stopLossPercentage,
           tradingPrice = currentPrice,

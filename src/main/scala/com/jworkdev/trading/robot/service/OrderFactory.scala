@@ -18,7 +18,6 @@ case class OrderRequest(
                          tradingStrategy: TradingStrategy,
                          openPosition: Option[Position],
                          exchangeMap: Map[String, TradingExchange],
-                         strategyConfigurations: StrategyConfigurations,
                          tradingMode: TradingMode,
                          stopLossPercentage: Int,
                          tradingPrice: Double,

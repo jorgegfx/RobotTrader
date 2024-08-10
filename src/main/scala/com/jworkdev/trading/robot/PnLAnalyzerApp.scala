@@ -90,7 +90,6 @@ object PnLAnalyzerApp extends App:
         tradingStrategy = TradingStrategy(`type` = tradingStrategyType, pnl = None),
         openPosition = currentPosition,
         exchangeMap = Map(exchangeName -> exchange),
-        strategyConfigurations = cfg,
         tradingMode = IntraDay,
         stopLossPercentage = stopLossPercentage,
         tradingPrice = entry.tradingPrice,
