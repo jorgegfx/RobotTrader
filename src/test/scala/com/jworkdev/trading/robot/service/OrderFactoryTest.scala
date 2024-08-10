@@ -7,7 +7,7 @@ import com.jworkdev.trading.robot.data.strategy.opengap.{OpenGapMarketDataStrate
 import com.jworkdev.trading.robot.domain.FinInstrumentType.Stock
 import com.jworkdev.trading.robot.domain.TradingExchangeWindowType.BusinessDaysWeek
 import com.jworkdev.trading.robot.domain.TradingStrategyType.OpenGap
-import com.jworkdev.trading.robot.domain.{FinInstrument, TradingExchange, TradingStrategy}
+import com.jworkdev.trading.robot.domain.{FinInstrument, Position, TradingExchange, TradingStrategy, TradingStrategyType}
 import com.jworkdev.trading.robot.market.data.SnapshotInterval.OneMinute
 import com.jworkdev.trading.robot.market.data.StockPrice
 import com.jworkdev.trading.robot.time.LocalDateTimeExtensions.toZonedDateTime
@@ -15,6 +15,7 @@ import org.mockito.Mockito.when
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatestplus.mockito.MockitoSugar.mock
 
+import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDateTime, LocalTime}
 import scala.util.Success
 
@@ -89,5 +90,39 @@ class OrderFactoryTest extends AnyFunSuiteLike:
       )
     )
     assert(res.isEmpty)
+  }
 
+  test("testStopLoss") {
+    val tradingPrice = 70
+    val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0)
+    val marketDataStrategyResponse = OpenGapMarketDataStrategyResponse(signalInputs = List.empty)
+    val orderFactory = new OrderFactoryImpl(signalFinderStrategy = signalFinderStrategy)
+    when(signalFinderStrategy.findSignals(signalFinderRequest = marketDataStrategyResponse.buildSignalFinderRequest()))
+      .thenReturn(List.empty)
+    val res = orderFactory.create(orderRequest =
+      OrderRequest(
+        balancePerFinInst = 0.0,
+        finInstrument = finInstrument,
+        tradingStrategy = TradingStrategy(`type` = tradingStrategyType, pnl = None),
+        openPosition = Some(Position(
+          id = 1,
+          symbol = symbol,
+          numberOfShares = 2,
+          openPricePerShare = 100,
+          closePricePerShare = None,
+          openDate = tradingTime.minus(1, ChronoUnit.HOURS).toZonedDateTime.toInstant,
+          closeDate = None,
+          pnl = None,
+          tradingStrategyType = TradingStrategyType.MACD
+        )),
+        exchangeMap = Map(exchangeName -> exchange),
+        strategyConfigurations = cfg,
+        tradingMode = IntraDay,
+        stopLossPercentage = stopLossPercentage,
+        tradingPrice = tradingPrice,
+        tradingTime = tradingTime,
+        marketDataStrategyResponse = Success(marketDataStrategyResponse)
+      )
+    )
+    assert(res.isDefined)
   }
