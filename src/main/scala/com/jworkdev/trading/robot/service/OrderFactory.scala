@@ -107,17 +107,21 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
           finInstrument = finInstrument,
           tradingExchangeMap = exchangeMap) then
         val numberOfShares = (balancePerFinInst / currentPrice).toLong
-        val order =
-          Order(
-            `type` = Buy,
-            symbol = finInstrument.symbol,
-            dateTime = tradingDateTime.toZonedDateTime.toInstant,
-            shares = numberOfShares,
-            price = currentPrice,
-            tradingStrategyType = tradingStrategy.`type`
-          )
-        logger.info(s"Creating Buy Order: $order")
-        Some(order)
+        if(numberOfShares>0)
+          val order =
+            Order(
+              `type` = Buy,
+              symbol = finInstrument.symbol,
+              dateTime = tradingDateTime.toZonedDateTime.toInstant,
+              shares = numberOfShares,
+              price = currentPrice,
+              tradingStrategyType = tradingStrategy.`type`
+            )
+          logger.info(s"Creating Buy Order: $order")
+          Some(order)
+        else
+          logger.info("Not enough of cash to buy!")
+          None
       else
         logger.info(s"Is closing IntraDay signal = $signal, " +
           s"tradingMode = $tradingMode, " +
