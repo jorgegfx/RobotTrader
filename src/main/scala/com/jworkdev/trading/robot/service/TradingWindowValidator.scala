@@ -8,6 +8,19 @@ import java.time.temporal.ChronoUnit
 
 object TradingWindowValidator:
   private val limitHoursBeforeCloseDay = 1
+  private val minutesBeforeToCloseDay = 30
+
+  def shouldCloseDay(tradingDateTime: LocalDateTime,
+                     tradingMode: TradingMode,
+                     finInstrument: FinInstrument,
+                     tradingExchangeMap: Map[String, TradingExchange]): Boolean =
+    tradingMode == TradingMode.IntraDay && tradingExchangeMap.get(finInstrument.exchange).exists(exchange => {
+      val lastChanceToCloseTime = for
+        limitClosingTime <- exchange.closeWindow(tradingDateTime = tradingDateTime)
+          .map(_.minus(minutesBeforeToCloseDay, ChronoUnit.MINUTES))
+       yield limitClosingTime
+      lastChanceToCloseTime.exists(closeTime=>tradingDateTime.isAfter(closeTime))
+    })
 
   def isNotOutOfBuyingWindow(tradingDateTime: LocalDateTime,
                              tradingMode: TradingMode,

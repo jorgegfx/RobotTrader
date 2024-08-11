@@ -134,3 +134,47 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
         ))
     assert(res)
   }
+
+  test("before shouldCloseDay"):
+    val localTime = LocalTime.of(12, 10)
+    val localDate = LocalDate.of(2024, 7, 24)
+    val localDateTime = LocalDateTime.of(localDate, localTime)
+    val res = TradingWindowValidator.
+      shouldCloseDay(tradingDateTime = localDateTime,
+        tradingMode = IntraDay,
+        finInstrument = FinInstrument(
+          symbol = "NVDA",
+          name = "Nvidia",
+          `type` = FinInstrumentType.Stock,
+          exchange = "NASDAQ",
+          volatility = Some(10d),
+          creationDate = Instant.now(),
+          lastUpdate = None,
+          isActive = true
+        ),
+        tradingExchangeMap = Map(
+          "NASDAQ" -> nasdaqExchange
+        ))
+    assert(!res)
+
+  test("after shouldCloseDay"):
+    val localTime = LocalTime.of(15, 35)
+    val localDate = LocalDate.of(2024, 7, 24)
+    val localDateTime = LocalDateTime.of(localDate, localTime)
+    val res = TradingWindowValidator.
+      shouldCloseDay(tradingDateTime = localDateTime,
+        tradingMode = IntraDay,
+        finInstrument = FinInstrument(
+          symbol = "NVDA",
+          name = "Nvidia",
+          `type` = FinInstrumentType.Stock,
+          exchange = "NASDAQ",
+          volatility = Some(10d),
+          creationDate = Instant.now(),
+          lastUpdate = None,
+          isActive = true
+        ),
+        tradingExchangeMap = Map(
+          "NASDAQ" -> nasdaqExchange
+        ))
+    assert(res)

@@ -93,7 +93,7 @@ object PnLAnalyzerApp extends App:
         tradingMode = IntraDay,
         stopLossPercentage = stopLossPercentage,
         tradingPrice = entry.tradingPrice,
-        tradingTime = entry.tradingTime,
+        tradeDateTime = entry.tradingTime,
         marketDataStrategyResponse = entry.marketDataStrategyResponse))
       orderCount = orderCount + 1
       newOrder.map(order => createPosition(order = order, lastPosition = currentPosition))

@@ -160,7 +160,7 @@ class TradingExecutorServiceImpl(
           tradingMode = tradingMode,
           stopLossPercentage = stopLossPercentage,
           tradingPrice = currentPrice,
-          tradingTime = currentLocalTime,
+          tradeDateTime = currentLocalTime,
           marketDataStrategyResponse = marketDataStrategyResponse
         )
       )
