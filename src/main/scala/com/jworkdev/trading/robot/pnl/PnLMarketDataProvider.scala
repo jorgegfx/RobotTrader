@@ -3,7 +3,7 @@ package com.jworkdev.trading.robot.pnl
 import com.jworkdev.trading.robot.data.strategy.MarketDataStrategyResponse
 import com.jworkdev.trading.robot.domain.TradingStrategyType
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, LocalTime}
 import scala.util.Try
 
 case class MarketDataEntry(
@@ -12,16 +12,26 @@ case class MarketDataEntry(
     marketDataStrategyResponse: Try[MarketDataStrategyResponse]
 )
 trait PnLMarketDataProvider:
-  def provide(symbol: String, daysCount: Int, tradingStrategyType: TradingStrategyType): List[MarketDataEntry]
+  def provide(
+      symbol: String,
+      daysCount: Int,
+      exchangeCloseTime: LocalTime,
+      tradingStrategyType: TradingStrategyType
+  ): List[MarketDataEntry]
 
 class PnLMarketDataProviderImpl extends PnLMarketDataProvider:
   private val pnLMarketDataStrategyProviderMap = Map[TradingStrategyType, PnLMarketDataStrategyProvider](
     TradingStrategyType.OpenGap -> OpenGapPnLMarketDataStrategyProvider()
   )
-  def provide(symbol: String, daysCount: Int, tradingStrategyType: TradingStrategyType): List[MarketDataEntry] =
+  def provide(
+      symbol: String,
+      daysCount: Int,
+      exchangeCloseTime: LocalTime,
+      tradingStrategyType: TradingStrategyType
+  ): List[MarketDataEntry] =
     pnLMarketDataStrategyProviderMap
       .get(tradingStrategyType)
-      .map(_.provide(symbol = symbol, daysCount = daysCount))
+      .map(_.provide(symbol = symbol, daysCount = daysCount, exchangeCloseTime = exchangeCloseTime))
       .getOrElse(List.empty)
 
 object PnLMarketDataProvider:

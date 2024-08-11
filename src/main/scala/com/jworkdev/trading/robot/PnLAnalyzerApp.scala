@@ -5,10 +5,10 @@ import com.jworkdev.trading.robot.config.TradingMode.IntraDay
 import com.jworkdev.trading.robot.config.{MACDStrategyConfiguration, OpenGapStrategyConfiguration, StrategyConfigurations}
 import com.jworkdev.trading.robot.data.signals.SignalFinderStrategy
 import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequestFactory}
+import com.jworkdev.trading.robot.domain.*
 import com.jworkdev.trading.robot.domain.FinInstrumentType.Stock
 import com.jworkdev.trading.robot.domain.TradingExchangeWindowType.BusinessDaysWeek
 import com.jworkdev.trading.robot.domain.TradingStrategyType.OpenGap
-import com.jworkdev.trading.robot.domain.*
 import com.jworkdev.trading.robot.market.data.SnapshotInterval.OneMinute
 import com.jworkdev.trading.robot.pnl.{MarketDataEntry, PnLAnalysis, PnLAnalyzer, PnLMarketDataProvider}
 import com.jworkdev.trading.robot.service.{OrderFactory, OrderRequest}
@@ -17,14 +17,13 @@ import java.time.{Instant, LocalTime}
 import java.util
 object PnLAnalyzerApp extends App:
   val initialCash = 1000.0
-  var currentCash = initialCash
-  private val symbol = "BFI"
-  private val sampleCount = 15
   val cfg = StrategyConfigurations(
     macd = Some(MACDStrategyConfiguration(snapshotInterval = OneMinute)),
     openGap = Some(OpenGapStrategyConfiguration(signalCount = sampleCount))
   )
-  val tests = List((symbol, OpenGap))
+  private val symbol = "BFI"
+  private val tests = List((symbol, OpenGap))
+  private val sampleCount = 15
   private val pnLAnalyzer = PnLAnalyzer()
   private val marketDataStrategyRequestFactory = MarketDataStrategyRequestFactory()
   private val marketDataStrategyProvider = MarketDataStrategyProvider()
@@ -33,7 +32,6 @@ object PnLAnalyzerApp extends App:
   private val orderFactory = OrderFactory(signalFinderStrategy = SignalFinderStrategy())
   private val stopLossPercentage = 10
   private val positionStack: util.Deque[Position] = new util.LinkedList()
-  private var orderCount = 1
   private val exchangeName = "NASDAQ"
   private val exchange = TradingExchange(id = exchangeName,
     name = exchangeName,
@@ -49,38 +47,20 @@ object PnLAnalyzerApp extends App:
     creationDate = Instant.now(),
     lastUpdate = None,
     isActive = true)
+  var currentCash = initialCash
+  private var orderCount = 1
 
 
   tests.foreach { case (symbol: String, tradingStrategyType: TradingStrategyType) =>
     val entries =
-      pnLMarketDataProvider.provide(symbol = symbol, daysCount = sampleCount, tradingStrategyType = tradingStrategyType)
+      pnLMarketDataProvider.provide(symbol = symbol,
+        daysCount = sampleCount,
+        tradingStrategyType = tradingStrategyType,
+        exchangeCloseTime =  exchange.closingTime.get)
     val orders = executeStrategy(tradingStrategyType = tradingStrategyType, entries = entries)
     println("Orders Created ...")
     orders.foreach(println)
   }
-
-
-  private def createPosition(order: Order, lastPosition: Option[Position]): Position =
-    if(order.`type` == OrderType.Buy)
-      Position(id = orderCount,
-        symbol = symbol,
-        numberOfShares = order.shares,
-        openPricePerShare = order.price,
-        closePricePerShare = None,
-        openDate = order.dateTime,
-        closeDate = None,
-        pnl = None,
-        tradingStrategyType = order.tradingStrategyType)
-    else
-      lastPosition.map(position=>Position(id = orderCount,
-        symbol = symbol,
-        numberOfShares = order.shares,
-        openPricePerShare = position.openPricePerShare,
-        closePricePerShare = Some(order.price),
-        openDate = position.openDate,
-        closeDate = Some(order.dateTime),
-        pnl = Some((order.price - position.openPricePerShare) * order.shares),
-        tradingStrategyType = position.tradingStrategyType)).get
 
   private def executeStrategy(entries: List[MarketDataEntry],tradingStrategyType: TradingStrategyType): List[Order] =
     entries.flatMap(entry => {
@@ -108,6 +88,28 @@ object PnLAnalyzerApp extends App:
       })
       newOrder
     })
+
+  private def createPosition(order: Order, lastPosition: Option[Position]): Position =
+    if(order.`type` == OrderType.Buy)
+      Position(id = orderCount,
+        symbol = symbol,
+        numberOfShares = order.shares,
+        openPricePerShare = order.price,
+        closePricePerShare = None,
+        openDate = order.dateTime,
+        closeDate = None,
+        pnl = None,
+        tradingStrategyType = order.tradingStrategyType)
+    else
+      lastPosition.map(position=>Position(id = orderCount,
+        symbol = symbol,
+        numberOfShares = order.shares,
+        openPricePerShare = position.openPricePerShare,
+        closePricePerShare = Some(order.price),
+        openDate = position.openDate,
+        closeDate = Some(order.dateTime),
+        pnl = Some((order.price - position.openPricePerShare) * order.shares),
+        tradingStrategyType = position.tradingStrategyType)).get
 
   private def printPnlAnalysis(pnLAnalysis: PnLAnalysis): Unit =
     println(s"PNL: ${pnLAnalysis.pnl}")
