@@ -28,7 +28,7 @@ class OpenGapSignalFinderTest extends AnyFunSuiteLike:
                 high = 150,
                 low = 20,
                 volume = 100,
-                snapshotTime = LocalDateTime.of(2024, 8, 7, 9, 0).toZonedDateTime.toInstant
+                snapshotTime = LocalDateTime.of(2024, 8, 7, 9, 0).toZonedDateTime
               ),
               StockPrice(
                 symbol = symbol,
@@ -37,7 +37,7 @@ class OpenGapSignalFinderTest extends AnyFunSuiteLike:
                 high = 150,
                 low = 20,
                 volume = 100,
-                snapshotTime = LocalDateTime.of(2024, 8, 7, 9, 1).toZonedDateTime.toInstant
+                snapshotTime = LocalDateTime.of(2024, 8, 7, 9, 1).toZonedDateTime
               )
             )
           )
@@ -70,7 +70,7 @@ class OpenGapSignalFinderTest extends AnyFunSuiteLike:
                 high = 150,
                 low = 20,
                 volume = 100,
-                snapshotTime = LocalDateTime.of(2024, 8, 7, 9, 0).toZonedDateTime.toInstant
+                snapshotTime = LocalDateTime.of(2024, 8, 7, 9, 0).toZonedDateTime
               ),
               StockPrice(
                 symbol = symbol,
@@ -79,7 +79,7 @@ class OpenGapSignalFinderTest extends AnyFunSuiteLike:
                 high = 150,
                 low = 20,
                 volume = 100,
-                snapshotTime = LocalDateTime.of(2024, 8, 7, 9, 1).toZonedDateTime.toInstant
+                snapshotTime = LocalDateTime.of(2024, 8, 7, 9, 1).toZonedDateTime
               )
             )
           )
@@ -111,7 +111,7 @@ class OpenGapSignalFinderTest extends AnyFunSuiteLike:
                 high = 150,
                 low = 20,
                 volume = 100,
-                snapshotTime = LocalDateTime.of(2024, 8, 7, 9, 0).toZonedDateTime.toInstant
+                snapshotTime = LocalDateTime.of(2024, 8, 7, 9, 0).toZonedDateTime
               ),
               StockPrice(
                 symbol = symbol,
@@ -120,7 +120,7 @@ class OpenGapSignalFinderTest extends AnyFunSuiteLike:
                 high = 150,
                 low = 20,
                 volume = 100,
-                snapshotTime = LocalDateTime.of(2024, 8, 7, 9, 1).toZonedDateTime.toInstant
+                snapshotTime = LocalDateTime.of(2024, 8, 7, 9, 1).toZonedDateTime
               )
             )
           )

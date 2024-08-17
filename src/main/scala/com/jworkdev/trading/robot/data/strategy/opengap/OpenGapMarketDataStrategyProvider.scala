@@ -1,11 +1,12 @@
 package com.jworkdev.trading.robot.data.strategy.opengap
 
 import com.jworkdev.trading.robot.data.strategy.MarketDataStrategyProvider
+import com.jworkdev.trading.robot.domain.groupPricesByDate
 import com.jworkdev.trading.robot.market.data.{MarketDataProvider, SnapshotInterval, StockPrice}
-import com.typesafe.scalalogging.Logger
 import com.jworkdev.trading.robot.time.InstantExtensions.toLocalDateTime
-import java.time.{LocalDate, LocalDateTime, ZoneId}
-import java.time.format.DateTimeFormatter
+import com.typesafe.scalalogging.Logger
+
+import java.time.LocalDate
 import scala.util.Try
 
 class OpenGapMarketDataStrategyProvider(private val marketDataProvider: MarketDataProvider)
@@ -14,10 +15,13 @@ class OpenGapMarketDataStrategyProvider(private val marketDataProvider: MarketDa
       OpenGapMarketDataStrategyResponse
     ]:
   private val logger = Logger(classOf[OpenGapMarketDataStrategyProvider])
-  private val DATE_PATTERN_FORMAT = "yyyy-MM-dd"
-  private val dateFormatter = DateTimeFormatter
-    .ofPattern(DATE_PATTERN_FORMAT)
-    .withZone(ZoneId.systemDefault())
+
+  def buildFromPrices(prices: List[StockPrice]): OpenGapMarketDataStrategyResponse =
+    val priceMap = groupPricesByDate(prices = prices)
+    val signalInputs =
+      if priceMap.nonEmpty && priceMap.size > 1 then buildSignalInputs(priceMap = priceMap)
+      else List.empty
+    OpenGapMarketDataStrategyResponse(signalInputs = signalInputs)
 
   override def provide(
       request: OpenGapMarketDataStrategyRequest
@@ -28,29 +32,17 @@ class OpenGapMarketDataStrategyProvider(private val marketDataProvider: MarketDa
         interval = SnapshotInterval.SixtyMinutes,
         daysRange = request.signalCount + 1
       )
-      .map { prices =>
-        val priceMap = buildPriceMap(prices = prices)
-        val signalInputs =
-          if priceMap.nonEmpty && priceMap.size > 1 then buildSignalInputs(priceMap = priceMap)
-          else List.empty
-        OpenGapMarketDataStrategyResponse(signalInputs = signalInputs)
-      }
+      .map { this.buildFromPrices }
 
-  private def buildPriceMap(prices: List[StockPrice]): Map[String, List[StockPrice]] =
-    prices
-      .map(price => (price, dateFormatter.format(price.snapshotTime)))
-      .groupBy(_._2)
-      .map { case (key, value) =>
-        (key, value.map(_._1))
-      }
-
-  private def buildSignalInputs(priceMap: Map[String, List[StockPrice]]): List[OpenGapSignalInput] =
+  private def buildSignalInputs(priceMap: Map[LocalDate, List[StockPrice]]): List[OpenGapSignalInput] =
     priceMap.keys.toList.sorted
       .sliding(2)
-      .map { case Seq(previous, current) =>
-        (previous, current)
+      .flatMap {
+        case Seq(previous, current) =>
+          Some(previous, current)
+        case _ => None
       }
-      .flatMap { case (previous: String, current: String) =>
+      .flatMap { case (previous: LocalDate, current: LocalDate) =>
         val currentPrices = priceMap(current).sortBy(_.snapshotTime)
         val previousPrices = priceMap(previous).sortBy(_.snapshotTime)
         val avgVol = calculateAverageVolume(prices = currentPrices)

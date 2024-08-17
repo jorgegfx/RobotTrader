@@ -8,7 +8,7 @@ import com.jworkdev.trading.robot.market.data.{ExchangeDataProvider, MarketDataP
 import com.typesafe.scalalogging.Logger
 import zio.{Duration, Task, ZIO, ZLayer}
 
-import java.time.Instant
+import java.time.{Instant, ZonedDateTime}
 import scala.util.{Failure, Success, Try}
 
 trait StockScreeningService:
@@ -60,7 +60,7 @@ class StockScreeningServiceImpl(
       `type` = finInstrumentType,
       volatility = None,
       exchange = exchange,
-      creationDate = Instant.now(),
+      creationDate = ZonedDateTime.now(),
       lastUpdate = None,
       isActive = true
     )

@@ -6,11 +6,11 @@ import com.jworkdev.trading.robot.config.TradingMode
 import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy, SignalType}
 import com.jworkdev.trading.robot.data.strategy.MarketDataStrategyResponse
 import com.jworkdev.trading.robot.domain.{FinInstrument, Position, TradingExchange, TradingStrategy}
-import com.jworkdev.trading.robot.time.InstantExtensions.isSameDay
+import com.jworkdev.trading.robot.time.ZonedDateTimeExtensions.isSameDay
 import com.jworkdev.trading.robot.time.LocalDateTimeExtensions.toZonedDateTime
 import com.typesafe.scalalogging.Logger
 
-import java.time.{Instant, LocalDateTime}
+import java.time.{Instant, LocalDateTime, ZonedDateTime}
 import scala.util.{Failure, Success, Try}
 case class OrderRequest(
     balancePerFinInst: Double,
@@ -32,7 +32,7 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
   private val logger = Logger(classOf[OrderFactoryImpl])
 
   def create(orderRequest: OrderRequest): Option[Order] =
-    logger.info(s"Trading on  ${orderRequest.finInstrument}")
+    logger.info(s"Trading on  ${orderRequest.finInstrument.symbol} tradeDateTime:${orderRequest.tradeDateTime} ...")
     orderRequest.marketDataStrategyResponse match
       case Failure(exception) =>
         logger.error("Error getting strategy market data!", exception)
@@ -113,7 +113,7 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
         Order(
           `type` = Sell,
           symbol = finInstrument.symbol,
-          dateTime = Instant.now(),
+          dateTime = ZonedDateTime.now(),
           shares = position.numberOfShares,
           price = currentPrice,
           positionId = Some(position.id),
@@ -184,7 +184,7 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
         Order(
           `type` = Sell,
           symbol = finInstrument.symbol,
-          dateTime = Instant.now(),
+          dateTime = ZonedDateTime.now(),
           shares = position.numberOfShares,
           price = currentPrice,
           positionId = Some(position.id),
@@ -210,7 +210,7 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
         Order(
           `type` = Sell,
           symbol = finInstrument.symbol,
-          dateTime = Instant.now(),
+          dateTime = ZonedDateTime.now(),
           shares = position.numberOfShares,
           price = currentPrice,
           positionId = Some(position.id),
@@ -244,7 +244,7 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
             Order(
               `type` = Buy,
               symbol = finInstrument.symbol,
-              dateTime = tradingDateTime.toZonedDateTime.toInstant,
+              dateTime = tradingDateTime.toZonedDateTime,
               shares = numberOfShares,
               price = currentPrice,
               tradingStrategyType = tradingStrategy.`type`

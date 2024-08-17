@@ -13,15 +13,16 @@ import com.jworkdev.trading.robot.market.data.SnapshotInterval.OneMinute
 import com.jworkdev.trading.robot.pnl.{MarketDataEntry, PnLAnalysis, PnLAnalyzer, PnLMarketDataProvider}
 import com.jworkdev.trading.robot.service.{OrderFactory, OrderRequest}
 
-import java.time.{Instant, LocalTime}
+import java.time.{Instant, LocalTime, ZonedDateTime}
 import java.util
+
 object PnLAnalyzerApp extends App:
   val initialCash = 1000.0
   val cfg = StrategyConfigurations(
     macd = Some(MACDStrategyConfiguration(snapshotInterval = OneMinute)),
     openGap = Some(OpenGapStrategyConfiguration(signalCount = sampleCount))
   )
-  private val symbol = "BFI"
+  private val symbol = "NVDA"
   private val tests = List((symbol, OpenGap))
   private val sampleCount = 15
   private val pnLAnalyzer = PnLAnalyzer()
@@ -44,7 +45,7 @@ object PnLAnalyzerApp extends App:
     `type` = Stock,
     volatility = Some(1.0),
     exchange = exchangeName,
-    creationDate = Instant.now(),
+    creationDate = ZonedDateTime.now(),
     lastUpdate = None,
     isActive = true)
   var currentCash = initialCash

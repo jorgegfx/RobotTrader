@@ -3,6 +3,8 @@ package com.jworkdev.trading.robot.data
 import com.jworkdev.trading.robot.data.strategy.opengap.OpenGapSignalInput
 import com.jworkdev.trading.robot.market.data.StockPrice
 
+import java.time.ZonedDateTime
+
 package object signals {
 
   import java.time.Instant
@@ -10,7 +12,7 @@ package object signals {
   enum SignalType:
     case Buy, Sell
 
-  case class Signal(date: Instant, `type`: SignalType, stockPrice: StockPrice)
+  case class Signal(date: ZonedDateTime, `type`: SignalType, stockPrice: StockPrice)
 
   trait SignalFinder[RequestType] {
     def find(request: RequestType): List[Signal]

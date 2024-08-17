@@ -1,13 +1,17 @@
 package com.jworkdev.trading.robot.pnl
 
-import com.jworkdev.trading.robot.config.{OpenGapStrategyConfiguration, StrategyConfigurations}
 import com.jworkdev.trading.robot.data.signals
-import com.jworkdev.trading.robot.data.strategy.opengap.{OpenGapMarketDataStrategyResponse, OpenGapSignalInput}
+import com.jworkdev.trading.robot.data.signals.SignalFinderRequest
+import com.jworkdev.trading.robot.data.strategy.opengap.{
+  OpenGapMarketDataStrategyProvider,
+  OpenGapMarketDataStrategyResponse,
+  OpenGapSignalInput
+}
 import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequestFactory}
-import com.jworkdev.trading.robot.domain.TradingStrategyType.OpenGap
-import com.jworkdev.trading.robot.market.data.StockPrice
+import com.jworkdev.trading.robot.domain.groupPricesByDate
+import com.jworkdev.trading.robot.market.data.{MarketDataProvider, SnapshotInterval, StockPrice}
 
-import java.time.{LocalDateTime, LocalTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import scala.util.Success
 
 trait PnLMarketDataStrategyProvider:
@@ -16,23 +20,48 @@ trait PnLMarketDataStrategyProvider:
 class OpenGapPnLMarketDataStrategyProvider extends PnLMarketDataStrategyProvider:
   private val marketDataStrategyRequestFactory = MarketDataStrategyRequestFactory()
   private val marketDataStrategyProvider = MarketDataStrategyProvider()
+  private val marketDataProvider = MarketDataProvider()
+  private val openGapMarketDataStrategyProvider = new OpenGapMarketDataStrategyProvider(marketDataProvider)
 
   def provide(symbol: String, daysCount: Int, exchangeCloseTime: LocalTime): List[MarketDataEntry] =
-    marketDataStrategyRequestFactory
-      .createMarketDataStrategyRequest(
+    marketDataProvider
+      .getIntradayQuotesDaysRange(
         symbol = symbol,
-        tradingStrategyType = OpenGap,
-        strategyConfigurations =
-          StrategyConfigurations(macd = None, openGap = Some(OpenGapStrategyConfiguration(signalCount = daysCount)))
+        interval = SnapshotInterval.SixtyMinutes,
+        daysRange = daysCount + 1
       )
-      .flatMap(marketDataStrategyProvider.provide)
-      .map(_.buildSignalFinderRequest())
-      .map {
-        case signals.OpenGapRequest(signalInputs) =>
-          buildEntries(signalInputs = signalInputs, exchangeCloseTime = exchangeCloseTime)
-        case _ => List.empty
-      }
+      .map(groupPricesByDate)
+      .map(priceMap => provide(priceMap = priceMap, exchangeCloseTime = exchangeCloseTime))
       .getOrElse(List.empty)
+
+  def provide(priceMap: Map[LocalDate, List[StockPrice]], exchangeCloseTime: LocalTime): List[MarketDataEntry] =
+    val requests = priceMap.keys.toList.sorted
+      .sliding(2)
+      .flatMap {
+        case Seq(previous, current) =>
+          Some(previous, current)
+        case _ => None
+      }
+      .flatMap { case (previous, current) =>
+        val previousPrices = priceMap(previous).sortBy(_.snapshotTime)
+        val currentPrices = priceMap(current).sortBy(_.snapshotTime)
+        previousPrices.lastOption
+          .map(lastPrice => buildSignalRequests(lastPrice = lastPrice, currentPrices = currentPrices))
+          .getOrElse(List.empty)
+      }
+      .toList
+    requests.map {
+      case signals.OpenGapRequest(signalInputs) =>
+        buildEntries(signalInputs = signalInputs, exchangeCloseTime = exchangeCloseTime)
+      case _ => List.empty
+    }
+    List.empty
+
+  def buildSignalRequests(lastPrice: StockPrice, currentPrices: List[StockPrice]): List[SignalFinderRequest] =
+    currentPrices.zipWithIndex.map { case (currentPrice: StockPrice, index: Int) =>
+      val prices = List(lastPrice) ++ currentPrices.take(index + 1)
+      openGapMarketDataStrategyProvider.buildFromPrices(prices = prices).buildSignalFinderRequest()
+    }
 
   private def buildEntries(
       signalInputs: List[OpenGapSignalInput],
@@ -50,10 +79,10 @@ class OpenGapPnLMarketDataStrategyProvider extends PnLMarketDataStrategyProvider
           tradingTime = input.tradingDateTime,
           marketDataStrategyResponse = Success(OpenGapMarketDataStrategyResponse(signalInputs = List(signalInput)))
         )
-      }++List(
+      } ++ List(
         MarketDataEntry(
           tradingPrice = lastTradingPrice,
-          tradingTime = LocalDateTime.of(lastTradingTime.toLocalDate,exchangeCloseTime),
+          tradingTime = LocalDateTime.of(lastTradingTime.toLocalDate, exchangeCloseTime),
           marketDataStrategyResponse = Success(OpenGapMarketDataStrategyResponse(signalInputs = List.empty))
         )
       )

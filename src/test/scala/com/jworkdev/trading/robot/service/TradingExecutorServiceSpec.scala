@@ -15,7 +15,7 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 import zio.*
 import zio.test.{test, *}
 
-import java.time.{Instant, LocalDateTime, LocalTime, ZoneId}
+import java.time.{ZonedDateTime, LocalDateTime, LocalTime, ZoneId}
 import java.time.temporal.ChronoUnit
 import scala.util.{Failure, Success}
 import com.jworkdev.trading.robot.time.LocalDateTimeExtensions.toZonedDateTime
@@ -146,7 +146,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       val tradingStrategies = List(TradingStrategy(`type` = TradingStrategyType.MACD, pnl = None))
       val macdMarketDataStrategyResponse = MACDMarketDataStrategyResponse(prices =
         List(
-          StockPrice(symbol = symbol, open = 1, close = 2, high = 2, low = 1, volume = 10, snapshotTime = Instant.now())
+          StockPrice(symbol = symbol, open = 1, close = 2, high = 2, low = 1, volume = 10, snapshotTime = ZonedDateTime.now())
         )
       )
       val signals = macdMarketDataStrategyResponse.prices.map(price =>
@@ -200,7 +200,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       val tradingStrategies = List(TradingStrategy(`type` = TradingStrategyType.MACD, pnl = None))
       val macdMarketDataStrategyResponse = MACDMarketDataStrategyResponse(prices =
         List(
-          StockPrice(symbol = symbol, open = 1, close = 2, high = 2, low = 1, volume = 10, snapshotTime = Instant.now())
+          StockPrice(symbol = symbol, open = 1, close = 2, high = 2, low = 1, volume = 10, snapshotTime = ZonedDateTime.now())
         )
       )
       val signals = macdMarketDataStrategyResponse.prices.map(price =>
@@ -270,7 +270,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             high = 2,
             low = 1,
             volume = 10,
-            snapshotTime = localDateTime.minus(1, ChronoUnit.DAYS).toZonedDateTime.toInstant)
+            snapshotTime = localDateTime.minus(1, ChronoUnit.DAYS).toZonedDateTime)
         )
       )
       val signals = macdMarketDataStrategyResponse.prices.map(price =>
@@ -331,7 +331,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
             high = 250,
             low = 50,
             volume = 10,
-            snapshotTime = Instant.now()
+            snapshotTime = ZonedDateTime.now()
           )
         )
       )
@@ -364,7 +364,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
                 numberOfShares = 2,
                 openPricePerShare = 100,
                 closePricePerShare = None,
-                openDate = Instant.now().minus(1, ChronoUnit.HOURS),
+                openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
                 closeDate = None,
                 pnl = None,
                 tradingStrategyType = TradingStrategyType.MACD
@@ -424,7 +424,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
                 numberOfShares = 2,
                 openPricePerShare = 100,
                 closePricePerShare = None,
-                openDate = Instant.now().minus(1, ChronoUnit.HOURS),
+                openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
                 closeDate = None,
                 pnl = None,
                 tradingStrategyType = TradingStrategyType.MACD
@@ -459,7 +459,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       val tradingStrategies = List(TradingStrategy(`type` = TradingStrategyType.MACD, pnl = None))
       val macdMarketDataStrategyResponse = MACDMarketDataStrategyResponse(prices =
         List(
-          StockPrice(symbol = symbol, open = 1, close = 2, high = 2, low = 1, volume = 10, snapshotTime = Instant.now())
+          StockPrice(symbol = symbol, open = 1, close = 2, high = 2, low = 1, volume = 10, snapshotTime = ZonedDateTime.now())
         )
       )
       val signals = macdMarketDataStrategyResponse.prices.map(price =>
@@ -491,7 +491,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
                 numberOfShares = 2,
                 openPricePerShare = 100,
                 closePricePerShare = None,
-                openDate = Instant.now().minus(1, ChronoUnit.HOURS),
+                openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
                 closeDate = None,
                 pnl = None,
                 tradingStrategyType = TradingStrategyType.MACD
@@ -551,7 +551,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
                 numberOfShares = 2,
                 openPricePerShare = 100,
                 closePricePerShare = None,
-                openDate = Instant.now().minus(1, ChronoUnit.HOURS),
+                openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
                 closeDate = None,
                 pnl = None,
                 tradingStrategyType = TradingStrategyType.MACD
@@ -611,7 +611,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
                 numberOfShares = 2,
                 openPricePerShare = 100,
                 closePricePerShare = None,
-                openDate = Instant.now().minus(1, ChronoUnit.HOURS),
+                openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
                 closeDate = None,
                 pnl = None,
                 tradingStrategyType = TradingStrategyType.MACD
@@ -635,7 +635,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       `type` = FinInstrumentType.Stock,
       exchange = "NASDAQ",
       volatility = Some(10d),
-      creationDate = Instant.now(),
+      creationDate = ZonedDateTime.now(),
       lastUpdate = None,
       isActive = true
     )

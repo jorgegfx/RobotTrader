@@ -1,10 +1,20 @@
 package com.jworkdev.trading.robot
 
-import java.time.{DayOfWeek, LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset, ZonedDateTime}
+import com.jworkdev.trading.robot.market.data.StockPrice
 
+import java.time.{DayOfWeek, LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset, ZonedDateTime}
+import com.jworkdev.trading.robot.time.InstantExtensions.toLocalDateTime
 package object domain:
 
-  import java.time.Instant
+  def groupPricesByDate(prices: List[StockPrice]): Map[LocalDate, List[StockPrice]] =
+    prices
+      .map(price => (price, price.snapshotTime.toLocalDateTime().toLocalDate))
+      .groupBy(_._2)
+      .map { case (key, value) =>
+        (key, value.map(_._1))
+      }
+
+  import java.time.ZonedDateTime
 
   case class Position(
       id: Long,
@@ -12,8 +22,8 @@ package object domain:
       numberOfShares: Long,
       openPricePerShare: Double,
       closePricePerShare: Option[Double],
-      openDate: Instant,
-      closeDate: Option[Instant],
+      openDate: ZonedDateTime,
+      closeDate: Option[ZonedDateTime],
       pnl: Option[Double],
       tradingStrategyType: TradingStrategyType
   ):
@@ -39,8 +49,8 @@ package object domain:
       `type`: FinInstrumentType,
       volatility: Option[Double],
       exchange: String,
-      creationDate: Instant,
-      lastUpdate: Option[Instant],
+      creationDate: ZonedDateTime,
+      lastUpdate: Option[ZonedDateTime],
       isActive: Boolean
   )
 

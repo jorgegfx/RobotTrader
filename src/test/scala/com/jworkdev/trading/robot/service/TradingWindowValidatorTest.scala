@@ -5,7 +5,7 @@ import com.jworkdev.trading.robot.domain.TradingExchangeWindowType.{Always, Busi
 import com.jworkdev.trading.robot.domain.{FinInstrument, FinInstrumentType, TradingExchange}
 import org.scalatest.funsuite.AnyFunSuiteLike
 
-import java.time.{Instant, LocalDate, LocalDateTime, LocalTime}
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZonedDateTime}
 
 class TradingWindowValidatorTest extends AnyFunSuiteLike:
   private val localTime = LocalTime.of(8, 10)
@@ -37,7 +37,7 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
           `type` = FinInstrumentType.Stock,
           exchange = "CRYPTO",
           volatility = Some(10d),
-          creationDate = Instant.now(),
+          creationDate = ZonedDateTime.now(),
           lastUpdate = None,
           isActive = true
         ),
@@ -59,7 +59,7 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
           `type` = FinInstrumentType.Stock,
           exchange = "NASDAQ",
           volatility = Some(10d),
-          creationDate = Instant.now(),
+          creationDate = ZonedDateTime.now(),
           lastUpdate = None,
           isActive = true
         ),
@@ -81,7 +81,7 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
           `type` = FinInstrumentType.Stock,
           exchange = "NASDAQ",
           volatility = Some(10d),
-          creationDate = Instant.now(),
+          creationDate = ZonedDateTime.now(),
           lastUpdate = None,
           isActive = true
         ),
@@ -103,7 +103,7 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
           `type` = FinInstrumentType.Stock,
           exchange = "NASDAQ",
           volatility = Some(10d),
-          creationDate = Instant.now(),
+          creationDate = ZonedDateTime.now(),
           lastUpdate = None,
           isActive = true
         ),
@@ -125,7 +125,7 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
           `type` = FinInstrumentType.Stock,
           exchange = "NASDAQ",
           volatility = Some(10d),
-          creationDate = Instant.now(),
+          creationDate = ZonedDateTime.now(),
           lastUpdate = None,
           isActive = true
         ),
@@ -148,7 +148,7 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
           `type` = FinInstrumentType.Stock,
           exchange = "NASDAQ",
           volatility = Some(10d),
-          creationDate = Instant.now(),
+          creationDate = ZonedDateTime.now(),
           lastUpdate = None,
           isActive = true
         ),
@@ -170,7 +170,7 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
           `type` = FinInstrumentType.Stock,
           exchange = "NASDAQ",
           volatility = Some(10d),
-          creationDate = Instant.now(),
+          creationDate = ZonedDateTime.now(),
           lastUpdate = None,
           isActive = true
         ),

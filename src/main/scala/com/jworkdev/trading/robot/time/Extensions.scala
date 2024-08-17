@@ -20,3 +20,13 @@ object LocalDateTimeExtensions:
   extension(localDateTime: LocalDateTime)
     def toZonedDateTime: ZonedDateTime =
       localDateTime.atZone(ZoneId.systemDefault())
+
+    def isSameDay(other: LocalDateTime): Boolean =
+      localDateTime.toLocalDate.equals(other)
+
+
+object ZonedDateTimeExtensions:
+  extension(zonedDateTime: ZonedDateTime)
+    
+    def isSameDay(localDateTime: LocalDateTime): Boolean =
+      zonedDateTime.toLocalDate.equals(localDateTime)
