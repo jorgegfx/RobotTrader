@@ -29,4 +29,4 @@ object ZonedDateTimeExtensions:
   extension(zonedDateTime: ZonedDateTime)
     
     def isSameDay(localDateTime: LocalDateTime): Boolean =
-      zonedDateTime.toLocalDate.equals(localDateTime)
+      zonedDateTime.toLocalDate.equals(localDateTime.toLocalDate)

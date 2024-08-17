@@ -184,7 +184,7 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
         Order(
           `type` = Sell,
           symbol = finInstrument.symbol,
-          dateTime = ZonedDateTime.now(),
+          dateTime = tradeDateTime.toZonedDateTime,
           shares = position.numberOfShares,
           price = currentPrice,
           positionId = Some(position.id),

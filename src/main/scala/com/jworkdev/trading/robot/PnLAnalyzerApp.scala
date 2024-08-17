@@ -65,7 +65,7 @@ object PnLAnalyzerApp extends App:
 
   private def executeStrategy(entries: List[MarketDataEntry],tradingStrategyType: TradingStrategyType): List[Order] =
     entries.flatMap(entry => {
-      val currentPosition = if (positionStack.isEmpty) None else Some(positionStack.pop())
+      val currentPosition = if (positionStack.isEmpty) None else Some(positionStack.peek())
       val newOrder = orderFactory.create(orderRequest = OrderRequest(balancePerFinInst = currentCash,
         finInstrument = finInstrument,
         tradingStrategy = TradingStrategy(`type` = tradingStrategyType, pnl = None),
@@ -85,6 +85,7 @@ object PnLAnalyzerApp extends App:
           currentCash = currentCash - order.totalPrice
         }else{
           currentCash = currentCash + order.totalPrice
+          positionStack.pop()
         }
       })
       newOrder
