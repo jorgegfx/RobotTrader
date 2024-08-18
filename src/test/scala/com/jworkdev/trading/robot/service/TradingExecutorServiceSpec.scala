@@ -4,33 +4,21 @@ import com.jworkdev.trading.robot.config.{MACDStrategyConfiguration, StrategyCon
 import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
 import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy}
 import com.jworkdev.trading.robot.data.strategy.macd.{MACDMarketDataStrategyRequest, MACDMarketDataStrategyResponse}
-import com.jworkdev.trading.robot.data.strategy.{
-  MarketDataStrategyProvider,
-  MarketDataStrategyRequest,
-  MarketDataStrategyRequestFactory,
-  MarketDataStrategyResponse
-}
+import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyProvider, MarketDataStrategyRequest, MarketDataStrategyRequestFactory, MarketDataStrategyResponse}
 import com.jworkdev.trading.robot.domain.TradingExchangeWindowType.BusinessDaysWeek
-import com.jworkdev.trading.robot.domain.{
-  FinInstrument,
-  FinInstrumentType,
-  Position,
-  TradingExchange,
-  TradingStrategy,
-  TradingStrategyType
-}
+import com.jworkdev.trading.robot.domain.*
 import com.jworkdev.trading.robot.market.data.SnapshotInterval.OneMinute
 import com.jworkdev.trading.robot.market.data.{MarketDataProvider, StockPrice}
+import com.jworkdev.trading.robot.time.LocalDateTimeExtensions.toZonedDateTime
 import com.jworkdev.trading.robot.{Order, OrderType}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar.mock
 import zio.*
 import zio.test.{test, *}
 
-import java.time.{ZonedDateTime, LocalDateTime, LocalTime, ZoneId}
 import java.time.temporal.ChronoUnit
+import java.time.{LocalDateTime, LocalTime, ZonedDateTime}
 import scala.util.{Failure, Success}
-import com.jworkdev.trading.robot.time.LocalDateTimeExtensions.toZonedDateTime
 
 object TradingExecutorServiceSpec extends ZIOSpecDefault:
 
