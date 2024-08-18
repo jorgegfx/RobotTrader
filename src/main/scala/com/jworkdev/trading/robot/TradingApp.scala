@@ -11,7 +11,7 @@ import zio.*
 import zio.Console.*
 import zio.interop.catz.*
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZonedDateTime}
 
 object TradingApp extends zio.ZIOAppDefault:
   implicit val dbContext: DbContext =
@@ -75,7 +75,7 @@ object TradingApp extends zio.ZIOAppDefault:
         strategyConfigurations = strategyCfgs,
         stopLossPercentage = stopLossPercentage,
         tradingMode = tradingMode,
-        tradingDateTime = LocalDateTime.now()
+        tradingDateTime = ZonedDateTime.now()
       )
     )
     _ <- ZIO.logInfo(s"Orders created :$orders ...")

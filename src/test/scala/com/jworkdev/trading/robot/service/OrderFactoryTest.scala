@@ -50,7 +50,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
   )
   test("testCreateNoEnoughOfCash") {
     val tradingPrice = 100
-    val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0)
+    val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0).toZonedDateTime
     val signalInput = OpenGapSignalInput(
       tradingDateTime = tradingTime,
       closingPrice = 100,
@@ -61,7 +61,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
     val marketDataStrategyResponse = OpenGapMarketDataStrategyResponse(signalInputs = List(signalInput))
     val orderFactory = new OrderFactoryImpl(signalFinderStrategy = signalFinderStrategy)
     val signal = Signal(
-      date = tradingTime.toZonedDateTime,
+      date = tradingTime,
       `type` = SignalType.Buy,
       stockPrice = StockPrice(
         symbol = symbol,
@@ -70,7 +70,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
         high = 99,
         low = 90,
         volume = 100,
-        snapshotTime = tradingTime.toZonedDateTime
+        snapshotTime = tradingTime
       )
     )
     when(signalFinderStrategy.findSignals(signalFinderRequest = marketDataStrategyResponse.buildSignalFinderRequest()))
@@ -94,7 +94,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
 
   test("testExecuteBuy") {
     val tradingPrice = 100
-    val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0)
+    val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0).toZonedDateTime
     val stockPrice = StockPrice(
       symbol = symbol,
       open = 95,
@@ -102,7 +102,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
       high = 99,
       low = 90,
       volume = 100,
-      snapshotTime = tradingTime.toZonedDateTime
+      snapshotTime = tradingTime
     )
     val signalInput = OpenGapSignalInput(
       tradingDateTime = tradingTime,
@@ -114,7 +114,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
     val marketDataStrategyResponse = OpenGapMarketDataStrategyResponse(signalInputs = List(signalInput))
     val orderFactory = new OrderFactoryImpl(signalFinderStrategy = signalFinderStrategy)
     val signal = Signal(
-      date = tradingTime.toZonedDateTime,
+      date = tradingTime,
       `type` = SignalType.Buy,
       stockPrice = stockPrice
     )
@@ -140,7 +140,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
 
   test("testExecuteSell") {
     val tradingPrice = 100
-    val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0)
+    val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0).toZonedDateTime
     val stockPrice = StockPrice(
       symbol = symbol,
       open = 95,
@@ -148,7 +148,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
       high = 99,
       low = 90,
       volume = 100,
-      snapshotTime = tradingTime.toZonedDateTime
+      snapshotTime = tradingTime
     )
     val signalInput = OpenGapSignalInput(
       tradingDateTime = tradingTime,
@@ -160,7 +160,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
     val marketDataStrategyResponse = OpenGapMarketDataStrategyResponse(signalInputs = List(signalInput))
     val orderFactory = new OrderFactoryImpl(signalFinderStrategy = signalFinderStrategy)
     val signal = Signal(
-      date = tradingTime.toZonedDateTime,
+      date = tradingTime,
       `type` = SignalType.Sell,
       stockPrice = stockPrice
     )
@@ -177,7 +177,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
           numberOfShares = 2,
           openPricePerShare = 100,
           closePricePerShare = None,
-          openDate = tradingTime.minus(1, ChronoUnit.HOURS).toZonedDateTime,
+          openDate = tradingTime.minus(1, ChronoUnit.HOURS),
           closeDate = None,
           pnl = None,
           tradingStrategyType = TradingStrategyType.OpenGap
@@ -196,7 +196,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
 
   test("testStopLossWithNoSell") {
     val tradingPrice = 70
-    val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0)
+    val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0).toZonedDateTime
     val marketDataStrategyResponse = OpenGapMarketDataStrategyResponse(signalInputs = List.empty)
     val orderFactory = new OrderFactoryImpl(signalFinderStrategy = signalFinderStrategy)
     val stockPrice = StockPrice(
@@ -206,10 +206,10 @@ class OrderFactoryTest extends AnyFunSuiteLike:
       high = 99,
       low = 90,
       volume = 100,
-      snapshotTime = tradingTime.toZonedDateTime
+      snapshotTime = tradingTime
     )
     val signal = Signal(
-      date = tradingTime.toZonedDateTime,
+      date = tradingTime,
       `type` = SignalType.Buy,
       stockPrice = stockPrice
     )
@@ -226,7 +226,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
           numberOfShares = 2,
           openPricePerShare = 100,
           closePricePerShare = None,
-          openDate = tradingTime.minus(1, ChronoUnit.HOURS).toZonedDateTime,
+          openDate = tradingTime.minus(1, ChronoUnit.HOURS),
           closeDate = None,
           pnl = None,
           tradingStrategyType = TradingStrategyType.OpenGap
@@ -243,7 +243,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
   }
   test("testStopLoss") {
     val tradingPrice = 70
-    val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0)
+    val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0).toZonedDateTime
     val marketDataStrategyResponse = OpenGapMarketDataStrategyResponse(signalInputs = List.empty)
     val orderFactory = new OrderFactoryImpl(signalFinderStrategy = signalFinderStrategy)
     when(signalFinderStrategy.findSignals(signalFinderRequest = marketDataStrategyResponse.buildSignalFinderRequest()))
@@ -259,7 +259,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
           numberOfShares = 2,
           openPricePerShare = 100,
           closePricePerShare = None,
-          openDate = tradingTime.minus(1, ChronoUnit.HOURS).toZonedDateTime,
+          openDate = tradingTime.minus(1, ChronoUnit.HOURS),
           closeDate = None,
           pnl = None,
           tradingStrategyType = TradingStrategyType.OpenGap
@@ -276,7 +276,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
   }
   test("testStopLossOnError") {
     val tradingPrice = 70
-    val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0)
+    val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0).toZonedDateTime
     val orderFactory = new OrderFactoryImpl(signalFinderStrategy = signalFinderStrategy)
     val res = orderFactory.create(orderRequest =
       OrderRequest(
@@ -289,7 +289,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
           numberOfShares = 2,
           openPricePerShare = 100,
           closePricePerShare = None,
-          openDate = tradingTime.minus(1, ChronoUnit.HOURS).toZonedDateTime,
+          openDate = tradingTime.minus(1, ChronoUnit.HOURS),
           closeDate = None,
           pnl = None,
           tradingStrategyType = TradingStrategyType.OpenGap
@@ -306,7 +306,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
   }
   test("testCloseDay") {
     val tradingPrice = 110
-    val tradingTime = LocalDateTime.of(2024, 8, 9, 15, 35)
+    val tradingTime = LocalDateTime.of(2024, 8, 9, 15, 35).toZonedDateTime
     val marketDataStrategyResponse = OpenGapMarketDataStrategyResponse(signalInputs = List.empty)
     val orderFactory = new OrderFactoryImpl(signalFinderStrategy = signalFinderStrategy)
     when(signalFinderStrategy.findSignals(signalFinderRequest = marketDataStrategyResponse.buildSignalFinderRequest()))
@@ -322,7 +322,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
           numberOfShares = 2,
           openPricePerShare = 100,
           closePricePerShare = None,
-          openDate = tradingTime.minus(1, ChronoUnit.HOURS).toZonedDateTime,
+          openDate = tradingTime.minus(1, ChronoUnit.HOURS),
           closeDate = None,
           pnl = None,
           tradingStrategyType = TradingStrategyType.OpenGap
@@ -339,7 +339,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
   }
   test("testCloseDayAfter") {
     val tradingPrice = 110
-    val tradingTime = LocalDateTime.of(2024, 8, 9, 16, 1)
+    val tradingTime = LocalDateTime.of(2024, 8, 9, 16, 1).toZonedDateTime
     val marketDataStrategyResponse = OpenGapMarketDataStrategyResponse(signalInputs = List.empty)
     val orderFactory = new OrderFactoryImpl(signalFinderStrategy = signalFinderStrategy)
     when(signalFinderStrategy.findSignals(signalFinderRequest = marketDataStrategyResponse.buildSignalFinderRequest()))
@@ -355,7 +355,7 @@ class OrderFactoryTest extends AnyFunSuiteLike:
           numberOfShares = 2,
           openPricePerShare = 100,
           closePricePerShare = None,
-          openDate = tradingTime.minus(1, ChronoUnit.HOURS).toZonedDateTime,
+          openDate = tradingTime.minus(1, ChronoUnit.HOURS),
           closeDate = None,
           pnl = None,
           tradingStrategyType = TradingStrategyType.OpenGap

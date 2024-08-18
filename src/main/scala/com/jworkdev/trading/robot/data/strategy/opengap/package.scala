@@ -3,11 +3,11 @@ import com.jworkdev.trading.robot.data.signals
 import com.jworkdev.trading.robot.data.signals.OpenGapRequest
 import com.jworkdev.trading.robot.market.data.StockPrice
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZonedDateTime}
 
 package object opengap {
   case class OpenGapMarketDataStrategyRequest(symbol: String, signalCount: Int) extends MarketDataStrategyRequest
-  case class OpenGapSignalInput(tradingDateTime: LocalDateTime,
+  case class OpenGapSignalInput(tradingDateTime: ZonedDateTime,
                                 closingPrice: Double,
                                 openingPrice: Double,
                                 volumeAvg: Double,

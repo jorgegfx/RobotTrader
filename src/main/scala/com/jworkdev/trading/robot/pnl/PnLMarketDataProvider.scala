@@ -3,13 +3,13 @@ package com.jworkdev.trading.robot.pnl
 import com.jworkdev.trading.robot.data.strategy.MarketDataStrategyResponse
 import com.jworkdev.trading.robot.domain.TradingStrategyType
 
-import java.time.{LocalDateTime, LocalTime}
+import java.time.{LocalDateTime, LocalTime, ZonedDateTime}
 import scala.util.Try
 
 case class MarketDataEntry(
-    tradingPrice: Double,
-    tradingTime: LocalDateTime,
-    marketDataStrategyResponse: Try[MarketDataStrategyResponse]
+                            tradingPrice: Double,
+                            tradingTime: ZonedDateTime,
+                            marketDataStrategyResponse: Try[MarketDataStrategyResponse]
 )
 trait PnLMarketDataProvider:
   def provide(

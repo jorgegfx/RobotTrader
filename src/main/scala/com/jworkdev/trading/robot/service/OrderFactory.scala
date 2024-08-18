@@ -7,10 +7,9 @@ import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy, Si
 import com.jworkdev.trading.robot.data.strategy.MarketDataStrategyResponse
 import com.jworkdev.trading.robot.domain.{FinInstrument, Position, TradingExchange, TradingStrategy}
 import com.jworkdev.trading.robot.time.ZonedDateTimeExtensions.isSameDay
-import com.jworkdev.trading.robot.time.LocalDateTimeExtensions.toZonedDateTime
 import com.typesafe.scalalogging.Logger
 
-import java.time.{Instant, LocalDateTime, ZonedDateTime}
+import java.time.ZonedDateTime
 import scala.util.{Failure, Success, Try}
 case class OrderRequest(
     balancePerFinInst: Double,
@@ -21,7 +20,7 @@ case class OrderRequest(
     tradingMode: TradingMode,
     stopLossPercentage: Int,
     tradingPrice: Double,
-    tradeDateTime: LocalDateTime,
+    tradeDateTime: ZonedDateTime,
     marketDataStrategyResponse: Try[MarketDataStrategyResponse]
 )
 
@@ -104,7 +103,7 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
       position: Position,
       stopLossPercentage: Int,
       currentPrice: Double,
-      tradeDateTime: LocalDateTime,
+      tradeDateTime: ZonedDateTime,
       exchangeMap: Map[String, TradingExchange],
       tradingMode: TradingMode
   ): Option[Order] =
@@ -139,7 +138,7 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
       position: Position,
       currentPrice: Double,
       stopLossPercentage: Int,
-      tradeDateTime: LocalDateTime,
+      tradeDateTime: ZonedDateTime,
       tradingStrategy: TradingStrategy,
       exchangeMap: Map[String, TradingExchange],
       tradingMode: TradingMode
@@ -167,7 +166,7 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
       finInstrument: FinInstrument,
       position: Position,
       currentPrice: Double,
-      tradeDateTime: LocalDateTime,
+      tradeDateTime: ZonedDateTime,
       tradingStrategy: TradingStrategy,
       exchangeMap: Map[String, TradingExchange],
       tradingMode: TradingMode
@@ -184,7 +183,7 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
         Order(
           `type` = Sell,
           symbol = finInstrument.symbol,
-          dateTime = tradeDateTime.toZonedDateTime,
+          dateTime = tradeDateTime,
           shares = position.numberOfShares,
           price = currentPrice,
           positionId = Some(position.id),
@@ -227,10 +226,10 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
       tradingMode: TradingMode,
       balancePerFinInst: Double,
       currentPrice: Double,
-      tradingDateTime: LocalDateTime
+      tradingDateTime: ZonedDateTime
   ): Option[Order] =
     if signal.`type` == SignalType.Buy then
-      if signal.date.isSameDay(localDateTime = tradingDateTime) &&
+      if signal.date.isSameDay(other = tradingDateTime) &&
         TradingWindowValidator.isNotOutOfBuyingWindow(
           tradingDateTime = tradingDateTime,
           tradingMode = tradingMode,
@@ -244,7 +243,7 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
             Order(
               `type` = Buy,
               symbol = finInstrument.symbol,
-              dateTime = tradingDateTime.toZonedDateTime,
+              dateTime = tradingDateTime,
               shares = numberOfShares,
               price = currentPrice,
               tradingStrategyType = tradingStrategy.`type`

@@ -3,14 +3,14 @@ package com.jworkdev.trading.robot.service
 import com.jworkdev.trading.robot.config.TradingMode
 import com.jworkdev.trading.robot.domain.{FinInstrument, TradingExchange, TradingExchangeWindowType}
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZonedDateTime}
 import java.time.temporal.ChronoUnit
 
 object TradingWindowValidator:
   private val limitHoursBeforeCloseDay = 1
   private val minutesBeforeToCloseDay = 30
 
-  def shouldCloseDay(tradingDateTime: LocalDateTime,
+  def shouldCloseDay(tradingDateTime: ZonedDateTime,
                      tradingMode: TradingMode,
                      finInstrument: FinInstrument,
                      tradingExchangeMap: Map[String, TradingExchange]): Boolean =
@@ -22,7 +22,7 @@ object TradingWindowValidator:
       lastChanceToCloseTime.exists(closeTime=>tradingDateTime.isAfter(closeTime))
     })
 
-  def isNotOutOfBuyingWindow(tradingDateTime: LocalDateTime,
+  def isNotOutOfBuyingWindow(tradingDateTime: ZonedDateTime,
                              tradingMode: TradingMode,
                              finInstrument: FinInstrument,
                              tradingExchangeMap: Map[String, TradingExchange]): Boolean =
@@ -31,7 +31,7 @@ object TradingWindowValidator:
         finInstrument = finInstrument,
         tradingExchangeMap = tradingExchangeMap)) || (tradingMode == TradingMode.Swing)
 
-  private def isNotOutOfBuyingWindow(tradingDateTime: LocalDateTime,
+  private def isNotOutOfBuyingWindow(tradingDateTime: ZonedDateTime,
                                      finInstrument: FinInstrument,
                                      tradingExchangeMap: Map[String, TradingExchange]): Boolean =
     tradingExchangeMap.get(finInstrument.exchange).exists(exchange => {
@@ -39,7 +39,7 @@ object TradingWindowValidator:
         isNotOutOfBuyingWindow(tradingDateTime = tradingDateTime, exchange = exchange)
     })
 
-  private def isNotOutOfBuyingWindow(tradingDateTime: LocalDateTime,
+  private def isNotOutOfBuyingWindow(tradingDateTime: ZonedDateTime,
                                      exchange: TradingExchange): Boolean =
     val res = for
       limitClosingTime <- exchange.closeWindow(tradingDateTime = tradingDateTime).

@@ -15,7 +15,7 @@ import com.jworkdev.trading.robot.market.data.MarketDataProvider
 import com.typesafe.scalalogging.Logger
 import zio.{Task, ZIO}
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZonedDateTime}
 import scala.util.Try
 
 case class TradingExecutorRequest(
@@ -27,7 +27,7 @@ case class TradingExecutorRequest(
     strategyConfigurations: StrategyConfigurations,
     stopLossPercentage: Int,
     tradingMode: TradingMode,
-    tradingDateTime: LocalDateTime
+    tradingDateTime: ZonedDateTime
 )
 
 trait TradingExecutorService:
@@ -39,10 +39,10 @@ class TradingExecutorServiceImpl(
     marketDataProvider: MarketDataProvider,
     marketDataStrategyProvider: MarketDataStrategyProvider[MarketDataStrategyRequest, MarketDataStrategyResponse],
     marketDataStrategyRequestFactory: MarketDataStrategyRequestFactory,
-    signalFinderStrategy: SignalFinderStrategy
+    signalFinderStrategy: SignalFinderStrategy,
+    orderFactory: OrderFactory
 ) extends TradingExecutorService:
   private val logger = Logger(classOf[TradingExecutorServiceImpl])
-  private val orderFactory: OrderFactory = OrderFactory(signalFinderStrategy = signalFinderStrategy)
 
   override def execute(
       request: TradingExecutorRequest
@@ -79,7 +79,7 @@ class TradingExecutorServiceImpl(
       strategyConfigurations: StrategyConfigurations,
       stopLossPercentage: Int,
       tradingMode: TradingMode,
-      currentLocalTime: LocalDateTime
+      currentLocalTime: ZonedDateTime
   ): Task[Option[Order]] =
     for
       _ <- ZIO.logInfo(s"Executing ${finInstrument.symbol} ...")
@@ -146,7 +146,7 @@ class TradingExecutorServiceImpl(
       tradingMode: TradingMode,
       stopLossPercentage: Int,
       currentPrice: Double,
-      currentLocalTime: LocalDateTime,
+      currentLocalTime: ZonedDateTime,
       marketDataStrategyResponse: Try[MarketDataStrategyResponse]
   ): Task[Option[Order]] =
     ZIO.attempt(
@@ -167,9 +167,12 @@ class TradingExecutorServiceImpl(
     )
 
 object TradingExecutorService:
-  def apply(): TradingExecutorService = new TradingExecutorServiceImpl(
-    MarketDataProvider(),
-    MarketDataStrategyProvider(),
-    MarketDataStrategyRequestFactory(),
-    SignalFinderStrategy()
-  )
+  def apply(): TradingExecutorService =
+    val signalFinderStrategy = SignalFinderStrategy()
+    new TradingExecutorServiceImpl(
+      MarketDataProvider(),
+      MarketDataStrategyProvider(),
+      MarketDataStrategyRequestFactory(),
+      signalFinderStrategy,
+      OrderFactory(signalFinderStrategy = signalFinderStrategy)
+    )

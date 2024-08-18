@@ -30,3 +30,6 @@ object ZonedDateTimeExtensions:
     
     def isSameDay(localDateTime: LocalDateTime): Boolean =
       zonedDateTime.toLocalDate.equals(localDateTime.toLocalDate)
+
+    def isSameDay(other: ZonedDateTime): Boolean =
+      zonedDateTime.toLocalDate.equals(other.toLocalDate)

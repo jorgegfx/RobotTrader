@@ -11,7 +11,7 @@ class OpenGapSignalFinderTest extends AnyFunSuiteLike:
   test("testFindBuySell") {
     val symbol = "NVDA"
     val signalFinder = OpenGapSignalFinder()
-    val currentDateTime = LocalDateTime.of(2024, 8, 7, 9, 0)
+    val currentDateTime = LocalDateTime.of(2024, 8, 7, 9, 0).toZonedDateTime
     val signals = signalFinder.find(request =
       OpenGapRequest(signalInputs =
         List(
@@ -53,7 +53,7 @@ class OpenGapSignalFinderTest extends AnyFunSuiteLike:
   test("testFindBuy") {
     val symbol = "NVDA"
     val signalFinder = OpenGapSignalFinder()
-    val currentDateTime = LocalDateTime.of(2024, 8, 7, 9, 0)
+    val currentDateTime = LocalDateTime.of(2024, 8, 7, 9, 0).toZonedDateTime
     val signals = signalFinder.find(request =
       OpenGapRequest(signalInputs =
         List(
@@ -94,7 +94,7 @@ class OpenGapSignalFinderTest extends AnyFunSuiteLike:
   test("testFind Already Filled") {
     val symbol = "NVDA"
     val signalFinder = OpenGapSignalFinder()
-    val currentDateTime = LocalDateTime.of(2024, 8, 7, 9, 0)
+    val currentDateTime = LocalDateTime.of(2024, 8, 7, 9, 0).toZonedDateTime
     val signals = signalFinder.find(request =
       OpenGapRequest(signalInputs =
         List(

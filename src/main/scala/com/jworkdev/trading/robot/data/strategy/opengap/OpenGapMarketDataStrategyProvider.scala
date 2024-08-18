@@ -49,7 +49,7 @@ class OpenGapMarketDataStrategyProvider(private val marketDataProvider: MarketDa
         for
           closingPrice <- getLastPrice(prices = previousPrices).map(_.close)
           openingPrice <- getFirstPrice(prices = currentPrices).map(_.open)
-          tradingDateTime <- currentPrices.lastOption.map(_.snapshotTime).map(_.toLocalDateTime())
+          tradingDateTime <- currentPrices.lastOption.map(_.snapshotTime)
         yield OpenGapSignalInput(
           tradingDateTime = tradingDateTime,
           closingPrice = closingPrice,
