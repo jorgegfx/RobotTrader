@@ -16,7 +16,7 @@ import java.util.Date
 class PositionServiceImpl extends PositionService:
 
   override def create(position: Position): TranzactIO[Unit] = tzio {
-    sql"""INSERT INTO position (symbol,number_of_shares,open_date,open_price_per_share,tradingStrategyType)
+    sql"""INSERT INTO position (symbol,number_of_shares,open_date,open_price_per_share,trading_strategy_type)
          VALUES (${position.symbol},
          ${position.numberOfShares},
          ${position.openDate},
