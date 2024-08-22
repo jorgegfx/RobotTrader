@@ -54,9 +54,12 @@ The application uses HOCON configuration format. Update the src/main/resources/a
         snapshotInterval = "OneMinute"
     }
     openGap = {
-        signalCount = 5
+        signalCount = 1
     }
   }
+  tradingMode = IntraDay
+  stopLossPercentage = 10
+  screenCount = 20
 }
 ```
 ## Trading Strategies
