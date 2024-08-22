@@ -3,7 +3,7 @@ package com.jworkdev.trading.robot.data.signals
 import com.jworkdev.trading.robot.market
 import com.jworkdev.trading.robot.market.data.StockPrice
 
-import java.time.Instant
+import java.time.{Instant, ZonedDateTime}
 
 package object validator {
 
@@ -12,7 +12,7 @@ package object validator {
     case Volume, RSI
 
   trait IndicatorValidator:
-    def validate(stockPrices: List[StockPrice]): Map[Instant,ValidationResult]
+    def validate(stockPrices: List[StockPrice]): Map[ZonedDateTime,ValidationResult]
 
   object IndicatorValidator{
     private val validatorMap = Map[IndicatorValidatorType, IndicatorValidator](
@@ -20,7 +20,7 @@ package object validator {
       IndicatorValidatorType.RSI -> RSIIndicatorValidator(period = 14))
 
     def validate(stockPrices: List[StockPrice],
-                 indicatorValidatorType: IndicatorValidatorType): Map[Instant,ValidationResult] = 
+                 indicatorValidatorType: IndicatorValidatorType): Map[ZonedDateTime,ValidationResult] = 
       validatorMap(indicatorValidatorType).validate(stockPrices = stockPrices)
   }
 }

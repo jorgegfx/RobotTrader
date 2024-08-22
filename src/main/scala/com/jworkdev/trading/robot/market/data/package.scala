@@ -4,8 +4,9 @@ import com.jworkdev.trading.robot.domain.FinInstrumentType
 import com.jworkdev.trading.robot.market.data.alphavantage.AlphaVantageExchangeDataProvider
 import com.jworkdev.trading.robot.market.data.yahoo.YahooFinanceMarketDataProvider
 import zio.{Task, ULayer, ZLayer}
-import scala.math._
-import java.time.Instant
+
+import scala.math.*
+import java.time.{Instant, ZonedDateTime}
 import scala.util.Try
 
 package object data:
@@ -16,7 +17,7 @@ package object data:
       high: Double,
       low: Double,
       volume: Long,
-      snapshotTime: Instant
+      snapshotTime: ZonedDateTime
   ) {}
 
   enum SnapshotInterval:
@@ -26,7 +27,7 @@ package object data:
     case Daily, Weekly, Monthly
 
   trait MarketDataProvider:
-    def getCurrentQuote(symbol: String): Try[Double]
+    def getCurrentMarketPriceQuote(symbol: String): Try[Double]
 
     def getIntradayQuotes(
         symbol: String,

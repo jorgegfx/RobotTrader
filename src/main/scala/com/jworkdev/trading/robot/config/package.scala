@@ -22,6 +22,7 @@ package object config {
   case class ApplicationConfiguration(dataBaseConfig: DataBaseConfig,
                                       strategyConfigurations: StrategyConfigurations,
                                       stopLossPercentage: Int,
+                                      screenCount: Int,
                                       tradingMode: TradingMode)
 
   val appConfig: IO[Config.Error, ApplicationConfiguration] = ConfigProvider

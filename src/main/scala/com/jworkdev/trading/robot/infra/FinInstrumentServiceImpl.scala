@@ -4,12 +4,12 @@ import com.jworkdev.trading.robot.domain.{FinInstrument, FinInstrumentType}
 import com.jworkdev.trading.robot.service.FinInstrumentService
 import doobie.*
 import doobie.implicits.*
-import doobie.implicits.legacy.instant.*
+import doobie.implicits.javatimedrivernative.*
 import io.github.gaelrenoux.tranzactio.DbException
 import io.github.gaelrenoux.tranzactio.doobie.*
 import zio.*
 
-import java.time.Instant
+import java.time.{Instant, ZonedDateTime}
 import scala.util.Try
 
 class FinInstrumentServiceImpl extends FinInstrumentService:
@@ -20,8 +20,8 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
       `type`: String,
       volatility: Option[Double],
       exchange: String,
-      creationDate: Instant,
-      lastUpdate: Option[Instant],
+      creationDate: ZonedDateTime,
+      lastUpdate: Option[ZonedDateTime],
       active: String
   ):
     def toDomain: FinInstrument = FinInstrument(
@@ -81,7 +81,7 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
       .map(_.map(_.toDomain))
   }
 
-  override def findTopToTrade(): TranzactIO[List[FinInstrument]] = tzio {
+  override def findTopToTrade(limit: Int): TranzactIO[List[FinInstrument]] = tzio {
     sql"""SELECT
              symbol,
              name,
@@ -91,7 +91,7 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
              creation_date,
              last_update,
              active
-             FROM fin_instrument order by volatility desc LIMIT 10"""
+             FROM fin_instrument order by volatility desc LIMIT ${limit}"""
       .query[FinInstrumentDB]
       .to[List]
       .map(_.map(_.toDomain))

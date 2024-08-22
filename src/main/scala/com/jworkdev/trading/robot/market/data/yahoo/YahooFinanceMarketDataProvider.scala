@@ -11,7 +11,7 @@ import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.util.EntityUtils
 
-import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset}
+import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset, ZonedDateTime}
 import scala.util.{Failure, Success, Try, Using}
 
 class YahooFinanceMarketDataProvider extends MarketDataProvider:
@@ -64,7 +64,7 @@ class YahooFinanceMarketDataProvider extends MarketDataProvider:
       }.flatten
     }.flatten
 
-  override def getCurrentQuote(symbol: String): Try[Double] =
+  override def getCurrentMarketPriceQuote(symbol: String): Try[Double] =
     fetchResponse(symbol = symbol)
 
   override def getIntradayQuotes(
@@ -166,11 +166,7 @@ class YahooFinanceMarketDataProvider extends MarketDataProvider:
       val highPrice = highPrices(index).asDouble()
       val lowPrice = lowPrices(index).asDouble()
       val volume = volumes(index).asLong()
-      val dateTime = LocalDateTime.ofInstant(
-        Instant.ofEpochSecond(timestamp),
-        zoneId
-      )
-      val snapshotTime = dateTime.toInstant(ZoneOffset.UTC)
+      val zonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochSecond(timestamp), zoneId)
       StockPrice(
         symbol = symbol,
         open = openPrice,
@@ -178,7 +174,7 @@ class YahooFinanceMarketDataProvider extends MarketDataProvider:
         high = highPrice,
         low = lowPrice,
         volume = volume,
-        snapshotTime = snapshotTime
+        snapshotTime = zonedDateTime
       )
     }
 

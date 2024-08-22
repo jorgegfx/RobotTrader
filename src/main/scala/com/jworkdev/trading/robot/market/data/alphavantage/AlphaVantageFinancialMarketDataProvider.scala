@@ -57,7 +57,6 @@ class AlphaVantageFinancialMarketDataProvider extends MarketDataProvider:
         val volume = data.getLong("5. volume")
         val dateTime = LocalDateTime.parse(date, formatter)
         val zonedDateTime = dateTime.atZone(ZoneId.systemDefault())
-        val snapshotTime = zonedDateTime.toInstant
         StockPrice(
           symbol = symbol,
           open = open,
@@ -65,7 +64,7 @@ class AlphaVantageFinancialMarketDataProvider extends MarketDataProvider:
           high = high,
           low = low,
           volume = volume,
-          snapshotTime = snapshotTime
+          snapshotTime = zonedDateTime
         )
       })
       entries.sortBy(_.snapshotTime)
@@ -87,7 +86,7 @@ class AlphaVantageFinancialMarketDataProvider extends MarketDataProvider:
     fetchResponse(url = url)
   }
 
-  override def getCurrentQuote(symbol: String): Try[Double] = ???
+  override def getCurrentMarketPriceQuote(symbol: String): Try[Double] = ???
 
   override def getIntradayQuotesDaysRange(symbol: String, interval: SnapshotInterval, daysRange: Int): Try[List[StockPrice]] = ???
   

@@ -3,7 +3,7 @@ package com.jworkdev.trading.robot.data.signals.validator
 import com.jworkdev.trading.robot.market
 import com.jworkdev.trading.robot.market.data
 
-import java.time.Instant
+import java.time.ZonedDateTime
 
 class RSIIndicatorValidator(period: Int) extends IndicatorValidator:
   private def calculate(prices: Seq[Double], period: Int): Seq[Option[Double]] =
@@ -35,13 +35,13 @@ class RSIIndicatorValidator(period: Int) extends IndicatorValidator:
 
   override def validate(
       stockPrices: List[data.StockPrice]
-  ): Map[Instant, ValidationResult] =
+  ): Map[ZonedDateTime, ValidationResult] =
     val rsiValues =
       calculate(prices = stockPrices.map(_.close), period = period)
     stockPrices
       .map(_.snapshotTime)
       .zip(rsiValues)
-      .flatMap { case (date: Instant, rsi: Option[Double]) =>
+      .flatMap { case (date: ZonedDateTime, rsi: Option[Double]) =>
         rsi match
           case Some(value) => Some((date, ValidationResult(value > 70, value < 30)))
           case None => None

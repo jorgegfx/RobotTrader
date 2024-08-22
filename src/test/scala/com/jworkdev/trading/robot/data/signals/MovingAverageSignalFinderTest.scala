@@ -4,7 +4,7 @@ import com.jworkdev.trading.robot.market
 import com.jworkdev.trading.robot.market.data.StockPrice
 import org.scalatest.flatspec.AnyFlatSpec
 
-import java.time.Instant
+import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import scala.util.Random
 
@@ -19,7 +19,7 @@ class MovingAverageSignalFinderTest extends AnyFlatSpec:
   }
   it should "Not have signals when has only one entry" in {
     val movingAverageSignalFinder = MovingAverageSignalFinder()
-    val now = Instant.now
+    val now = ZonedDateTime.now
     val stockQuotes: List[StockPrice] = List(
       StockPrice(
         symbol = "NDVA",
@@ -43,7 +43,7 @@ class MovingAverageSignalFinderTest extends AnyFlatSpec:
       frequency: Double,
       phase: Double
   ): List[StockPrice] =
-    val start = Instant.now().minus(numberOfDays, ChronoUnit.DAYS)
+    val start = ZonedDateTime.now().minus(numberOfDays, ChronoUnit.DAYS)
     val random = new Random()
     (0 until numberOfDays).toList.map { day =>
       val date = start.plus(day, ChronoUnit.DAYS)
@@ -63,7 +63,7 @@ class MovingAverageSignalFinderTest extends AnyFlatSpec:
 
   it should "Have signals" in {
     val movingAverageSignalFinder = MovingAverageSignalFinder(shortTermPeriod = 10, 100)
-    val start = Instant.now.minus(14, ChronoUnit.DAYS)
+    val start = ZonedDateTime.now.minus(14, ChronoUnit.DAYS)
     val prices = List(100, 152, 115, 151, 170, 100, 120, 180, 160, 162)
     val stockPrices: List[StockPrice] = generateSinusoidalSeries(
       numberOfDays = 300,

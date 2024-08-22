@@ -39,7 +39,7 @@ class OpenGapMarketDataStrategyProviderTest extends AnyFunSuiteLike:
         high = 2,
         low = 1,
         volume = 10,
-        snapshotTime = currentDateTime.minus(1, ChronoUnit.DAYS).toZonedDateTime.toInstant
+        snapshotTime = currentDateTime.minus(1, ChronoUnit.DAYS).toZonedDateTime
       )
     )
     val provider = OpenGapMarketDataStrategyProvider(marketDataProvider)
@@ -59,7 +59,7 @@ class OpenGapMarketDataStrategyProviderTest extends AnyFunSuiteLike:
 
   }
   test("testProvide Single price") {
-    val currentDateTime = LocalDateTime.of(2024, 7, 31, 10, 0).toZonedDateTime.toInstant
+    val currentDateTime = LocalDateTime.of(2024, 7, 31, 10, 0).toZonedDateTime
     val prices = List(
       StockPrice(
         symbol = symbol,
@@ -92,7 +92,7 @@ class OpenGapMarketDataStrategyProviderTest extends AnyFunSuiteLike:
         assert(signalInput.closingPrice === 5.0)
   }
   test("testProvide Multiple prices") {
-    val currentDateTime = LocalDateTime.of(2024, 7, 31, 10, 0).toZonedDateTime.toInstant
+    val currentDateTime = LocalDateTime.of(2024, 7, 31, 10, 0).toZonedDateTime
     val dayBefore = currentDateTime.minus(1, ChronoUnit.DAYS)
     val dayBeforePrices = Range
       .inclusive(1, 5)
@@ -141,7 +141,7 @@ class OpenGapMarketDataStrategyProviderTest extends AnyFunSuiteLike:
         assert(signalInput.closingPrice === 10.0)
   }
   test("testProvide Multiple prices not sorted") {
-    val currentDateTime = LocalDateTime.of(2024, 7, 31, 10, 0).toZonedDateTime.toInstant
+    val currentDateTime = LocalDateTime.of(2024, 7, 31, 10, 0).toZonedDateTime
     val dayBefore = currentDateTime.minus(1, ChronoUnit.DAYS)
     val dayBeforePrices = List(
       StockPrice(

@@ -3,7 +3,7 @@ package com.jworkdev.trading
 import com.jworkdev.trading.robot.data.signals.SignalType
 import com.jworkdev.trading.robot.domain.TradingStrategyType
 
-import java.time.Instant
+import java.time.{Instant, ZonedDateTime}
 
 package object robot:
   enum OrderType:
@@ -15,7 +15,7 @@ package object robot:
   case class Order(
       `type`: OrderType,
       symbol: String,
-      dateTime: Instant,
+      dateTime: ZonedDateTime,
       shares: Long,
       price: Double,
       tradingStrategyType: TradingStrategyType,
