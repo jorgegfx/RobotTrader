@@ -2,8 +2,8 @@ package com.jworkdev.trading.robot
 
 import com.jworkdev.trading.robot.config.appConfig
 import com.jworkdev.trading.robot.domain.{Account, FinInstrument, Position, TradingExchange}
-import com.jworkdev.trading.robot.infra.{TradingStrategyService, *}
-import com.jworkdev.trading.robot.service.{AccountService, FinInstrumentService, PositionService, TradingExchangeService, TradingExecutorRequest, TradingExecutorService, TradingStrategyService}
+import com.jworkdev.trading.robot.infra.*
+import com.jworkdev.trading.robot.service.{AccountService, FinInstrumentService, PositionService, TradingExchangeService, TradingStrategyService, *}
 import doobie.util.log.LogHandler
 import io.github.gaelrenoux.tranzactio.ErrorStrategiesRef
 import io.github.gaelrenoux.tranzactio.doobie.*
@@ -11,7 +11,7 @@ import zio.*
 import zio.Console.*
 import zio.interop.catz.*
 
-import java.time.{LocalDateTime, ZonedDateTime}
+import java.time.ZonedDateTime
 
 object TradingApp extends zio.ZIOAppDefault:
   implicit val dbContext: DbContext =
@@ -40,11 +40,15 @@ object TradingApp extends zio.ZIOAppDefault:
   yield ()
 
   private val executeTradingTransaction: ZIO[Connection & AppEnv, Throwable, Unit] = for
+    strategyCfgs <- appConfig.map(_.strategyConfigurations)
+    stopLossPercentage <- appConfig.map(_.stopLossPercentage)
+    screenCount <- appConfig.map(_.screenCount)
+    tradingMode <- appConfig.map(_.tradingMode)
     accountService <- ZIO.service[AccountService]
     account <- accountService.findByName("trading")
     _ <- ZIO.logInfo(s"Trading with account name :'${account.name}''")
     finInstrumentService <- ZIO.service[FinInstrumentService]
-    finInstruments <- finInstrumentService.findTopToTrade()
+    finInstruments <- finInstrumentService.findTopToTrade(limit = screenCount)
     _ <- ZIO.logInfo(s"Searching signals on ${finInstruments.map(_.symbol)}")
     balancePerFinInst <- ZIO.attempt(
       getBalancePerFinInst(
@@ -61,9 +65,6 @@ object TradingApp extends zio.ZIOAppDefault:
     _ <- ZIO.logInfo(s"openPositions : $openPositions")
     exchangeMap <- getTradingExchangeMap(openPositions = openPositions)
     _ <- ZIO.logInfo(s"exchangeMap : $exchangeMap")
-    strategyCfgs <- appConfig.map(_.strategyConfigurations)
-    stopLossPercentage <- appConfig.map(_.stopLossPercentage)
-    tradingMode <- appConfig.map(_.tradingMode)
     _ <- ZIO.logInfo("Executing orders ...")
     orders <- tradingExecutorService.execute(
       TradingExecutorRequest(

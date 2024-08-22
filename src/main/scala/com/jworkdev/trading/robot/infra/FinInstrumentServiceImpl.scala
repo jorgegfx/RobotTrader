@@ -81,7 +81,7 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
       .map(_.map(_.toDomain))
   }
 
-  override def findTopToTrade(): TranzactIO[List[FinInstrument]] = tzio {
+  override def findTopToTrade(limit: Int): TranzactIO[List[FinInstrument]] = tzio {
     sql"""SELECT
              symbol,
              name,
@@ -91,7 +91,7 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
              creation_date,
              last_update,
              active
-             FROM fin_instrument order by volatility desc LIMIT 10"""
+             FROM fin_instrument order by volatility desc LIMIT ${limit}"""
       .query[FinInstrumentDB]
       .to[List]
       .map(_.map(_.toDomain))
