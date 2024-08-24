@@ -19,15 +19,14 @@ import java.time.{LocalDateTime, ZonedDateTime}
 import scala.util.Try
 
 case class TradingExecutorRequest(
-    balancePerFinInst: Double,
-    finInstruments: List[FinInstrument],
-    tradingStrategies: List[TradingStrategy],
-    openPositions: List[Position],
-    exchangeMap: Map[String, TradingExchange],
-    strategyConfigurations: StrategyConfigurations,
-    stopLossPercentage: Int,
-    tradingMode: TradingMode,
-    tradingDateTime: ZonedDateTime
+                                   balancePerFinInst: Double,
+                                   finInstrumentMap: Map[FinInstrument,List[Position]],
+                                   tradingStrategies: List[TradingStrategy],
+                                   exchangeMap: Map[String, TradingExchange],
+                                   strategyConfigurations: StrategyConfigurations,
+                                   stopLossPercentage: Int,
+                                   tradingMode: TradingMode,
+                                   tradingDateTime: ZonedDateTime
 )
 
 trait TradingExecutorService:
@@ -47,19 +46,24 @@ class TradingExecutorServiceImpl(
   override def execute(
       request: TradingExecutorRequest
   ): Task[List[Order]] =
+    val finInstruments = request.finInstrumentMap.keys
     val input = request.tradingStrategies.flatMap(tradingStrategy =>
-      request.finInstruments.map(finInstrument => (tradingStrategy, finInstrument))
+      finInstruments.map(finInstrument =>
+        (tradingStrategy, finInstrument, request.finInstrumentMap(finInstrument)))
     )
     for
       _ <- ZIO.logInfo(
-        s"Trading on  ${request.finInstruments.map(_.symbol)} using ${request.tradingStrategies}"
+        s"Trading on  ${finInstruments.map(_.symbol)} using ${request.tradingStrategies}"
       )
-      fibers <- ZIO.foreach(input) { case (tradingStrategy: TradingStrategy, finInstrument: FinInstrument) =>
+      fibers <- ZIO.foreach(input) { case (tradingStrategy: TradingStrategy,
+                                          finInstrument: FinInstrument,
+                                          openPositions: List[Position]) =>
         execute(
           balancePerFinInst = request.balancePerFinInst,
           finInstrument = finInstrument,
           tradingStrategy = tradingStrategy,
-          openPositions = request.openPositions,
+          openPosition = findOpenPositionForStrategy(openPositions = openPositions, 
+                                                    tradingStrategy = tradingStrategy),
           exchangeMap = request.exchangeMap,
           strategyConfigurations = request.strategyConfigurations,
           stopLossPercentage = request.stopLossPercentage,
@@ -74,7 +78,7 @@ class TradingExecutorServiceImpl(
       balancePerFinInst: Double,
       finInstrument: FinInstrument,
       tradingStrategy: TradingStrategy,
-      openPositions: List[Position],
+      openPosition: Option[Position],
       exchangeMap: Map[String, TradingExchange],
       strategyConfigurations: StrategyConfigurations,
       stopLossPercentage: Int,
@@ -110,11 +114,7 @@ class TradingExecutorServiceImpl(
             balancePerFinInst = balancePerFinInst,
             finInstrument = finInstrument,
             tradingStrategy = tradingStrategy,
-            openPosition = findOpenPositionForSymbol(
-              symbol = finInstrument.symbol,
-              tradingStrategy = tradingStrategy,
-              openPositions = openPositions
-            ),
+            openPosition = openPosition,
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             tradingMode = tradingMode,
@@ -126,13 +126,11 @@ class TradingExecutorServiceImpl(
       )
     yield orders
 
-  private def findOpenPositionForSymbol(
-      symbol: String,
+  private def findOpenPositionForStrategy(
       tradingStrategy: TradingStrategy,
       openPositions: List[Position]
   ): Option[Position] =
     openPositions.find(position =>
-      symbol == position.symbol &&
         tradingStrategy.`type` == position.tradingStrategyType
     )
 

@@ -72,9 +72,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
             balancePerFinInst = balancePerFinInst,
-            finInstruments = buildFinInstrument(symbol = symbol),
+            finInstrumentMap = buildFinInstrument(symbol = symbol).map((_,List.empty)).toMap,
             tradingStrategies = tradingStrategies,
-            openPositions = List.empty,
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
@@ -120,9 +119,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
             balancePerFinInst = balancePerFinInst,
-            finInstruments = buildFinInstrument(symbol = symbol),
+            finInstrumentMap = buildFinInstrument(symbol = symbol).map((_,List.empty)).toMap,
             tradingStrategies = tradingStrategies,
-            openPositions = List.empty,
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
@@ -179,11 +177,11 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       ).thenReturn(signals)
       val tradingPrice = 2.toDouble
       when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(tradingPrice))
+      val finInstrumentMap = buildFinInstrument(symbol = symbol).map((_,List.empty)).toMap
       val request = TradingExecutorRequest(
         balancePerFinInst = balancePerFinInst,
-        finInstruments = buildFinInstrument(symbol = symbol),
+        finInstrumentMap = finInstrumentMap,
         tradingStrategies = tradingStrategies,
-        openPositions = List.empty,
         exchangeMap = exchangeMap,
         strategyConfigurations = strategyConfigurations,
         stopLossPercentage = 10,
@@ -203,7 +201,7 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
         orderFactory.create(
           OrderRequest(
             balancePerFinInst = balancePerFinInst,
-            finInstrument = request.finInstruments.head,
+            finInstrument = request.finInstrumentMap.keys.head,
             tradingStrategy = request.tradingStrategies.head,
             openPosition = None,
             exchangeMap = request.exchangeMap,
@@ -278,13 +276,13 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
           windowType = BusinessDaysWeek
         )
       )
+      val finInstrumentMap = buildFinInstrument(symbol = symbol).map((_,List.empty)).toMap
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
             balancePerFinInst = balancePerFinInst,
-            finInstruments = buildFinInstrument(symbol = symbol),
+            finInstrumentMap = finInstrumentMap,
             tradingStrategies = tradingStrategies,
-            openPositions = List.empty,
             exchangeMap = offExchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
@@ -341,13 +339,13 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
         )
       ).thenReturn(signals)
       when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
+      val finInstrumentMap = buildFinInstrument(symbol = symbol).map((_,List.empty)).toMap
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
             balancePerFinInst = balancePerFinInst,
-            finInstruments = buildFinInstrument(symbol = symbol),
+            finInstrumentMap = finInstrumentMap,
             tradingStrategies = tradingStrategies,
-            openPositions = List.empty,
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
@@ -404,25 +402,25 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
         )
       ).thenReturn(signals)
       when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(200.toDouble))
+      val finInstrumentMap = buildFinInstrument(symbol = symbol).map((_,List(
+        Position(
+          id = 1,
+          symbol = symbol,
+          numberOfShares = 2,
+          openPricePerShare = 100,
+          closePricePerShare = None,
+          openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
+          closeDate = None,
+          pnl = None,
+          tradingStrategyType = TradingStrategyType.MACD
+        )
+      ))).toMap
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
             balancePerFinInst = balancePerFinInst,
-            finInstruments = buildFinInstrument(symbol = symbol),
+            finInstrumentMap = finInstrumentMap,
             tradingStrategies = tradingStrategies,
-            openPositions = List(
-              Position(
-                id = 1,
-                symbol = symbol,
-                numberOfShares = 2,
-                openPricePerShare = 100,
-                closePricePerShare = None,
-                openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
-                closeDate = None,
-                pnl = None,
-                tradingStrategyType = TradingStrategyType.MACD
-              )
-            ),
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
@@ -465,25 +463,25 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
         )
       ).thenReturn(List.empty)
       when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
+      val finInstrumentMap = buildFinInstrument(symbol = symbol).map((_, List(
+        Position(
+          id = 1,
+          symbol = symbol,
+          numberOfShares = 2,
+          openPricePerShare = 100,
+          closePricePerShare = None,
+          openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
+          closeDate = None,
+          pnl = None,
+          tradingStrategyType = TradingStrategyType.MACD
+        )
+      ))).toMap
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
             balancePerFinInst = balancePerFinInst,
-            finInstruments = buildFinInstrument(symbol = symbol),
+            finInstrumentMap = finInstrumentMap,
             tradingStrategies = tradingStrategies,
-            openPositions = List(
-              Position(
-                id = 1,
-                symbol = symbol,
-                numberOfShares = 2,
-                openPricePerShare = 100,
-                closePricePerShare = None,
-                openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
-                closeDate = None,
-                pnl = None,
-                tradingStrategyType = TradingStrategyType.MACD
-              )
-            ),
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
@@ -541,25 +539,25 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
         )
       ).thenReturn(signals)
       when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
+      val finInstrumentMap = buildFinInstrument(symbol = symbol).map((_, List(
+        Position(
+          id = 1,
+          symbol = symbol,
+          numberOfShares = 2,
+          openPricePerShare = 100,
+          closePricePerShare = None,
+          openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
+          closeDate = None,
+          pnl = None,
+          tradingStrategyType = TradingStrategyType.MACD
+        )
+      ))).toMap
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
             balancePerFinInst = balancePerFinInst,
-            finInstruments = buildFinInstrument(symbol = symbol),
+            finInstrumentMap = finInstrumentMap,
             tradingStrategies = tradingStrategies,
-            openPositions = List(
-              Position(
-                id = 1,
-                symbol = symbol,
-                numberOfShares = 2,
-                openPricePerShare = 100,
-                closePricePerShare = None,
-                openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
-                closeDate = None,
-                pnl = None,
-                tradingStrategyType = TradingStrategyType.MACD
-              )
-            ),
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
@@ -602,25 +600,25 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
         )
       ).thenReturn(List.empty)
       when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(2.toDouble))
+      val finInstrumentMap = buildFinInstrument(symbol = symbol).map((_, List(
+        Position(
+          id = 1,
+          symbol = symbol,
+          numberOfShares = 2,
+          openPricePerShare = 100,
+          closePricePerShare = None,
+          openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
+          closeDate = None,
+          pnl = None,
+          tradingStrategyType = TradingStrategyType.MACD
+        )
+      ))).toMap
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
             balancePerFinInst = balancePerFinInst,
-            finInstruments = buildFinInstrument(symbol = symbol),
+            finInstrumentMap = finInstrumentMap,
             tradingStrategies = tradingStrategies,
-            openPositions = List(
-              Position(
-                id = 1,
-                symbol = symbol,
-                numberOfShares = 2,
-                openPricePerShare = 100,
-                closePricePerShare = None,
-                openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
-                closeDate = None,
-                pnl = None,
-                tradingStrategyType = TradingStrategyType.MACD
-              )
-            ),
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
@@ -663,25 +661,25 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
         )
       ).thenReturn(List.empty)
       when(marketDataProvider.getCurrentMarketPriceQuote(symbol = symbol)).thenReturn(Success(98.toDouble))
+      val finInstrumentMap = buildFinInstrument(symbol = symbol).map((_, List(
+        Position(
+          id = 1,
+          symbol = symbol,
+          numberOfShares = 2,
+          openPricePerShare = 100,
+          closePricePerShare = None,
+          openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
+          closeDate = None,
+          pnl = None,
+          tradingStrategyType = TradingStrategyType.MACD
+        )
+      ))).toMap
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
             balancePerFinInst = balancePerFinInst,
-            finInstruments = buildFinInstrument(symbol = symbol),
+            finInstrumentMap = finInstrumentMap,
             tradingStrategies = tradingStrategies,
-            openPositions = List(
-              Position(
-                id = 1,
-                symbol = symbol,
-                numberOfShares = 2,
-                openPricePerShare = 100,
-                closePricePerShare = None,
-                openDate = ZonedDateTime.now().minus(1, ChronoUnit.HOURS),
-                closeDate = None,
-                pnl = None,
-                tradingStrategyType = TradingStrategyType.MACD
-              )
-            ),
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,

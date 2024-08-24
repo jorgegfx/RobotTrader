@@ -3,7 +3,14 @@ package com.jworkdev.trading.robot
 import com.jworkdev.trading.robot.config.appConfig
 import com.jworkdev.trading.robot.domain.{Account, FinInstrument, Position, TradingExchange}
 import com.jworkdev.trading.robot.infra.*
-import com.jworkdev.trading.robot.service.{AccountService, FinInstrumentService, PositionService, TradingExchangeService, TradingStrategyService, *}
+import com.jworkdev.trading.robot.service.{
+  AccountService,
+  FinInstrumentService,
+  PositionService,
+  TradingExchangeService,
+  TradingStrategyService,
+  *
+}
 import doobie.util.log.LogHandler
 import io.github.gaelrenoux.tranzactio.ErrorStrategiesRef
 import io.github.gaelrenoux.tranzactio.doobie.*
@@ -35,9 +42,36 @@ object TradingApp extends zio.ZIOAppDefault:
   private val periodicTask: ZIO[AppEnv, Throwable, Unit] = for
     _ <- ZIO.logInfo(s"Starting ...")
     currentTime <- Clock.currentDateTime
-    _ <- runTradingLoop().foldCauseZIO(cause=>ZIO.logErrorCause("Error",cause),_=>ZIO.unit)
+    _ <- runTradingLoop().foldCauseZIO(cause => ZIO.logErrorCause("Error", cause), _ => ZIO.unit)
     _ <- ZIO.logInfo(s"Task executed at: $currentTime")
   yield ()
+
+  private def fetchAllFinInstrument(
+      finInstruments: List[FinInstrument],
+      openPositions: List[Position]
+  ): ZIO[Connection & AppEnv, Throwable, List[FinInstrument]] =
+    val symbols = finInstruments.map(_.symbol)
+    val missingSymbols = openPositions
+      .filter(position => !symbols.contains(position.symbol))
+      .map(_.symbol)
+    for
+      finInstrumentService <- ZIO.service[FinInstrumentService]
+      missingFinInstruments <- ZIO.foreach(missingSymbols) { symbol =>
+        finInstrumentService.findBySymbol(symbol = symbol)
+      }
+    yield missingFinInstruments.flatten ++ finInstruments
+
+  private def buildFinInstrumentMap(
+      screenCount: Int,
+      openPositions: List[Position]
+  ): ZIO[Connection & AppEnv, Throwable, Map[FinInstrument, List[Position]]] =
+    for
+      finInstrumentService <- ZIO.service[FinInstrumentService]
+      finInstruments <- finInstrumentService.findTopToTrade(limit = screenCount)
+      allFinInstruments <- fetchAllFinInstrument(finInstruments = finInstruments, openPositions = openPositions)
+    yield allFinInstruments
+      .map(finInstrument => (finInstrument, openPositions.filter(position => position.symbol == finInstrument.symbol)))
+      .toMap
 
   private val executeTradingTransaction: ZIO[Connection & AppEnv, Throwable, Unit] = for
     strategyCfgs <- appConfig.map(_.strategyConfigurations)
@@ -47,6 +81,9 @@ object TradingApp extends zio.ZIOAppDefault:
     accountService <- ZIO.service[AccountService]
     account <- accountService.findByName("trading")
     _ <- ZIO.logInfo(s"Trading with account name :'${account.name}''")
+    positionService <- ZIO.service[PositionService]
+    openPositions <- positionService.findAllOpen()
+    _ <- ZIO.logInfo(s"openPositions : $openPositions")
     finInstrumentService <- ZIO.service[FinInstrumentService]
     finInstruments <- finInstrumentService.findTopToTrade(limit = screenCount)
     _ <- ZIO.logInfo(s"Searching signals on ${finInstruments.map(_.symbol)}")
@@ -57,21 +94,18 @@ object TradingApp extends zio.ZIOAppDefault:
       )
     )
     _ <- ZIO.logInfo(s"balancePerFinInst : $balancePerFinInst")
-    positionService <- ZIO.service[PositionService]
     strategyService <- ZIO.service[TradingStrategyService]
     tradingStrategies <- strategyService.findAll()
     _ <- ZIO.logInfo(s"tradingStrategies : $tradingStrategies")
-    openPositions <- positionService.findAllOpen()
-    _ <- ZIO.logInfo(s"openPositions : $openPositions")
     exchangeMap <- getTradingExchangeMap(openPositions = openPositions)
     _ <- ZIO.logInfo(s"exchangeMap : $exchangeMap")
     _ <- ZIO.logInfo("Executing orders ...")
+    finInstrumentMap <- buildFinInstrumentMap(screenCount = screenCount, openPositions = openPositions)
     orders <- tradingExecutorService.execute(
       TradingExecutorRequest(
         balancePerFinInst = balancePerFinInst,
-        finInstruments = finInstruments,
+        finInstrumentMap = finInstrumentMap,
         tradingStrategies = tradingStrategies,
-        openPositions = openPositions,
         exchangeMap = exchangeMap,
         strategyConfigurations = strategyCfgs,
         stopLossPercentage = stopLossPercentage,
@@ -100,15 +134,15 @@ object TradingApp extends zio.ZIOAppDefault:
         _ <- ZIO.logInfo(s"Applying orders :$orders ...")
         _ <- updateBalance(account = account, orders = orders)
         positionService <- ZIO.service[PositionService]
-        _ <- positionService.closeOpenPositions(
+        closeOpenPositionsCount <- positionService.closeOpenPositions(
           openPositions = openPositions,
           orders = orders
         )
-        _ <- ZIO.logInfo(s"Positions closed!")
-        _ <- positionService.createOpenPositionsFromOrders(
+        _ <- ZIO.logInfo(s"Positions closed : $closeOpenPositionsCount")
+        openPositionsCount <- positionService.createOpenPositionsFromOrders(
           orders = orders
         )
-        _ <- ZIO.logInfo(s"Positions opened!")
+        _ <- ZIO.logInfo(s"Positions opened : $openPositionsCount")
       yield ()
     })
 
@@ -143,7 +177,7 @@ object TradingApp extends zio.ZIOAppDefault:
   private def getTradingExchangeMap(
       openPositions: List[Position]
   ): ZIO[Connection & AppEnv, Throwable, Map[String, TradingExchange]] =
-    //TODO filter by symbols
+    // TODO filter by symbols
     val symbols = openPositions.map(_.symbol).toSet
     ZIO
       .when(openPositions.nonEmpty)(ZIO.scoped {
