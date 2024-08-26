@@ -42,7 +42,7 @@ libraryDependencies ++= Seq(
   // Start with this one
   "org.tpolecat" %% "doobie-core" % doobieVersion,
 
-  // And add any of these as needed
+  //H2 DB tests
   "org.tpolecat" %% "doobie-h2" % doobieVersion, // H2 driver 1.4.200 + type mappings.
   "org.tpolecat" %% "doobie-hikari" % doobieVersion, // HikariCP transactor.
   "org.tpolecat" %% "doobie-specs2" % doobieVersion % "test", // Specs2 support for typechecking statements.

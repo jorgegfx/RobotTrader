@@ -4,7 +4,7 @@ import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy}
 import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
 import com.jworkdev.trading.robot.domain.TradingStrategyType
 import com.jworkdev.trading.robot.service.OrderFactory
-import com.jworkdev.trading.robot.{Order, OrderType}
+import com.jworkdev.trading.robot.{Order, OrderTrigger, OrderType}
 import com.typesafe.scalalogging.Logger
 
 import scala.collection.mutable
@@ -43,7 +43,8 @@ class PnLAnalyzerImpl(signalFinderStrategy: SignalFinderStrategy) extends PnLAna
             dateTime = signal.date,
             shares = sharesToBuy,
             price = orderPrice,
-            tradingStrategyType = tradingStrategyType
+            tradingStrategyType = tradingStrategyType,
+            trigger = OrderTrigger.Signal
           )
 
         case Sell if currentPosition._1 > 0 =>
@@ -55,7 +56,8 @@ class PnLAnalyzerImpl(signalFinderStrategy: SignalFinderStrategy) extends PnLAna
             dateTime = signal.date,
             shares = position,
             price = orderPrice,
-            tradingStrategyType = tradingStrategyType
+            tradingStrategyType = tradingStrategyType,
+            trigger = OrderTrigger.Signal
           )
           currentPosition = (0,0.0D)
         case _ =>

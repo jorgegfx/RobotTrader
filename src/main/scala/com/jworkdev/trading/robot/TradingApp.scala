@@ -3,14 +3,8 @@ package com.jworkdev.trading.robot
 import com.jworkdev.trading.robot.config.appConfig
 import com.jworkdev.trading.robot.domain.{Account, FinInstrument, Position, TradingExchange}
 import com.jworkdev.trading.robot.infra.*
-import com.jworkdev.trading.robot.service.{
-  AccountService,
-  FinInstrumentService,
-  PositionService,
-  TradingExchangeService,
-  TradingStrategyService,
-  *
-}
+import com.jworkdev.trading.robot.service.{AccountService, FinInstrumentService, PositionService, TradingExchangeService, TradingStrategyService, *}
+import com.typesafe.scalalogging.Logger
 import doobie.util.log.LogHandler
 import io.github.gaelrenoux.tranzactio.ErrorStrategiesRef
 import io.github.gaelrenoux.tranzactio.doobie.*
@@ -37,13 +31,13 @@ object TradingApp extends zio.ZIOAppDefault:
   // Define the interval in minutes
   private val intervalMinutes: Int = 1
   private val schedule: Schedule[Any, Any, Long] = Schedule.fixed(intervalMinutes.minutes)
-
+  private val logger = Logger(classOf[OrderFactoryImpl])
   // Task to be executed periodically
   private val periodicTask: ZIO[AppEnv, Throwable, Unit] = for
-    _ <- ZIO.logInfo(s"Starting ...")
+    _ <- ZIO.attempt(logger.info(s"Starting ..."))
     currentTime <- Clock.currentDateTime
     _ <- runTradingLoop().foldCauseZIO(cause => ZIO.logErrorCause("Error", cause), _ => ZIO.unit)
-    _ <- ZIO.logInfo(s"Task executed at: $currentTime")
+    _ <- ZIO.attempt(logger.info(s"Task executed at: $currentTime"))
   yield ()
 
   private def fetchAllFinInstrument(
@@ -80,26 +74,26 @@ object TradingApp extends zio.ZIOAppDefault:
     tradingMode <- appConfig.map(_.tradingMode)
     accountService <- ZIO.service[AccountService]
     account <- accountService.findByName("trading")
-    _ <- ZIO.logInfo(s"Trading with account name :'${account.name}''")
+    _ <- ZIO.attempt(logger.info(s"Trading with account name :'${account.name}''"))
     positionService <- ZIO.service[PositionService]
     openPositions <- positionService.findAllOpen()
-    _ <- ZIO.logInfo(s"openPositions : $openPositions")
+    _ <- ZIO.attempt(logger.info(s"openPositions : $openPositions"))
     finInstrumentService <- ZIO.service[FinInstrumentService]
     finInstruments <- finInstrumentService.findTopToTrade(limit = screenCount)
-    _ <- ZIO.logInfo(s"Searching signals on ${finInstruments.map(_.symbol)}")
+    _ <- ZIO.attempt(logger.info(s"Searching signals on ${finInstruments.map(_.symbol)}"))
     balancePerFinInst <- ZIO.attempt(
       getBalancePerFinInst(
         account = account,
         finInstruments = finInstruments
       )
     )
-    _ <- ZIO.logInfo(s"balancePerFinInst : $balancePerFinInst")
+    _ <- ZIO.attempt(logger.info(s"balancePerFinInst : $balancePerFinInst"))
     strategyService <- ZIO.service[TradingStrategyService]
     tradingStrategies <- strategyService.findAll()
-    _ <- ZIO.logInfo(s"tradingStrategies : $tradingStrategies")
+    _ <- ZIO.attempt(logger.info(s"tradingStrategies : $tradingStrategies"))
     exchangeMap <- getTradingExchangeMap(openPositions = openPositions)
-    _ <- ZIO.logInfo(s"exchangeMap : $exchangeMap")
-    _ <- ZIO.logInfo("Executing orders ...")
+    _ <- ZIO.attempt(logger.info(s"exchangeMap : $exchangeMap"))
+    _ <- ZIO.attempt(logger.info("Executing orders ..."))
     finInstrumentMap <- buildFinInstrumentMap(screenCount = screenCount, openPositions = openPositions)
     orders <- tradingExecutorService.execute(
       TradingExecutorRequest(
@@ -113,7 +107,7 @@ object TradingApp extends zio.ZIOAppDefault:
         tradingDateTime = ZonedDateTime.now()
       )
     )
-    _ <- ZIO.logInfo(s"Orders created :$orders ...")
+    _ <- ZIO.attempt(logger.info(s"Orders created :$orders ..."))
     _ <- applyOrders(
       account = account,
       openPositions = openPositions,
@@ -131,18 +125,18 @@ object TradingApp extends zio.ZIOAppDefault:
   ): ZIO[Connection & AppEnv, Throwable, Option[Unit]] =
     ZIO.when(orders.nonEmpty)(ZIO.scoped {
       for
-        _ <- ZIO.logInfo(s"Applying orders :$orders ...")
+        _ <- ZIO.attempt(logger.info(s"Applying orders :$orders ..."))
         _ <- updateBalance(account = account, orders = orders)
         positionService <- ZIO.service[PositionService]
         closeOpenPositionsCount <- positionService.closeOpenPositions(
           openPositions = openPositions,
           orders = orders
         )
-        _ <- ZIO.logInfo(s"Positions closed : $closeOpenPositionsCount")
+        _ <- ZIO.attempt(logger.info(s"Positions closed : $closeOpenPositionsCount"))
         openPositionsCount <- positionService.createOpenPositionsFromOrders(
           orders = orders
         )
-        _ <- ZIO.logInfo(s"Positions opened : $openPositionsCount")
+        _ <- ZIO.attempt(logger.info(s"Positions opened : $openPositionsCount"))
       yield ()
     })
 
@@ -153,7 +147,7 @@ object TradingApp extends zio.ZIOAppDefault:
     val newBalance = totalBalance(currentBalance = account.balance, orders = orders)
     ZIO.when(orders.nonEmpty)(ZIO.scoped {
       for
-        _ <- ZIO.logInfo(s"Balance updated to $newBalance !")
+        _ <- ZIO.attempt(logger.info(s"Balance updated to $newBalance !"))
         accountService <- ZIO.service[AccountService]
         _ <- accountService.updateBalance(
           id = account.id,
@@ -183,9 +177,9 @@ object TradingApp extends zio.ZIOAppDefault:
       .when(openPositions.nonEmpty)(ZIO.scoped {
         for
           tradingExchangeService <- ZIO.service[TradingExchangeService]
-          _ <- ZIO.logInfo(s"Getting exchanges for symbols ${symbols}... ")
+          _ <- ZIO.attempt(logger.info(s"Getting exchanges for symbols ${symbols}... "))
           exchanges <- tradingExchangeService.findAll()
-          _ <- ZIO.logInfo(s"exchanges: $exchanges")
+          _ <- ZIO.attempt(logger.info(s"exchanges: $exchanges"))
         yield exchanges.groupBy(_.id).view.mapValues(_.head).toMap
       })
       .map {

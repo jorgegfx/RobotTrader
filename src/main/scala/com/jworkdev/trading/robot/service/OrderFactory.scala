@@ -1,6 +1,6 @@
 package com.jworkdev.trading.robot.service
 
-import com.jworkdev.trading.robot.Order
+import com.jworkdev.trading.robot.{Order, OrderTrigger}
 import com.jworkdev.trading.robot.OrderType.{Buy, Sell}
 import com.jworkdev.trading.robot.config.TradingMode
 import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy, SignalType}
@@ -116,7 +116,8 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
           shares = position.numberOfShares,
           price = currentPrice,
           positionId = Some(position.id),
-          tradingStrategyType = tradingStrategy.`type`
+          tradingStrategyType = tradingStrategy.`type`,
+          trigger = OrderTrigger.Signal
         )
       logger.info(s"Creating Sell Order: $order")
       Some(order)
@@ -187,7 +188,8 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
           shares = position.numberOfShares,
           price = currentPrice,
           positionId = Some(position.id),
-          tradingStrategyType = tradingStrategy.`type`
+          tradingStrategyType = tradingStrategy.`type`,
+          trigger = OrderTrigger.CloseDay
         )
       )
     else None
@@ -213,7 +215,8 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
           shares = position.numberOfShares,
           price = currentPrice,
           positionId = Some(position.id),
-          tradingStrategyType = tradingStrategy.`type`
+          tradingStrategyType = tradingStrategy.`type`,
+          trigger = OrderTrigger.StopLoss
         )
       )
     else None
@@ -246,7 +249,8 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy) extends Order
               dateTime = tradingDateTime,
               shares = numberOfShares,
               price = currentPrice,
-              tradingStrategyType = tradingStrategy.`type`
+              tradingStrategyType = tradingStrategy.`type`,
+              trigger = OrderTrigger.Signal
             )
           logger.info(s"Creating Buy Order: $order")
           Some(order)

@@ -1,6 +1,7 @@
 package com.jworkdev.trading.robot.infra
 
 import com.jworkdev.trading.robot.Order
+import com.jworkdev.trading.robot.OrderTrigger.Signal
 import com.jworkdev.trading.robot.OrderType.{Buy, Sell}
 import com.jworkdev.trading.robot.domain.{Position, TradingStrategyType}
 import com.jworkdev.trading.robot.service.PositionService
@@ -75,7 +76,8 @@ object PositionServiceSpec extends ZIOSpecDefault:
             shares = 2,
             price = 20,
             tradingStrategyType = TradingStrategyType.MACD,
-            positionId = None
+            positionId = None,
+            trigger = Signal
           )
         )))
         positions <- ZIO.serviceWithZIO[PositionService](_.findAllOpen())
@@ -101,7 +103,8 @@ object PositionServiceSpec extends ZIOSpecDefault:
               shares = 2,
               price = 20,
               tradingStrategyType = TradingStrategyType.MACD,
-              positionId = positions.find(position=>openPosition.symbol == position.symbol).map(_.id)
+              positionId = positions.find(position=>openPosition.symbol == position.symbol).map(_.id),
+              trigger = Signal
             )
           )
         )

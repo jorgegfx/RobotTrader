@@ -1,5 +1,6 @@
 package com.jworkdev.trading.robot.service
 
+import com.jworkdev.trading.robot.OrderTrigger.Signal as SignalTrigger
 import com.jworkdev.trading.robot.config.{MACDStrategyConfiguration, StrategyConfigurations, TradingMode}
 import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
 import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy}
@@ -195,7 +196,8 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
         shares = 500L,
         price = 2.0d,
         tradingStrategyType = TradingStrategyType.MACD,
-        positionId = None
+        positionId = None,
+        trigger = SignalTrigger
       )
       when(
         orderFactory.create(

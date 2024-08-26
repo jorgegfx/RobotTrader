@@ -18,13 +18,13 @@ import java.util
 
 object PnLAnalyzerApp extends App:
   val initialCash = 1000.0
+  private val sampleCount = 15
   val cfg = StrategyConfigurations(
     macd = Some(MACDStrategyConfiguration(snapshotInterval = OneMinute)),
     openGap = Some(OpenGapStrategyConfiguration(signalCount = sampleCount))
   )
-  private val symbol = "NVDA"
+  private val symbol = "INM"
   private val tests = List((symbol, OpenGap))
-  private val sampleCount = 15
   private val pnLAnalyzer = PnLAnalyzer()
   private val marketDataStrategyRequestFactory = MarketDataStrategyRequestFactory()
   private val marketDataStrategyProvider = MarketDataStrategyProvider()
@@ -48,7 +48,7 @@ object PnLAnalyzerApp extends App:
     creationDate = ZonedDateTime.now(),
     lastUpdate = None,
     isActive = true)
-  var currentCash = initialCash
+  private var currentCash = initialCash
   private var orderCount = 1
 
 
@@ -60,7 +60,17 @@ object PnLAnalyzerApp extends App:
         exchangeCloseTime =  exchange.closingTime.get)
     val orders = executeStrategy(tradingStrategyType = tradingStrategyType, entries = entries)
     println("Orders Created ...")
-    orders.foreach(println)
+    orders.foreach(order=>println(s"ORDER: TYPE:${order.`type`} " +
+      s"DATE:${order.dateTime} " +
+      s"TRIGGER:${order.trigger} " +
+      s"TOTAL PRICE:${order.totalPrice}"))
+    var pnl = initialCash;
+    orders.foreach(order=>
+      if(order.`type` == Buy)
+        pnl = pnl - order.totalPrice
+      else pnl = pnl + order.totalPrice
+    )
+    println(s"PnL : $pnl")
   }
 
   private def executeStrategy(entries: List[MarketDataEntry],tradingStrategyType: TradingStrategyType): List[Order] =

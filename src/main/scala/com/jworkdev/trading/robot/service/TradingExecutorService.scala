@@ -52,9 +52,9 @@ class TradingExecutorServiceImpl(
         (tradingStrategy, finInstrument, request.finInstrumentMap(finInstrument)))
     )
     for
-      _ <- ZIO.logInfo(
+      _ <- ZIO.attempt(logger.info(
         s"Trading on  ${finInstruments.map(_.symbol)} using ${request.tradingStrategies}"
-      )
+      ))
       fibers <- ZIO.foreach(input) { case (tradingStrategy: TradingStrategy,
                                           finInstrument: FinInstrument,
                                           openPositions: List[Position]) =>
@@ -86,7 +86,7 @@ class TradingExecutorServiceImpl(
       currentLocalTime: ZonedDateTime
   ): Task[Option[Order]] =
     for
-      _ <- ZIO.logInfo(s"Executing ${finInstrument.symbol} ...")
+      _ <- ZIO.attempt(logger.info(s"Executing ${finInstrument.symbol} ..."))
       currentPriceFiber <- ZIO
         .attempt(marketDataProvider.getCurrentMarketPriceQuote(symbol = finInstrument.symbol))
         .fork
@@ -103,10 +103,10 @@ class TradingExecutorServiceImpl(
         .fork
       marketDataStrategyResponse <- marketDataStrategyResponseFiber.join
       currentPriceRes <- currentPriceFiber.join
-      _ <- ZIO.logInfo(s"Data for ${finInstrument.symbol} fetched!")
+      _ <- ZIO.attempt(logger.info(s"Data for ${finInstrument.symbol} fetched!"))
       orders <- currentPriceRes.fold(
         ex =>
-          logger.error("Error fetching current price!", ex)
+          ZIO.attempt(logger.error("Error fetching current price!", ex))
           ZIO.none
         ,
         currentPrice =>

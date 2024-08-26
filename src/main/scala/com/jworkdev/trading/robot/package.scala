@@ -19,7 +19,11 @@ package object robot:
       shares: Long,
       price: Double,
       tradingStrategyType: TradingStrategyType,
-      positionId: Option[Long] = None 
+      positionId: Option[Long] = None,
+      trigger: OrderTrigger
   ){
     def totalPrice: Double = shares * price 
   }
+
+  enum OrderTrigger:
+    case Signal, StopLoss, CloseDay
