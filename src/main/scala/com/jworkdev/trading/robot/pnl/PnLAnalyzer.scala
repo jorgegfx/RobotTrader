@@ -3,7 +3,7 @@ package com.jworkdev.trading.robot.pnl
 import com.jworkdev.trading.robot.data.signals.{Signal, SignalFinderStrategy}
 import com.jworkdev.trading.robot.data.signals.SignalType.{Buy, Sell}
 import com.jworkdev.trading.robot.domain.TradingStrategyType
-import com.jworkdev.trading.robot.service.OrderFactory
+import com.jworkdev.trading.robot.service.{ForcePositionExitService, OrderFactory}
 import com.jworkdev.trading.robot.{Order, OrderTrigger, OrderType}
 import com.typesafe.scalalogging.Logger
 
@@ -16,8 +16,7 @@ trait PnLAnalyzer:
 
 class PnLAnalyzerImpl(signalFinderStrategy: SignalFinderStrategy) extends PnLAnalyzer:
   private val logger = Logger(classOf[PnLAnalyzerImpl])
-  private val orderFactory: OrderFactory = OrderFactory(signalFinderStrategy = signalFinderStrategy)
-
+ 
   override def execute(
       initialCash: Double,
       signals: List[Signal],

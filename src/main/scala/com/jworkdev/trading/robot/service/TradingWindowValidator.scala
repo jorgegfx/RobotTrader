@@ -22,6 +22,33 @@ object TradingWindowValidator:
       lastChanceToCloseTime.exists(closeTime=>tradingDateTime.isAfter(closeTime))
     })
 
+  def shouldCloseDay(tradingDateTime: ZonedDateTime,
+                     tradingMode: TradingMode,
+                     finInstrument: FinInstrument,
+                     tradingExchange: TradingExchange): Boolean =
+    val lastChanceToCloseTime = for
+      limitClosingTime <- tradingExchange.closeWindow(tradingDateTime = tradingDateTime)
+        .map(_.minus(minutesBeforeToCloseDay, ChronoUnit.MINUTES))
+    yield limitClosingTime
+    tradingMode == TradingMode.IntraDay && 
+      lastChanceToCloseTime.exists(closeTime => tradingDateTime.isAfter(closeTime))
+        
+
+  def isNotOutOfBuyingWindow(tradingDateTime: ZonedDateTime,
+                             tradingMode: TradingMode,
+                             finInstrument: FinInstrument,
+                             tradingExchange: TradingExchange): Boolean =
+    (tradingMode == TradingMode.IntraDay &&
+      isNotOutOfBuyingWindow(tradingDateTime = tradingDateTime,
+        finInstrument = finInstrument,
+        tradingExchange = tradingExchange)) || (tradingMode == TradingMode.Swing)
+
+  private def isNotOutOfBuyingWindow(tradingDateTime: ZonedDateTime,
+                                     finInstrument: FinInstrument,
+                                     tradingExchange: TradingExchange): Boolean =
+    tradingExchange.windowType == TradingExchangeWindowType.Always ||
+      isNotOutOfBuyingWindow(tradingDateTime = tradingDateTime, exchange = tradingExchange)
+
   def isNotOutOfBuyingWindow(tradingDateTime: ZonedDateTime,
                              tradingMode: TradingMode,
                              finInstrument: FinInstrument,
