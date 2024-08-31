@@ -67,11 +67,6 @@ class OpenGapTradingStrategyExecutorTest extends AnyFunSuiteLike:
       currentPrices = List(stockPrice)
     )
     val marketDataStrategyResponse = OpenGapMarketDataStrategyResponse(signalInputs = List(signalInput))
-    val signal = Signal(
-      date = tradingTime,
-      `type` = SignalType.Sell,
-      stockPrice = stockPrice
-    )
     val position = Position(
       id = 1,
       symbol = symbol,
@@ -102,6 +97,65 @@ class OpenGapTradingStrategyExecutorTest extends AnyFunSuiteLike:
       tradingStrategyType= TradingStrategyType.OpenGap,
       positionId = Some(position.id),
       trigger= OrderTrigger.Signal)))
+    val res = openGapTradingStrategyExecutor.executeExit(request =
+      TradingStrategyExitRequest(
+        position = position,
+        finInstrument = finInstrument,
+        exchange = exchange,
+        tradingStrategy = tradingStrategy,
+        tradingMode = IntraDay,
+        stopLossPercentage = 10,
+        tradingPrice = tradingPrice,
+        tradeDateTime = tradingTime,
+        marketDataStrategyResponse = Success(marketDataStrategyResponse)
+      )
+    )
+    assert(res.isDefined)
+  }
+
+  test("testExecuteExit when no signal") {
+    val tradingPrice = 110
+    val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0).toZonedDateTime
+    val stockPrice = StockPrice(
+      symbol = symbol,
+      open = 95,
+      close = 95,
+      high = 99,
+      low = 90,
+      volume = 100,
+      snapshotTime = tradingTime
+    )
+    val signalInput = OpenGapSignalInput(
+      tradingDateTime = tradingTime,
+      closingPrice = 100,
+      openingPrice = 90,
+      volumeAvg = 100,
+      currentPrices = List(stockPrice)
+    )
+    val marketDataStrategyResponse = OpenGapMarketDataStrategyResponse(signalInputs = List(signalInput))
+    val position = Position(
+      id = 1,
+      symbol = symbol,
+      numberOfShares = 2,
+      openPricePerShare = 100,
+      closePricePerShare = None,
+      openDate = tradingTime.minus(1, ChronoUnit.HOURS),
+      closeDate = None,
+      pnl = None,
+      tradingStrategyType = TradingStrategyType.OpenGap
+    )
+    when(
+      orderFactory.createSell(
+        position = position,
+        finInstrument = finInstrument,
+        tradingExchange = exchange,
+        tradingMode = IntraDay,
+        stopLossPercentage = 10,
+        tradingPrice = tradingPrice,
+        tradeDateTime = tradingTime,
+        marketDataStrategyResponse = Success(marketDataStrategyResponse)
+      )
+    ).thenReturn(None)
     val res = openGapTradingStrategyExecutor.executeExit(request =
       TradingStrategyExitRequest(
         position = position,
