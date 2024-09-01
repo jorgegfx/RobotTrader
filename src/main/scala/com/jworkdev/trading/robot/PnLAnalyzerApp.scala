@@ -12,6 +12,7 @@ import com.jworkdev.trading.robot.domain.TradingStrategyType.OpenGap
 import com.jworkdev.trading.robot.market.data.SnapshotInterval.OneMinute
 import com.jworkdev.trading.robot.pnl.{MarketDataEntry, PnLAnalysis, PnLAnalyzer, PnLMarketDataProvider}
 import com.jworkdev.trading.robot.service.{ForcePositionExitService, OrderFactory}
+import com.jworkdev.trading.robot.strategy.{MACDTradingStrategyExecutor, OpenGapTradingStrategyExecutor, TradingStrategyEntryRequest, TradingStrategyExitRequest}
 
 import java.time.{Instant, LocalTime, ZonedDateTime}
 import java.util
@@ -33,6 +34,10 @@ object PnLAnalyzerApp extends App:
   private val orderFactory = OrderFactory(
     signalFinderStrategy = SignalFinderStrategy(),
     forcePositionExitService = ForcePositionExitService())
+  private val tradingStrategyExecutorMap = Map(
+    TradingStrategyType.MACD -> new MACDTradingStrategyExecutor(orderFactory = orderFactory),
+    TradingStrategyType.OpenGap -> new OpenGapTradingStrategyExecutor(orderFactory = orderFactory)
+  )
   private val stopLossPercentage = 10
   private val positionStack: util.Deque[Position] = new util.LinkedList()
   private val exchangeName = "NASDAQ"
@@ -79,24 +84,29 @@ object PnLAnalyzerApp extends App:
   private def executeStrategy(entries: List[MarketDataEntry],tradingStrategyType: TradingStrategyType): List[Order] =
     entries.flatMap(entry => {
       val currentPosition = if (positionStack.isEmpty) None else Some(positionStack.peek())
+      val tradingStrategyExecutor = tradingStrategyExecutorMap(tradingStrategyType)
       val newOrder = currentPosition match
-        case Some(openPosition) => orderFactory.createSell(
-          position = openPosition, 
-          finInstrument = finInstrument, 
-          tradingExchange = exchange, 
-          tradingMode = IntraDay,
-          stopLossPercentage = stopLossPercentage, 
-          tradingPrice = entry.tradingPrice,
-          tradeDateTime = entry.tradingTime,
-          marketDataStrategyResponse = entry.marketDataStrategyResponse)
-        case None => orderFactory.createBuy(finInstrument = finInstrument, 
-          tradeDateTime = entry.tradingTime, 
-          tradingMode = IntraDay, 
-          tradingExchange = exchange, 
-          balancePerFinInst = currentCash, 
-          tradingPrice = entry.tradingPrice, 
-          tradingStrategy = TradingStrategy(`type` = tradingStrategyType, pnl = None), 
-          marketDataStrategyResponse = entry.marketDataStrategyResponse)
+        case Some(openPosition) => 
+          tradingStrategyExecutor.executeExit(tradingStrategyExitRequest = 
+            TradingStrategyExitRequest(position = openPosition, 
+              finInstrument = finInstrument, 
+              exchange = exchange, 
+              tradingStrategy = TradingStrategy(`type` = tradingStrategyType, pnl = None), 
+              tradingMode = IntraDay, 
+              stopLossPercentage = 10, 
+              tradingPrice = entry.tradingPrice, 
+              tradeDateTime = entry.tradingTime,
+              marketDataStrategyResponse = entry.marketDataStrategyResponse))
+        case None => tradingStrategyExecutor.executeEntry(tradingStrategyEntryRequest = 
+          TradingStrategyEntryRequest(balancePerFinInst = currentCash, 
+            finInstrument = finInstrument, 
+            exchange = exchange, 
+            tradingStrategy = TradingStrategy(`type` = tradingStrategyType, pnl = None), 
+            tradingMode = IntraDay,
+            tradingPrice = entry.tradingPrice,
+            tradeDateTime = entry.tradingTime,
+            marketDataStrategyResponse = entry.marketDataStrategyResponse))
+
       orderCount = orderCount + 1
       newOrder.map(order => createPosition(order = order, lastPosition = currentPosition))
         .filter(_.closeDate.isEmpty)

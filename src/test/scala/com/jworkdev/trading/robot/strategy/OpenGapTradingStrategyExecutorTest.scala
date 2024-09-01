@@ -114,6 +114,7 @@ class OpenGapTradingStrategyExecutorTest extends AnyFunSuiteLike:
   }
 
   test("testExecuteExit when no signal") {
+    val openPricePerShare = 100
     val tradingPrice = 110
     val tradingTime = LocalDateTime.of(2024, 8, 9, 10, 0).toZonedDateTime
     val stockPrice = StockPrice(
@@ -125,19 +126,20 @@ class OpenGapTradingStrategyExecutorTest extends AnyFunSuiteLike:
       volume = 100,
       snapshotTime = tradingTime
     )
-    val signalInput = OpenGapSignalInput(
-      tradingDateTime = tradingTime,
-      closingPrice = 100,
-      openingPrice = 90,
-      volumeAvg = 100,
-      currentPrices = List(stockPrice)
-    )
-    val marketDataStrategyResponse = OpenGapMarketDataStrategyResponse(signalInputs = List(signalInput))
+    val signalInputs = for( index <- 1 until 10)
+      yield OpenGapSignalInput(
+        tradingDateTime = tradingTime.plus(index,ChronoUnit.HOURS),
+        closingPrice = 100,
+        openingPrice = 90,
+        volumeAvg = 100,
+        currentPrices = List(stockPrice)
+      )
+    val marketDataStrategyResponse = OpenGapMarketDataStrategyResponse(signalInputs = signalInputs.toList)
     val position = Position(
       id = 1,
       symbol = symbol,
       numberOfShares = 2,
-      openPricePerShare = 100,
+      openPricePerShare = openPricePerShare,
       closePricePerShare = None,
       openDate = tradingTime.minus(1, ChronoUnit.HOURS),
       closeDate = None,
