@@ -13,7 +13,6 @@ class SignalFinderStrategyImpl extends SignalFinderStrategy:
       MACDValidatedSignalFinder().find(request = request)
     case request: OpenGapRequest =>
       OpenGapSignalFinder().find(request = request)
-    case _ => List.empty
 
 object SignalFinderStrategy:
   def apply(): SignalFinderStrategy = new SignalFinderStrategyImpl()
