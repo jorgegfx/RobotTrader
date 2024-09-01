@@ -18,7 +18,7 @@ package object signals {
     def find(request: RequestType): List[Signal]
   }
 
-  sealed class SignalFinderRequest
+  sealed trait SignalFinderRequest
   case class MovingAverageRequest(stockPrices: List[StockPrice]) extends SignalFinderRequest
   case class OpenGapRequest(signalInputs: List[OpenGapSignalInput]) extends SignalFinderRequest
   case class RelativeStrengthIndexRequest(stockPrices: List[StockPrice]) extends SignalFinderRequest

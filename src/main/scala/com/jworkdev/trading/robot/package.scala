@@ -26,4 +26,4 @@ package object robot:
   }
 
   enum OrderTrigger:
-    case Signal, StopLoss, CloseDay
+    case Signal, MaxProfitExit, StopLoss, CloseDay
