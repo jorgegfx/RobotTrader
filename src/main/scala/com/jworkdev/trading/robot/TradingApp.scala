@@ -91,7 +91,7 @@ object TradingApp extends zio.ZIOAppDefault:
     strategyService <- ZIO.service[TradingStrategyService]
     tradingStrategies <- strategyService.findAll()
     _ <- ZIO.attempt(logger.info(s"tradingStrategies : $tradingStrategies"))
-    exchangeMap <- getTradingExchangeMap(openPositions = openPositions)
+    exchangeMap <- getTradingExchangeMap
     _ <- ZIO.attempt(logger.info(s"exchangeMap : $exchangeMap"))
     _ <- ZIO.attempt(logger.info("Executing orders ..."))
     finInstrumentMap <- buildFinInstrumentMap(screenCount = screenCount, openPositions = openPositions)
@@ -168,24 +168,14 @@ object TradingApp extends zio.ZIOAppDefault:
     if finInstruments.isEmpty then 0.0d
     else account.balance / finInstruments.size
 
-  private def getTradingExchangeMap(
-      openPositions: List[Position]
-  ): ZIO[Connection & AppEnv, Throwable, Map[String, TradingExchange]] =
-    // TODO filter by symbols
-    val symbols = openPositions.map(_.symbol).toSet
-    ZIO
-      .when(openPositions.nonEmpty)(ZIO.scoped {
+  private def getTradingExchangeMap: ZIO[Connection & AppEnv, Throwable, Map[String, TradingExchange]] =
+    ZIO.scoped {
         for
           tradingExchangeService <- ZIO.service[TradingExchangeService]
-          _ <- ZIO.attempt(logger.info(s"Getting exchanges for symbols ${symbols}... "))
           exchanges <- tradingExchangeService.findAll()
           _ <- ZIO.attempt(logger.info(s"exchanges: $exchanges"))
         yield exchanges.groupBy(_.id).view.mapValues(_.head).toMap
-      })
-      .map {
-        case Some(value) => value
-        case None        => Map.empty
-      }
+    }
 
   implicit val errorRecovery: ErrorStrategiesRef =
     DatabaseConfig.alternateDbRecovery
