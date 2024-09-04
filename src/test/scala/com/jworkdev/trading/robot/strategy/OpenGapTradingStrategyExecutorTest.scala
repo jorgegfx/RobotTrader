@@ -89,14 +89,20 @@ class OpenGapTradingStrategyExecutorTest extends AnyFunSuiteLike:
         tradeDateTime = tradingTime,
         marketDataStrategyResponse = Success(marketDataStrategyResponse)
       )
-    ).thenReturn(Some(Order(`type`= Sell,
-      symbol = symbol,
-      dateTime = tradingTime,
-      shares = 100,
-      price = tradingPrice,
-      tradingStrategyType= TradingStrategyType.OpenGap,
-      positionId = Some(position.id),
-      trigger= OrderTrigger.Signal)))
+    ).thenReturn(
+      Some(
+        Order(
+          `type` = Sell,
+          symbol = symbol,
+          dateTime = tradingTime,
+          shares = 100,
+          price = tradingPrice,
+          tradingStrategyType = TradingStrategyType.OpenGap,
+          positionId = Some(position.id),
+          trigger = OrderTrigger.Signal
+        )
+      )
+    )
     val res = openGapTradingStrategyExecutor.executeExit(request =
       TradingStrategyExitRequest(
         position = position,
@@ -126,14 +132,15 @@ class OpenGapTradingStrategyExecutorTest extends AnyFunSuiteLike:
       volume = 100,
       snapshotTime = tradingTime
     )
-    val signalInputs = for( index <- 1 until 10)
-      yield OpenGapSignalInput(
-        tradingDateTime = tradingTime.plus(index,ChronoUnit.HOURS),
-        closingPrice = 100,
-        openingPrice = 90,
-        volumeAvg = 100,
-        currentPrices = List(stockPrice)
-      )
+    val signalInputs =
+      for (index <- 1 until 10)
+        yield OpenGapSignalInput(
+          tradingDateTime = tradingTime.plus(index, ChronoUnit.HOURS),
+          closingPrice = 100,
+          openingPrice = 90,
+          volumeAvg = 100,
+          currentPrices = List(stockPrice)
+        )
     val marketDataStrategyResponse = OpenGapMarketDataStrategyResponse(signalInputs = signalInputs.toList)
     val position = Position(
       id = 1,
@@ -158,6 +165,28 @@ class OpenGapTradingStrategyExecutorTest extends AnyFunSuiteLike:
         marketDataStrategyResponse = Success(marketDataStrategyResponse)
       )
     ).thenReturn(None)
+    when(
+      orderFactory.createSell(
+        symbol = finInstrument.symbol,
+        dateTime = tradingTime,
+        shares = 2,
+        price = tradingPrice,
+        tradingStrategyType = TradingStrategyType.OpenGap,
+        positionId = position.id,
+        trigger = OrderTrigger.MaxProfitExit
+      )
+    ).thenReturn(
+      Order(
+        `type` = Sell,
+        symbol = symbol,
+        dateTime = tradingTime,
+        shares = 2,
+        price = tradingPrice,
+        tradingStrategyType = TradingStrategyType.OpenGap,
+        positionId = Some(position.id),
+        trigger = OrderTrigger.MaxProfitExit
+      )
+    )
     val res = openGapTradingStrategyExecutor.executeExit(request =
       TradingStrategyExitRequest(
         position = position,
@@ -210,14 +239,20 @@ class OpenGapTradingStrategyExecutorTest extends AnyFunSuiteLike:
         tradingStrategy = tradingStrategy,
         marketDataStrategyResponse = Success(marketDataStrategyResponse)
       )
-    ).thenReturn(Some(Order(`type`= Buy,
-      symbol = symbol,
-      dateTime = tradingTime,
-      shares = 100,
-      price = tradingPrice,
-      tradingStrategyType= TradingStrategyType.OpenGap,
-      positionId = None,
-      trigger= OrderTrigger.Signal)))
+    ).thenReturn(
+      Some(
+        Order(
+          `type` = Buy,
+          symbol = symbol,
+          dateTime = tradingTime,
+          shares = 100,
+          price = tradingPrice,
+          tradingStrategyType = TradingStrategyType.OpenGap,
+          positionId = None,
+          trigger = OrderTrigger.Signal
+        )
+      )
+    )
     val res = openGapTradingStrategyExecutor.executeEntry(request =
       TradingStrategyEntryRequest(
         balancePerFinInst = 400,

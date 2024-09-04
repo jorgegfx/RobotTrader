@@ -2,6 +2,7 @@ package com.jworkdev.trading
 
 import com.jworkdev.trading.robot.data.signals.SignalType
 import com.jworkdev.trading.robot.domain.TradingStrategyType
+import com.jworkdev.trading.robot.util.IdGenerator
 
 import java.time.{Instant, ZonedDateTime}
 
@@ -13,6 +14,7 @@ package object robot:
     case SignalType.Sell => OrderType.Sell
 
   case class Order(
+      id: String = IdGenerator.generate,
       `type`: OrderType,
       symbol: String,
       dateTime: ZonedDateTime,

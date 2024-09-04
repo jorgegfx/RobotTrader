@@ -16,6 +16,25 @@ import scala.util.{Failure, Success, Try}
 trait OrderFactory:
 
   def createSell(
+      symbol: String,
+      dateTime: ZonedDateTime,
+      shares: Long,
+      price: Double,
+      tradingStrategyType: TradingStrategyType,
+      positionId: Long,
+      trigger: OrderTrigger
+  ): Order
+
+  def createBuy(
+      symbol: String,
+      dateTime: ZonedDateTime,
+      shares: Long,
+      price: Double,
+      tradingStrategyType: TradingStrategyType,
+      trigger: OrderTrigger
+  ): Order
+
+  def createSell(
       position: Position,
       finInstrument: FinInstrument,
       tradingExchange: TradingExchange,
@@ -37,9 +56,49 @@ trait OrderFactory:
       marketDataStrategyResponse: Try[MarketDataStrategyResponse]
   ): Option[Order]
 
-class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy,
-                       forcePositionExitService: ForcePositionExitService) extends OrderFactory:
+class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy, forcePositionExitService: ForcePositionExitService)
+    extends OrderFactory:
   private val logger = Logger(classOf[OrderFactoryImpl])
+
+  override def createBuy(
+      symbol: String,
+      dateTime: ZonedDateTime,
+      shares: Long,
+      price: Double,
+      tradingStrategyType: TradingStrategyType,
+      trigger: OrderTrigger
+  ): Order =
+    logger.info(s"Creating Sell Order for Symbol: $symbol, trigger: $trigger, Price $price")
+    Order(
+      `type` = Buy,
+      symbol = symbol,
+      dateTime = dateTime,
+      shares = shares,
+      price = price,
+      tradingStrategyType = tradingStrategyType,
+      trigger = trigger
+    )
+
+  override def createSell(
+      symbol: String,
+      dateTime: ZonedDateTime,
+      shares: Long,
+      price: Double,
+      tradingStrategyType: TradingStrategyType,
+      positionId: Long,
+      trigger: OrderTrigger
+  ): Order =
+    logger.info(s"Creating Sell Order for Symbol: $symbol, positionId: $positionId trigger: $trigger, Price $price")
+    Order(
+      `type` = Sell,
+      symbol = symbol,
+      dateTime = dateTime,
+      shares = shares,
+      price = price,
+      tradingStrategyType = tradingStrategyType,
+      positionId = Some(positionId),
+      trigger = trigger
+    )
 
   private def validate(
       signal: Signal,
@@ -84,7 +143,7 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy,
       marketDataStrategyResponse: Try[MarketDataStrategyResponse]
   ): Option[Order] = marketDataStrategyResponse match
     case Failure(exception) =>
-      logger.error("Error fetching market data!",exception)
+      logger.error("Error fetching market data!", exception)
       forcePositionExitService
         .executeCloseDayOrStopLoss(
           finInstrument = finInstrument,
@@ -102,38 +161,39 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy,
         tradeDateTime = tradeDateTime
       ) match
         case Some(lastSignal) =>
-          val order = Order(
-            `type` = Sell,
+          val order = createSell(
             symbol = position.symbol,
             dateTime = tradeDateTime,
             shares = position.numberOfShares,
             price = tradingPrice,
             tradingStrategyType = position.tradingStrategyType,
-            trigger = OrderTrigger.Signal
+            trigger = OrderTrigger.Signal,
+            positionId = position.id
           )
           logger.info(s"Creating Sell Order: $order PnL: ${order.totalPrice - position.totalOpenPrice}")
           Some(order)
-        case None => forcePositionExitService
-          .executeCloseDayOrStopLoss(
-            finInstrument = finInstrument,
-            position = position,
-            currentPrice = tradingPrice,
-            stopLossPercentage = stopLossPercentage,
-            tradeDateTime = tradeDateTime,
-            tradingExchange = tradingExchange,
-            tradingMode = tradingMode
-          )
+        case None =>
+          forcePositionExitService
+            .executeCloseDayOrStopLoss(
+              finInstrument = finInstrument,
+              position = position,
+              currentPrice = tradingPrice,
+              stopLossPercentage = stopLossPercentage,
+              tradeDateTime = tradeDateTime,
+              tradingExchange = tradingExchange,
+              tradingMode = tradingMode
+            )
 
   private def createBuy(
-                            finInstrument: FinInstrument,
-                            tradeDateTime: ZonedDateTime,
-                            tradingMode: TradingMode,
-                            tradingExchange: TradingExchange,
-                            balancePerFinInst: Double,
-                            tradingPrice: Double,
-                            tradingStrategy: TradingStrategy,
-                            signalFinderRequest: SignalFinderRequest
-                          ): Option[Order] =
+      finInstrument: FinInstrument,
+      tradeDateTime: ZonedDateTime,
+      tradingMode: TradingMode,
+      tradingExchange: TradingExchange,
+      balancePerFinInst: Double,
+      tradingPrice: Double,
+      tradingStrategy: TradingStrategy,
+      signalFinderRequest: SignalFinderRequest
+  ): Option[Order] =
     getLastSignal(
       signalType = SignalBuy,
       signalFinderRequest = signalFinderRequest,
@@ -141,17 +201,16 @@ class OrderFactoryImpl(signalFinderStrategy: SignalFinderStrategy,
     ) match
       case Some(lastSignal) =>
         if validate(
-          signal = lastSignal,
-          tradeDateTime = tradeDateTime,
-          tradingMode = tradingMode,
-          finInstrument = finInstrument,
-          tradingExchange = tradingExchange
-        )
+            signal = lastSignal,
+            tradeDateTime = tradeDateTime,
+            tradingMode = tradingMode,
+            finInstrument = finInstrument,
+            tradingExchange = tradingExchange
+          )
         then
           val numberOfShares = (balancePerFinInst / tradingPrice).toLong
           if numberOfShares > 0 then
-            val order = Order(
-              `type` = Buy,
+            val order = createBuy(
               symbol = finInstrument.symbol,
               dateTime = tradeDateTime,
               shares = numberOfShares,

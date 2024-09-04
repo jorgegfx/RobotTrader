@@ -52,14 +52,14 @@ class OpenGapTradingStrategyExecutor(orderFactory: OrderFactory) extends Trading
           currentTradingPrice = request.tradingPrice
         )
         then
-          val order = Order(
-            `type` = Sell,
+          val order = orderFactory.createSell(
             symbol = request.position.symbol,
             dateTime = request.tradeDateTime,
             shares = request.position.numberOfShares,
             price = request.tradingPrice,
             tradingStrategyType = request.position.tradingStrategyType,
-            trigger = OrderTrigger.MaxProfitExit
+            trigger = OrderTrigger.MaxProfitExit,
+            positionId = request.position.id
           )
           logger.info(s"Creating Sell Order: $order PnL: ${order.totalPrice - request.position.totalOpenPrice}")
           Some(order)

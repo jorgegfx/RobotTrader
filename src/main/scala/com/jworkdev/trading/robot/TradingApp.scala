@@ -18,16 +18,17 @@ object TradingApp extends zio.ZIOAppDefault:
   implicit val dbContext: DbContext =
     DbContext(logHandler = LogHandler.jdkLogHandler[Task])
   type AppEnv = Database & AccountService & PositionService & FinInstrumentService & TradingStrategyService &
-    TradingExchangeService
+    TradingExchangeService & OrderService
   private val accountService = AccountService.layer
   private val positionService = PositionService.layer
   private val tradingStrategyService = TradingStrategyService.layer
   private val finInstrumentService = FinInstrumentService.layer
   private val tradingExchangeService = TradingExchangeService.layer
+  private val orderService = OrderService.layer
   private val tradingExecutorService = TradingExecutorService()
   private val appEnv =
     DatabaseConfig.database ++ accountService ++ positionService ++ finInstrumentService ++ tradingStrategyService ++
-      tradingExchangeService
+      tradingExchangeService ++ orderService
   // Define the interval in minutes
   private val intervalMinutes: Int = 1
   private val schedule: Schedule[Any, Any, Long] = Schedule.fixed(intervalMinutes.minutes)
@@ -108,6 +109,7 @@ object TradingApp extends zio.ZIOAppDefault:
       )
     )
     _ <- ZIO.attempt(logger.info(s"Orders created :$orders ..."))
+    _ <- ZIO.serviceWithZIO[OrderService](_.create(orders = orders))
     _ <- applyOrders(
       account = account,
       openPositions = openPositions,

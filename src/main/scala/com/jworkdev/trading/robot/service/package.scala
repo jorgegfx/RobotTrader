@@ -44,5 +44,8 @@ package object service {
     def findOpenBetween(from: Instant, to: Instant): TranzactIO[List[Position]]
     def findCloseBetween(from: Instant, to: Instant): TranzactIO[List[Position]]
     def getPnL(from: Instant, to: Instant): TranzactIO[Double]
-  
+
+  trait OrderService:
+    def findAll(): TranzactIO[List[Order]]
+    def create(orders: List[Order]): TranzactIO[Int]
 }
