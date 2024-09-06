@@ -53,29 +53,6 @@ CREATE TABLE `fin_instrument` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `order`
---
-
-DROP TABLE IF EXISTS `order`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `order` (
-  `id` varchar(40) NOT NULL,
-  `type` varchar(5) NOT NULL,
-  `symbol` varchar(20) NOT NULL,
-  `date_time` datetime NOT NULL,
-  `shares` int NOT NULL,
-  `price` double NOT NULL,
-  `trading_strategy_type` varchar(45) NOT NULL,
-  `positionId` bigint DEFAULT NULL,
-  `trigger` varchar(45) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `position_fk_idx` (`positionId`),
-  CONSTRAINT `position_fk` FOREIGN KEY (`positionId`) REFERENCES `position` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `position`
 --
 
@@ -95,6 +72,29 @@ CREATE TABLE `position` (
   PRIMARY KEY (`id`),
   KEY `instrument_fk_idx` (`symbol`),
   CONSTRAINT `instrument_fk` FOREIGN KEY (`symbol`) REFERENCES `fin_instrument` (`symbol`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `trade_order`
+--
+
+DROP TABLE IF EXISTS `trade_order`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `trade_order` (
+  `id` varchar(40) NOT NULL,
+  `type` varchar(5) NOT NULL,
+  `symbol` varchar(20) NOT NULL,
+  `date_time` datetime NOT NULL,
+  `shares` int NOT NULL,
+  `price` double NOT NULL,
+  `trading_strategy_type` varchar(45) NOT NULL,
+  `position_id` bigint DEFAULT NULL,
+  `order_trigger` varchar(45) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `position_fk_idx` (`position_id`),
+  CONSTRAINT `position_fk` FOREIGN KEY (`position_id`) REFERENCES `position` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -139,4 +139,4 @@ CREATE TABLE `trading_strategy` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-09-04  8:56:20
+-- Dump completed on 2024-09-06  6:28:24
