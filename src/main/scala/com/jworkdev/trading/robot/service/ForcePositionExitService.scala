@@ -61,7 +61,7 @@ class ForcePositionExitServiceImpl extends ForcePositionExitService:
       tradingExchange = tradingExchange
     )
     then
-      logger.info(s"Close Day for Position : $position")
+      logger.info(s"Close Day for Position : $position at $tradeDateTime")
       Some(
         Order(
           `type` = Sell,
