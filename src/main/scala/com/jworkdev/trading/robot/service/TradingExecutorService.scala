@@ -47,7 +47,7 @@ class TradingExecutorServiceImpl(
     for
       _ <- ZIO.attempt(
         logger.info(
-          s"Trading on  ${finInstruments.map(_.symbol)} using ${request.tradingStrategies}"
+          s"Trading on  ${finInstruments.map(_.symbol)} using ${request.tradingStrategies} at ${request.tradingDateTime}"
         )
       )
       fibers <- ZIO.foreach(input) {

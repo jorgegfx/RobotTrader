@@ -13,18 +13,6 @@ object TradingWindowValidator:
   def shouldCloseDay(tradingDateTime: ZonedDateTime,
                      tradingMode: TradingMode,
                      finInstrument: FinInstrument,
-                     tradingExchangeMap: Map[String, TradingExchange]): Boolean =
-    tradingMode == TradingMode.IntraDay && tradingExchangeMap.get(finInstrument.exchange).exists(exchange => {
-      val lastChanceToCloseTime = for
-        limitClosingTime <- exchange.closeWindow(tradingDateTime = tradingDateTime)
-          .map(_.minus(minutesBeforeToCloseDay, ChronoUnit.MINUTES))
-       yield limitClosingTime
-      lastChanceToCloseTime.exists(closeTime=>tradingDateTime.isAfter(closeTime))
-    })
-
-  def shouldCloseDay(tradingDateTime: ZonedDateTime,
-                     tradingMode: TradingMode,
-                     finInstrument: FinInstrument,
                      tradingExchange: TradingExchange): Boolean =
     val lastChanceToCloseTime = for
       limitClosingTime <- tradingExchange.closeWindow(tradingDateTime = tradingDateTime)
@@ -49,14 +37,6 @@ object TradingWindowValidator:
     tradingExchange.windowType == TradingExchangeWindowType.Always ||
       isNotOutOfBuyingWindow(tradingDateTime = tradingDateTime, exchange = tradingExchange)
 
-  def isNotOutOfBuyingWindow(tradingDateTime: ZonedDateTime,
-                             tradingMode: TradingMode,
-                             finInstrument: FinInstrument,
-                             tradingExchangeMap: Map[String, TradingExchange]): Boolean =
-    (tradingMode == TradingMode.IntraDay &&
-      isNotOutOfBuyingWindow(tradingDateTime=tradingDateTime,
-        finInstrument = finInstrument,
-        tradingExchangeMap = tradingExchangeMap)) || (tradingMode == TradingMode.Swing)
 
   private def isNotOutOfBuyingWindow(tradingDateTime: ZonedDateTime,
                                      finInstrument: FinInstrument,

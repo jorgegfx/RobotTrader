@@ -1,12 +1,8 @@
 package com.jworkdev.trading.robot.strategy
 import com.jworkdev.trading.robot
-import com.jworkdev.trading.robot.OrderType.Sell
-import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyResponse, opengap}
 import com.jworkdev.trading.robot.service.OrderFactory
 import com.jworkdev.trading.robot.{Order, OrderTrigger}
 import com.typesafe.scalalogging.Logger
-
-import scala.util.{Failure, Success}
 
 class OpenGapTradingStrategyExecutor(orderFactory: OrderFactory) extends TradingStrategyExecutor:
 
