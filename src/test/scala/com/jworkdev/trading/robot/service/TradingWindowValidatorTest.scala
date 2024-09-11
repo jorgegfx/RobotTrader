@@ -135,7 +135,7 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
   }
 
   test("before shouldCloseDay another timezone") {
-    val localTime = LocalTime.of(16, 10)
+    val localTime = LocalTime.of(15, 31)
     val localDate = LocalDate.of(2024, 7, 24)
     val localDateTime = LocalDateTime.of(localDate, localTime).atZone(ZoneId.of("UTC"))
     val res = TradingWindowValidator.shouldCloseDay(
@@ -145,6 +145,19 @@ class TradingWindowValidatorTest extends AnyFunSuiteLike:
       tradingExchange = nasdaqExchange
     )
     assert(!res)
+  }
+
+  test("after shouldCloseDay another timezone") {
+    val localTime = LocalTime.of(20, 31)
+    val localDate = LocalDate.of(2024, 7, 24)
+    val localDateTime = LocalDateTime.of(localDate, localTime).atZone(ZoneId.of("UTC"))
+    val res = TradingWindowValidator.shouldCloseDay(
+      tradingDateTime = localDateTime,
+      tradingMode = IntraDay,
+      finInstrument = finInstrument,
+      tradingExchange = nasdaqExchange
+    )
+    assert(res)
   }
 
   test("after shouldCloseDay") {

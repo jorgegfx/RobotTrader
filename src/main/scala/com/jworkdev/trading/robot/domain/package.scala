@@ -76,9 +76,7 @@ package object domain:
         localTime: LocalTime,
         timezone: String
     ): ZonedDateTime =
-      val localClosingDateTime = LocalDateTime.of(tradingDateTime.toLocalDate, localTime).toZonedDateTime
-      val exchangeZoneId = ZoneId.of(timezone)
-      localClosingDateTime.withZoneSameInstant(exchangeZoneId)
+      LocalDateTime.of(tradingDateTime.toLocalDate, localTime).atZone(ZoneId.of(timezone))
 
     def closeWindow(tradingDateTime: ZonedDateTime): Option[ZonedDateTime] =
       for

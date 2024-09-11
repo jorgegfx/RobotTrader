@@ -83,6 +83,7 @@ class TradingExecutorServiceImpl(
     val tradingStrategyExecutor = tradingStrategyExecutorMap(tradingStrategy.`type`)
     for
       _ <- ZIO.attempt(logger.info(s"Executing ${finInstrument.symbol} ..."))
+      _ <- ZIO.attempt(logger.info(s"Close Exchange ${tradingExchange.closeWindow(tradingDateTime = tradeDateTime)} ..."))
       currentPriceFiber <- ZIO
         .attempt(marketDataProvider.getCurrentMarketPriceQuote(symbol = finInstrument.symbol))
         .fork

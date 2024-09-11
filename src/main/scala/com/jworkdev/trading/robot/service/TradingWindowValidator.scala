@@ -2,11 +2,13 @@ package com.jworkdev.trading.robot.service
 
 import com.jworkdev.trading.robot.config.TradingMode
 import com.jworkdev.trading.robot.domain.{FinInstrument, TradingExchange, TradingExchangeWindowType}
+import com.typesafe.scalalogging.Logger
 
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.time.temporal.ChronoUnit
 
 object TradingWindowValidator:
+  private val logger = Logger("TradingWindowValidator")
   private val limitHoursBeforeCloseDay = 1
   private val minutesBeforeToCloseDay = 30
 
@@ -14,10 +16,12 @@ object TradingWindowValidator:
                      tradingMode: TradingMode,
                      finInstrument: FinInstrument,
                      tradingExchange: TradingExchange): Boolean =
+    val localZoneId = tradingDateTime.getZone
     val lastChanceToCloseTime = for
       limitClosingTime <- tradingExchange.closeWindow(tradingDateTime = tradingDateTime)
         .map(_.minus(minutesBeforeToCloseDay, ChronoUnit.MINUTES))
-    yield limitClosingTime
+    yield limitClosingTime.withZoneSameInstant(localZoneId)
+    logger.info(s"lastChanceToCloseTime $lastChanceToCloseTime vs $tradingDateTime")
     tradingMode == TradingMode.IntraDay && 
       lastChanceToCloseTime.exists(closeTime => tradingDateTime.isAfter(closeTime))
         
