@@ -22,8 +22,10 @@ package object config {
   case class ApplicationConfiguration(dataBaseConfig: DataBaseConfig,
                                       strategyConfigurations: StrategyConfigurations,
                                       stopLossPercentage: Int,
+                                      takeProfitPercentage: Int,
                                       screenCount: Int,
-                                      tradingMode: TradingMode)
+                                      tradingMode: TradingMode,
+                                      accountName: String)
 
   val appConfig: IO[Config.Error, ApplicationConfiguration] = ConfigProvider
     .fromHoconFile(new java.io.File("config/application.conf"))

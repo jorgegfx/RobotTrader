@@ -111,6 +111,7 @@ class OpenGapTradingStrategyExecutorTest extends AnyFunSuiteLike:
         tradingStrategy = tradingStrategy,
         tradingMode = IntraDay,
         stopLossPercentage = 10,
+        takeProfitPercentage = 80,
         tradingPrice = tradingPrice,
         tradeDateTime = tradingTime,
         marketDataStrategyResponse = Success(marketDataStrategyResponse)
@@ -195,6 +196,7 @@ class OpenGapTradingStrategyExecutorTest extends AnyFunSuiteLike:
         tradingStrategy = tradingStrategy,
         tradingMode = IntraDay,
         stopLossPercentage = 10,
+        takeProfitPercentage = 80,
         tradingPrice = tradingPrice,
         tradeDateTime = tradingTime,
         marketDataStrategyResponse = Success(marketDataStrategyResponse)

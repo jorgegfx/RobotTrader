@@ -26,6 +26,7 @@ case class TradingStrategyExitRequest(
     tradingStrategy: TradingStrategy,
     tradingMode: TradingMode,
     stopLossPercentage: Int,
+    takeProfitPercentage: Int,
     tradingPrice: Double,
     tradeDateTime: ZonedDateTime,
     marketDataStrategyResponse: Try[MarketDataStrategyResponse]

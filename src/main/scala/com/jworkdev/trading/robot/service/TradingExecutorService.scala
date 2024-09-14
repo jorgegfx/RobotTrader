@@ -14,14 +14,15 @@ import zio.{Task, ZIO}
 import java.time.ZonedDateTime
 
 case class TradingExecutorRequest(
-    balancePerFinInst: Double,
-    finInstrumentMap: Map[FinInstrument, List[Position]],
-    tradingStrategies: List[TradingStrategy],
-    exchangeMap: Map[String, TradingExchange],
-    strategyConfigurations: StrategyConfigurations,
-    stopLossPercentage: Int,
-    tradingMode: TradingMode,
-    tradingDateTime: ZonedDateTime
+                                   maxTradingCapitalPerTrade: Double,
+                                   finInstrumentMap: Map[FinInstrument, List[Position]],
+                                   tradingStrategies: List[TradingStrategy],
+                                   exchangeMap: Map[String, TradingExchange],
+                                   strategyConfigurations: StrategyConfigurations,
+                                   stopLossPercentage: Int,
+                                   takeProfitPercentage: Int,
+                                   tradingMode: TradingMode,
+                                   tradingDateTime: ZonedDateTime
 )
 
 trait TradingExecutorService:
@@ -54,7 +55,7 @@ class TradingExecutorServiceImpl(
         case (tradingStrategy: TradingStrategy, finInstrument: FinInstrument, openPositions: List[Position]) =>
           val tradingExchange = request.exchangeMap(finInstrument.exchange)
           executeStrategy(
-            balancePerFinInst = request.balancePerFinInst,
+            balancePerFinInst = request.maxTradingCapitalPerTrade,
             finInstrument = finInstrument,
             tradingStrategy = tradingStrategy,
             openPosition =
@@ -62,6 +63,7 @@ class TradingExecutorServiceImpl(
             tradingExchange = tradingExchange,
             strategyConfigurations = request.strategyConfigurations,
             stopLossPercentage = request.stopLossPercentage,
+            takeProfitPercentage = request.takeProfitPercentage,
             tradingMode = request.tradingMode,
             tradeDateTime = request.tradingDateTime
           ).fork
@@ -77,6 +79,7 @@ class TradingExecutorServiceImpl(
                                tradingExchange: TradingExchange,
                                strategyConfigurations: StrategyConfigurations,
                                stopLossPercentage: Int,
+                               takeProfitPercentage: Int, 
                                tradingMode: TradingMode,
                                tradeDateTime: ZonedDateTime
   ): Task[Option[Order]] =
@@ -118,6 +121,7 @@ class TradingExecutorServiceImpl(
                     tradingStrategy = tradingStrategy,
                     tradingMode = tradingMode,
                     stopLossPercentage = stopLossPercentage,
+                    takeProfitPercentage = takeProfitPercentage,
                     tradingPrice = currentPrice,
                     tradeDateTime = tradeDateTime, 
                     marketDataStrategyResponse = marketDataStrategyResponse

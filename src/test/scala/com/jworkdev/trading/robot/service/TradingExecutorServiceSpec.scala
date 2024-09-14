@@ -94,12 +94,13 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
-            balancePerFinInst = balancePerFinInst,
+            maxTradingCapitalPerTrade = balancePerFinInst,
             finInstrumentMap = finInstruments.map((_,List.empty)).toMap,
             tradingStrategies = tradingStrategies,
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
+            takeProfitPercentage = 80,
             tradingMode = TradingMode.IntraDay,
             tradingDateTime = tradingDateTime
           )
@@ -171,12 +172,13 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       for
         orders <- tradingExecutorService.execute(
           TradingExecutorRequest(
-            balancePerFinInst = balancePerFinInst,
+            maxTradingCapitalPerTrade = balancePerFinInst,
             finInstrumentMap = finInstruments.map((_,List.empty)).toMap,
             tradingStrategies = tradingStrategies,
             exchangeMap = exchangeMap,
             strategyConfigurations = strategyConfigurations,
             stopLossPercentage = 10,
+            takeProfitPercentage = 80,
             tradingMode = TradingMode.IntraDay,
             tradingDateTime = tradingDateTime
           )

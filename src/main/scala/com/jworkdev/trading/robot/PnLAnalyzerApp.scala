@@ -93,7 +93,8 @@ object PnLAnalyzerApp extends App:
               exchange = exchange, 
               tradingStrategy = TradingStrategy(`type` = tradingStrategyType, pnl = None), 
               tradingMode = IntraDay, 
-              stopLossPercentage = 10, 
+              stopLossPercentage = 10,
+              takeProfitPercentage = 80,
               tradingPrice = entry.tradingPrice, 
               tradeDateTime = entry.tradingTime,
               marketDataStrategyResponse = entry.marketDataStrategyResponse))

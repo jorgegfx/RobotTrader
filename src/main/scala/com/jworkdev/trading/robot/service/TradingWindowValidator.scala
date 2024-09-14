@@ -21,8 +21,7 @@ object TradingWindowValidator:
       limitClosingTime <- tradingExchange.closeWindow(tradingDateTime = tradingDateTime)
         .map(_.minus(minutesBeforeToCloseDay, ChronoUnit.MINUTES))
     yield limitClosingTime.withZoneSameInstant(localZoneId)
-    logger.info(s"lastChanceToCloseTime $lastChanceToCloseTime vs $tradingDateTime")
-    tradingMode == TradingMode.IntraDay && 
+    tradingMode == TradingMode.IntraDay &&
       lastChanceToCloseTime.exists(closeTime => tradingDateTime.isAfter(closeTime))
         
 

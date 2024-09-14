@@ -7,7 +7,6 @@ import com.typesafe.scalalogging.Logger
 class OpenGapTradingStrategyExecutor(orderFactory: OrderFactory) extends TradingStrategyExecutor:
 
   private val logger = Logger(classOf[OpenGapTradingStrategyExecutor])
-  private val profitPercentageExit = 60
 
   override def executeEntry(request: TradingStrategyEntryRequest): Option[Order] =
     logger.info(s"Executing Entry on OpenGap with request: $request")
@@ -22,11 +21,15 @@ class OpenGapTradingStrategyExecutor(orderFactory: OrderFactory) extends Trading
       marketDataStrategyResponse = request.marketDataStrategyResponse
     )
 
-  private def isReadyToClose(openPricePerShare: Double, currentTradingPrice: Double): Boolean =
+  private def isReadyToClose(
+      openPricePerShare: Double,
+      currentTradingPrice: Double,
+      takeProfitPercentage: Int
+  ): Boolean =
     if currentTradingPrice > openPricePerShare then
       val profit = currentTradingPrice - openPricePerShare
       val profitPercentage = profit / openPricePerShare
-      profitPercentageExit >= profitPercentage
+      takeProfitPercentage >= profitPercentage
     else false
 
   override def executeExit(request: TradingStrategyExitRequest): Option[Order] =
@@ -44,9 +47,10 @@ class OpenGapTradingStrategyExecutor(orderFactory: OrderFactory) extends Trading
       case Some(order) => Some(order)
       case None =>
         if isReadyToClose(
-          openPricePerShare = request.position.openPricePerShare,
-          currentTradingPrice = request.tradingPrice
-        )
+            openPricePerShare = request.position.openPricePerShare,
+            currentTradingPrice = request.tradingPrice,
+            takeProfitPercentage = request.takeProfitPercentage
+          )
         then
           val order = orderFactory.createSell(
             symbol = request.position.symbol,
@@ -60,8 +64,9 @@ class OpenGapTradingStrategyExecutor(orderFactory: OrderFactory) extends Trading
           logger.info(s"Creating Sell Order: $order PnL: ${order.totalPrice - request.position.totalOpenPrice}")
           Some(order)
         else
-          logger.info(s"${request.position.id} has not reached limit " +
-            s"openPricePerShare:${request.position.openPricePerShare} " +
-            s"currentTradingPrice:${request.tradingPrice}")
+          logger.info(
+            s"${request.position.id} has not reached limit " +
+              s"openPricePerShare:${request.position.openPricePerShare} " +
+              s"currentTradingPrice:${request.tradingPrice}"
+          )
           None
-
