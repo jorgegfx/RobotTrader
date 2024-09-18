@@ -1,66 +1,63 @@
--- MySQL dump 10.13  Distrib 8.4.2, for macos14 (arm64)
+-- phpMyAdmin SQL Dump
+-- version 5.2.1deb3
+-- https://www.phpmyadmin.net/
 --
--- Host: localhost    Database: robot_trading
--- ------------------------------------------------------
--- Server version	8.4.2
+-- Host: localhost:3306
+-- Generation Time: Sep 18, 2024 at 09:49 AM
+-- Server version: 8.0.39-0ubuntu0.24.04.1
+-- PHP Version: 8.3.6
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8mb4 */;
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-/*!40103 SET TIME_ZONE='+00:00' */;
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Database: `robot_trading`
+--
+
+-- --------------------------------------------------------
 
 --
 -- Table structure for table `account`
 --
 
-DROP TABLE IF EXISTS `account`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `account` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
+  `id` bigint NOT NULL,
   `name` varchar(45) DEFAULT NULL,
-  `balance` double DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+  `balance` double DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
 
 --
 -- Table structure for table `fin_instrument`
 --
 
-DROP TABLE IF EXISTS `fin_instrument`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `fin_instrument` (
   `symbol` varchar(20) NOT NULL,
-  `name` varchar(250) DEFAULT NULL,
+  `name` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `type` varchar(10) NOT NULL,
   `volatility` double DEFAULT NULL,
   `exchange` varchar(20) NOT NULL,
   `creation_date` datetime NOT NULL,
   `last_update` datetime DEFAULT NULL,
-  `active` varchar(3) DEFAULT NULL,
-  PRIMARY KEY (`symbol`),
-  KEY `exchange_fk_idx` (`exchange`),
-  CONSTRAINT `exchange_fk` FOREIGN KEY (`exchange`) REFERENCES `trading_exchange` (`id`)
+  `active` varchar(3) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+
+-- --------------------------------------------------------
 
 --
 -- Table structure for table `position`
 --
 
-DROP TABLE IF EXISTS `position`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `position` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
+  `id` bigint NOT NULL,
   `symbol` varchar(10) NOT NULL,
   `number_of_shares` int NOT NULL,
   `open_price_per_share` double NOT NULL,
@@ -68,20 +65,15 @@ CREATE TABLE `position` (
   `open_date` datetime NOT NULL,
   `close_date` datetime DEFAULT NULL,
   `pnl` double DEFAULT NULL,
-  `trading_strategy_type` varchar(10) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `instrument_fk_idx` (`symbol`),
-  CONSTRAINT `instrument_fk` FOREIGN KEY (`symbol`) REFERENCES `fin_instrument` (`symbol`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+  `trading_strategy_type` varchar(10) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
 
 --
 -- Table structure for table `trade_order`
 --
 
-DROP TABLE IF EXISTS `trade_order`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `trade_order` (
   `id` varchar(40) NOT NULL,
   `type` varchar(5) NOT NULL,
@@ -91,52 +83,117 @@ CREATE TABLE `trade_order` (
   `price` double NOT NULL,
   `trading_strategy_type` varchar(45) NOT NULL,
   `position_id` bigint DEFAULT NULL,
-  `order_trigger` varchar(45) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `position_fk_idx` (`position_id`),
-  CONSTRAINT `position_fk` FOREIGN KEY (`position_id`) REFERENCES `position` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+  `order_trigger` varchar(45) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+
+-- --------------------------------------------------------
 
 --
 -- Table structure for table `trading_exchange`
 --
 
-DROP TABLE IF EXISTS `trading_exchange`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `trading_exchange` (
   `id` varchar(10) NOT NULL,
   `name` varchar(20) NOT NULL,
   `openingTime` time NOT NULL,
   `closingTime` time NOT NULL,
   `timezone` varchar(45) NOT NULL,
-  `window_type` varchar(20) NOT NULL,
-  PRIMARY KEY (`id`)
+  `window_type` varchar(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+
+-- --------------------------------------------------------
 
 --
 -- Table structure for table `trading_strategy`
 --
 
-DROP TABLE IF EXISTS `trading_strategy`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `trading_strategy` (
   `type` varchar(10) NOT NULL,
-  `pnl` double DEFAULT NULL,
-  PRIMARY KEY (`type`)
+  `pnl` double DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `account`
+--
+ALTER TABLE `account`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `fin_instrument`
+--
+ALTER TABLE `fin_instrument`
+  ADD PRIMARY KEY (`symbol`),
+  ADD KEY `exchange_fk_idx` (`exchange`);
+
+--
+-- Indexes for table `position`
+--
+ALTER TABLE `position`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `instrument_fk_idx` (`symbol`);
+
+--
+-- Indexes for table `trade_order`
+--
+ALTER TABLE `trade_order`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `position_fk_idx` (`position_id`);
+
+--
+-- Indexes for table `trading_exchange`
+--
+ALTER TABLE `trading_exchange`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `trading_strategy`
+--
+ALTER TABLE `trading_strategy`
+  ADD PRIMARY KEY (`type`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `account`
+--
+ALTER TABLE `account`
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `position`
+--
+ALTER TABLE `position`
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `fin_instrument`
+--
+ALTER TABLE `fin_instrument`
+  ADD CONSTRAINT `exchange_fk` FOREIGN KEY (`exchange`) REFERENCES `trading_exchange` (`id`);
+
+--
+-- Constraints for table `position`
+--
+ALTER TABLE `position`
+  ADD CONSTRAINT `instrument_fk` FOREIGN KEY (`symbol`) REFERENCES `fin_instrument` (`symbol`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+--
+-- Constraints for table `trade_order`
+--
+ALTER TABLE `trade_order`
+  ADD CONSTRAINT `position_fk` FOREIGN KEY (`position_id`) REFERENCES `position` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+COMMIT;
+
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
--- Dump completed on 2024-09-06  6:28:24
