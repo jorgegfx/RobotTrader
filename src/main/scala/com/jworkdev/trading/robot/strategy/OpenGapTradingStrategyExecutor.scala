@@ -1,19 +1,19 @@
 package com.jworkdev.trading.robot.strategy
 import com.jworkdev.trading.robot
 import com.jworkdev.trading.robot.data.strategy.opengap.OpenGapSignalInput
-import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyResponse, macd, opengap}
+import com.jworkdev.trading.robot.data.strategy.{MarketDataStrategyResponse, opengap}
 import com.jworkdev.trading.robot.service.OrderFactory
 import com.jworkdev.trading.robot.{Order, OrderTrigger}
 import com.typesafe.scalalogging.Logger
 
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 class OpenGapTradingStrategyExecutor(orderFactory: OrderFactory) extends TradingStrategyExecutor:
 
   private val logger = Logger(classOf[OpenGapTradingStrategyExecutor])
 
   override def executeEntry(request: TradingStrategyEntryRequest): Option[Order] =
-    logger.info(s"Executing Entry on OpenGap with request: $request")
+    logger.info(s"Executing Entry on OpenGap with request: ${request.getDescription}")
     orderFactory.createBuy(
       finInstrument = request.finInstrument,
       tradeDateTime = request.tradeDateTime,

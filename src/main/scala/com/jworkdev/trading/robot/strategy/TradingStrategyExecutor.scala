@@ -17,7 +17,11 @@ case class TradingStrategyEntryRequest(
     tradingPrice: Double,
     tradeDateTime: ZonedDateTime,
     marketDataStrategyResponse: Try[MarketDataStrategyResponse]
-)
+):
+  def getDescription: String = s"balancePerFinInst:$balancePerFinInst, " +
+    s"symbol:${finInstrument.symbol}, exchange:${exchange.name}, " +
+    s"tradingStrategy:${tradingStrategy.`type`}, tradingMode:${tradingMode}, " +
+    s"tradingPrice:${tradingPrice}, tradeDateTime:${tradeDateTime}"
 
 case class TradingStrategyExitRequest(
     position: Position,
