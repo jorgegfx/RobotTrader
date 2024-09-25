@@ -3,15 +3,15 @@ package com.jworkdev.trading.robot.market.data.yahoo
 import com.fasterxml.jackson.databind.{DeserializationFeature, JsonNode, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.jworkdev.trading.robot.market
-import com.jworkdev.trading.robot.market.data.{MarketDataProvider, SnapshotFrequency, SnapshotInterval, StockPrice}
 import com.jworkdev.trading.robot.market.data
+import com.jworkdev.trading.robot.market.data.{MarketDataProvider, SnapshotFrequency, SnapshotInterval, StockPrice}
 import com.typesafe.scalalogging.Logger
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpGet
-import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
+import org.apache.http.impl.client.HttpClients
 import org.apache.http.util.EntityUtils
 
-import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{Instant, ZoneId, ZonedDateTime}
 import scala.util.{Failure, Success, Try, Using}
 
 class YahooFinanceMarketDataProvider extends MarketDataProvider:
@@ -91,18 +91,21 @@ class YahooFinanceMarketDataProvider extends MarketDataProvider:
       case data.SnapshotInterval.FifteenMinutes => "15m"
       case data.SnapshotInterval.ThirtyMinutes  => "30m"
       case data.SnapshotInterval.SixtyMinutes   => "60m"
-    val client: CloseableHttpClient = HttpClients.createDefault()
-    val url = s"$baseUrl/$symbol?interval=$internalParam&range=${daysRange}d"
-    logger.info(s"fetching url :$url ...")
-    val request = new HttpGet(url)
-    val response = client.execute(request)
-    val responseCode = response.getStatusLine.getStatusCode
-    if responseCode != 200 then Failure(new IllegalStateException(s"Invalid response $responseCode"))
-    else
-      val entity = response.getEntity
-      val responseString = EntityUtils.toString(entity)
-      val json = mapper.readTree(responseString)
-      Try(parse(symbol = symbol, response = json))
+    Using(HttpClients.custom().setDefaultRequestConfig(requestConfig).build()){ httpClient =>
+      val url = s"$baseUrl/$symbol?interval=$internalParam&range=${daysRange}d"
+      logger.info(s"fetching url :$url ...")
+      val request = new HttpGet(url)
+      Using(httpClient.execute(request)){ response=>
+        val responseCode = response.getStatusLine.getStatusCode
+        if responseCode != 200 then throw new IllegalStateException(s"Invalid response $responseCode")
+        else
+          val entity = response.getEntity
+          val responseString = EntityUtils.toString(entity)
+          val json = mapper.readTree(responseString)
+          parse(symbol = symbol, response = json)
+      }
+    }.flatten
+
 
   private def parse(symbol: String, response: JsonNode): List[StockPrice] =
     val res = for
