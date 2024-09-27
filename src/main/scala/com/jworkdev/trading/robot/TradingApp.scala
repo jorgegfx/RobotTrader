@@ -11,26 +11,15 @@ import io.github.gaelrenoux.tranzactio.doobie.*
 import zio.*
 import zio.Console.*
 import zio.interop.catz.*
-
+import com.jworkdev.trading.robot.infra.DatabaseConfig.appEnv
 import java.time.ZonedDateTime
 
 object TradingApp extends zio.ZIOAppDefault:
   implicit val dbContext: DbContext =
     DbContext(logHandler = LogHandler.jdkLogHandler[Task])
-  type AppEnv = Database & AccountService & PositionService & FinInstrumentService & TradingStrategyService &
-    TradingExchangeService & OrderService
-  private val accountService = AccountService.layer
-  private val positionService = PositionService.layer
-  private val tradingStrategyService = TradingStrategyService.layer
-  private val finInstrumentService = FinInstrumentService.layer
-  private val tradingExchangeService = TradingExchangeService.layer
-  private val orderService = OrderService.layer
   private val tradingExecutorService = TradingExecutorService()
-  private val appEnv =
-    DatabaseConfig.database ++ accountService ++
-      positionService ++ finInstrumentService ++
-      tradingStrategyService ++ tradingExchangeService ++
-      orderService
+  private val orderBalancer = OrderBalancer()
+
   // Define the interval in minutes
   private val intervalMinutes: Int = 1
   private val schedule: Schedule[Any, Any, Long] = Schedule.fixed(intervalMinutes.minutes)
@@ -133,15 +122,17 @@ object TradingApp extends zio.ZIOAppDefault:
         _ <- ZIO.attempt(logger.info(s"Orders created :$orders ..."))
         _ <- ZIO.serviceWithZIO[OrderService](_.create(orders = orders))
         _ <- ZIO.attempt(logger.info(s"Applying orders :$orders ..."))
-        _ <- updateBalance(account = account, orders = orders)
+        balancedOrders <- ZIO.attempt(orderBalancer.balance(amount = account.balance,orders = orders))
+        _ <- ZIO.attempt(logger.info(s"Balanced orders :$balancedOrders ..."))
+        _ <- updateBalance(account = account, orders = balancedOrders)
         positionService <- ZIO.service[PositionService]
         closeOpenPositionsCount <- positionService.closeOpenPositions(
           openPositions = openPositions,
-          orders = orders
+          orders = balancedOrders
         )
         _ <- ZIO.attempt(logger.info(s"Positions closed : $closeOpenPositionsCount"))
         openPositionsCount <- positionService.createOpenPositionsFromOrders(
-          orders = orders
+          orders = balancedOrders
         )
         _ <- ZIO.attempt(logger.info(s"Positions opened : $openPositionsCount"))
       yield ()
