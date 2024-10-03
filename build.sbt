@@ -62,7 +62,11 @@ libraryDependencies ++= Seq(
 // Testing
   "dev.zio" %% "zio-test" % zioVersion % Test,
   "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
-  "org.scalatestplus" %% "mockito-5-12" % "3.2.19.0" % Test
+  "org.scalatestplus" %% "mockito-5-12" % "3.2.19.0" % Test,
+  //Webull
+  "com.webull.openapi" % "webull-java-sdk-quotes" % "0.2.6",
+  "com.webull.openapi" % "webull-java-sdk-trade-events" % "0.2.6",
+  "com.webull.openapi" % "webull-java-sdk-trade" % "0.2.6"
 )
 
 lazy val root = (project in file("."))
