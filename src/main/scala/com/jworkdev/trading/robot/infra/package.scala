@@ -20,7 +20,7 @@ package object infra:
   import zio.*
 
   type AppEnv = Database & AccountService & PositionService & FinInstrumentService & TradingStrategyService &
-    TradingExchangeService & OrderService
+    TradingExchangeService & OrderService & PnLPerformanceService
 
   object DatabaseConfig:
 
@@ -62,9 +62,10 @@ package object infra:
     private val finInstrumentService = FinInstrumentService.layer
     private val tradingExchangeService = TradingExchangeService.layer
     private val orderService = OrderService.layer
+    private val pnLPerformanceService = PnLPerformanceService.layer
     val appEnv =
       DatabaseConfig.database ++ accountService ++
         positionService ++ finInstrumentService ++
         tradingStrategyService ++ tradingExchangeService ++
-        orderService
+        orderService ++ pnLPerformanceService
 

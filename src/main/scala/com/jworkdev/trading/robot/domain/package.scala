@@ -1,7 +1,6 @@
 package com.jworkdev.trading.robot
 
 import com.jworkdev.trading.robot.market.data.StockPrice
-import com.jworkdev.trading.robot.time.LocalDateTimeExtensions.toZonedDateTime
 
 import java.time.*
 package object domain:
@@ -71,13 +70,6 @@ package object domain:
   ):
     private val nonBusinessDays = Set(DayOfWeek.SUNDAY, DayOfWeek.SATURDAY)
 
-    private def createFromZonedDateTime(
-        tradingDateTime: ZonedDateTime,
-        localTime: LocalTime,
-        timezone: String
-    ): ZonedDateTime =
-      LocalDateTime.of(tradingDateTime.toLocalDate, localTime).atZone(ZoneId.of(timezone))
-
     def closeWindow(tradingDateTime: ZonedDateTime): Option[ZonedDateTime] =
       for
         timezone <- timezone
@@ -90,8 +82,17 @@ package object domain:
         openingTime <- openingTime
       yield createFromZonedDateTime(tradingDateTime = tradingDateTime, localTime = openingTime, timezone = timezone)
 
+    private def createFromZonedDateTime(
+        tradingDateTime: ZonedDateTime,
+        localTime: LocalTime,
+        timezone: String
+    ): ZonedDateTime =
+      LocalDateTime.of(tradingDateTime.toLocalDate, localTime).atZone(ZoneId.of(timezone))
+
     def isTradingExchangeDay(tradingDateTime: ZonedDateTime): Boolean =
       windowType == TradingExchangeWindowType.Always ||
         !nonBusinessDays.contains(tradingDateTime.getDayOfWeek)
 
   case class Account(id: Long, name: String, balance: Double)
+
+  case class PnLPerformance(entryDate: LocalDate, tradingStrategyType: TradingStrategyType, amount: Double)

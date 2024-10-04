@@ -1,12 +1,12 @@
 package com.jworkdev.trading.robot
 
-import com.jworkdev.trading.robot.domain.{Account, TradingExchange, FinInstrument, Position, TradingStrategy, TradingStrategyType}
+import com.jworkdev.trading.robot.domain.{Account, FinInstrument, PnLPerformance, Position, TradingExchange, TradingStrategy, TradingStrategyType}
 import doobie.implicits.*
 import io.github.gaelrenoux.tranzactio.doobie
 import io.github.gaelrenoux.tranzactio.doobie.{TranzactIO, tzio}
 import zio.{ULayer, ZLayer}
 
-import java.time.Instant
+import java.time.{Instant, LocalDate}
 import scala.util.Try
 
 
@@ -48,4 +48,11 @@ package object service {
   trait OrderService:
     def findAll(): TranzactIO[List[Order]]
     def create(orders: List[Order]): TranzactIO[Int]
+
+  trait PnLPerformanceService:
+    def findByEntryDate(entryDate: LocalDate,
+                        tradingStrategyType: TradingStrategyType): TranzactIO[Option[PnLPerformance]]
+    def createOrUpdate(entryDate: LocalDate,
+                       tradingStrategyType: TradingStrategyType,
+                       amount: Double): TranzactIO[Unit]
 }
