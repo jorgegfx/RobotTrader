@@ -193,7 +193,11 @@ object TradingExecutorServiceSpec extends ZIOSpecDefault:
       name = "Nvidia",
       `type` = FinInstrumentType.Stock,
       exchange = "NASDAQ",
-      volatility = Some(10d),
+      priceVolatility = Some(1.0),
+      averageDailyVolume = None,
+      preMarketGap = None,
+      preMarketNumberOfShareTrades = None,
+      averageTrueRange = None,
       creationDate = ZonedDateTime.now(),
       lastUpdate = None,
       isActive = true

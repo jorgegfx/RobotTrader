@@ -29,7 +29,8 @@ class YahooFinanceMarketDataProvider extends MarketDataProvider:
   private val requestTimeout = 5000
 
   // Create a RequestConfig with the timeout settings
-  private val requestConfig = RequestConfig.custom()
+  private val requestConfig = RequestConfig
+    .custom()
     .setConnectTimeout(connectionTimeout)
     .setSocketTimeout(socketTimeout)
     .setConnectionRequestTimeout(requestTimeout)
@@ -41,12 +42,11 @@ class YahooFinanceMarketDataProvider extends MarketDataProvider:
 
   private def fetchResponse(symbol: String): Try[Double] =
     val url = s"$baseUrl/$symbol"
-    Using(HttpClients.custom().setDefaultRequestConfig(requestConfig).build()){ httpClient =>
+    Using(HttpClients.custom().setDefaultRequestConfig(requestConfig).build()) { httpClient =>
       val request = new HttpGet(url)
-      Using(httpClient.execute(request)){ response=>
+      Using(httpClient.execute(request)) { response =>
         val responseCode = response.getStatusLine.getStatusCode
-        if responseCode != 200 then
-          Failure(new IllegalStateException(s"Invalid response $responseCode"))
+        if responseCode != 200 then Failure(new IllegalStateException(s"Invalid response $responseCode"))
         else
           val entity = response.getEntity
           val responseString = EntityUtils.toString(entity)
@@ -59,7 +59,7 @@ class YahooFinanceMarketDataProvider extends MarketDataProvider:
             yield regularMarketPrice
           ) flatMap {
             case Some(value) => Success(value)
-            case None => Failure(new IllegalStateException("No Price found!"))
+            case None        => Failure(new IllegalStateException("No Price found!"))
           }
       }.flatten
     }.flatten
@@ -91,11 +91,13 @@ class YahooFinanceMarketDataProvider extends MarketDataProvider:
       case data.SnapshotInterval.FifteenMinutes => "15m"
       case data.SnapshotInterval.ThirtyMinutes  => "30m"
       case data.SnapshotInterval.SixtyMinutes   => "60m"
-    Using(HttpClients.custom().setDefaultRequestConfig(requestConfig).build()){ httpClient =>
+      case data.SnapshotInterval.Hourly         => "1h"
+      case data.SnapshotInterval.Daily          => "1d"
+    Using(HttpClients.custom().setDefaultRequestConfig(requestConfig).build()) { httpClient =>
       val url = s"$baseUrl/$symbol?interval=$internalParam&range=${daysRange}d"
       logger.info(s"fetching url :$url ...")
       val request = new HttpGet(url)
-      Using(httpClient.execute(request)){ response=>
+      Using(httpClient.execute(request)) { response =>
         val responseCode = response.getStatusLine.getStatusCode
         if responseCode != 200 then throw new IllegalStateException(s"Invalid response $responseCode")
         else
@@ -105,7 +107,6 @@ class YahooFinanceMarketDataProvider extends MarketDataProvider:
           parse(symbol = symbol, response = json)
       }
     }.flatten
-
 
   private def parse(symbol: String, response: JsonNode): List[StockPrice] =
     val res = for

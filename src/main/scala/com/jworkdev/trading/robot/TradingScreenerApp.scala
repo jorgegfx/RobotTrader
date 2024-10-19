@@ -1,5 +1,6 @@
 package com.jworkdev.trading.robot
 
+import com.jworkdev.trading.robot.config.appConfig
 import com.jworkdev.trading.robot.infra.{DatabaseConfig, FinInstrumentService}
 import com.jworkdev.trading.robot.market.data.ExchangeDataProvider
 import com.jworkdev.trading.robot.service.{FinInstrumentService, StockScreeningService}
@@ -16,41 +17,45 @@ object TradingScreenerApp extends zio.ZIOAppDefault:
   private val stockScreeningService = StockScreeningService.layer
   private val finInstrumentService = FinInstrumentService.layer
   private val exchangeDataProvider = ExchangeDataProvider.layer
-  private val exchange = "NASDAQ"
 
   override def run: ZIO[ZIOAppArgs & Scope, Any, Unit] =
     for
-      _ <- calculateVolatilityLoop().provide(
+      _ <- calculateStatsLoop().provide(
         DatabaseConfig.database ++
-        StockScreeningService.layer,
+          StockScreeningService.layer,
         FinInstrumentService.layer,
         ExchangeDataProvider.layer
       )
     yield ()
 
-  private def calculateVolatilityLoop(): ZIO[AppEnv, Throwable, Unit] =
-    calculateVolatility().flatMap{ res =>
-        if(!res){
-          for
-            _ <- Console.printLine(s"Next batch ...")
-            _ <- ZIO.sleep(Duration.fromSeconds(30))
-            _ <- calculateVolatilityLoop()
-          yield ()
-        }else{
-          ZIO.succeed(())
-        }
-    }
+  private def calculateStatsLoop(): ZIO[AppEnv, Throwable, Unit] =
+    calculateStats().flatMap { res =>
+      if (!res) {
+        for
+          _ <- Console.printLine(s"Next batch ...")
+          _ <- ZIO.sleep(Duration.fromSeconds(30))
+          _ <- calculateStatsLoop()
+        yield ()
+      } else {
+        ZIO.succeed(())
+      }
+    }  
 
   /** Main code for the application. Results in a big ZIO depending on the AppEnv. */
-  private def calculateVolatility(): ZIO[AppEnv, Throwable, Boolean] =
+  private def calculateStats(): ZIO[AppEnv, Throwable, Boolean] =
     val executeTradingScreening: ZIO[Connection & AppEnv, Throwable, Boolean] =
       for
         finInstrumentService <- ZIO.service[FinInstrumentService]
         stockScreeningService <- ZIO.service[StockScreeningService]
-        finInstruments <- finInstrumentService.findWithoutVolatility()
-        _ <- Console.printLine(s"Updating ${finInstruments.size} finInstruments ...")
-        volatilityMap <- stockScreeningService.calculateVolatility(finInstruments = finInstruments)
-        - <- finInstrumentService.updateVolatility(volatilityMap = volatilityMap)
+        screenCount <- appConfig.map(_.screenCount)
+        finInstruments <- finInstrumentService.findWithExpiredStats()
+        _ <- ZIO.foreach(finInstruments){ finInstrument =>
+          for
+            _ <- Console.printLine(s"Updating ${finInstrument.symbol} ...")
+          yield ()
+        }
+        stats <- stockScreeningService.calculateStats(symbols = finInstruments.map(_.symbol).toSet)
+        - <- finInstrumentService.updateStats(stats = stats)
       yield finInstruments.isEmpty
 
     ZIO.serviceWithZIO[Any] { conf =>
@@ -59,3 +64,4 @@ object TradingScreenerApp extends zio.ZIOAppDefault:
         DatabaseConfig.alternateDbRecovery
       Database.transactionOrWiden(executeTradingScreening)
     }
+

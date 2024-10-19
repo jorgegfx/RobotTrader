@@ -22,10 +22,12 @@ package object service {
   trait FinInstrumentService:
     def findBySymbol(symbol: String): TranzactIO[Option[FinInstrument]]
     def findAll(): TranzactIO[List[FinInstrument]]
+    def findTopVolatile(limit: Int): TranzactIO[List[FinInstrument]]
     def findTopToTrade(limit: Int): TranzactIO[List[FinInstrument]]
-    def findWithoutVolatility(): TranzactIO[List[FinInstrument]]
+    def findWithExpiredStats(): TranzactIO[List[FinInstrument]]
     def saveNonExisting(finInstruments: List[FinInstrument]): TranzactIO[Int]
     def updateVolatility(volatilityMap: Map[String,Try[Double]]): TranzactIO[Int]
+    def updateStats(stats: List[FinInstrumentStats]): TranzactIO[Int]
     def updateVolatility(symbol: String, volatility: Double): TranzactIO[Unit]
     def deleteAll(): TranzactIO[Int]
 

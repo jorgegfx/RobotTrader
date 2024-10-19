@@ -23,4 +23,5 @@ package object signals {
   case class OpenGapRequest(signalInputs: List[OpenGapSignalInput]) extends SignalFinderRequest
   case class RelativeStrengthIndexRequest(stockPrices: List[StockPrice]) extends SignalFinderRequest
   case class MACDRequest(stockPrices: List[StockPrice], validate: Boolean) extends SignalFinderRequest
+  case class ABCDRequest(stockPrices: List[StockPrice])
 }
