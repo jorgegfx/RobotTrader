@@ -5,6 +5,14 @@ import com.jworkdev.trading.robot.market.data.StockPrice
 import java.time.*
 package object domain:
 
+  def getAverage[T](numbers: List[T])(implicit num: Numeric[T]): Double = {
+    if (numbers.nonEmpty) {
+      num.toDouble(numbers.sum) / numbers.size
+    } else {
+      0.0
+    }
+  }
+
   def groupPricesByDate(prices: List[StockPrice]): Map[LocalDate, List[StockPrice]] =
     prices
       .map(price => (price, price.snapshotTime.toLocalDate))
@@ -46,7 +54,11 @@ package object domain:
       symbol: String,
       name: String,
       `type`: FinInstrumentType,
-      volatility: Option[Double],
+      priceVolatility: Option[Double],
+      averageDailyVolume: Option[Double],
+      preMarketGap: Option[Double],
+      preMarketNumberOfShareTrades: Option[Double],
+      averageTrueRange: Option[Double],
       exchange: String,
       creationDate: ZonedDateTime,
       lastUpdate: Option[ZonedDateTime],

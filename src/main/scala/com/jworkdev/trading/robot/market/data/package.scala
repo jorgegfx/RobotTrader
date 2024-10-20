@@ -5,8 +5,8 @@ import com.jworkdev.trading.robot.market.data.alphavantage.AlphaVantageExchangeD
 import com.jworkdev.trading.robot.market.data.yahoo.YahooFinanceMarketDataProvider
 import zio.{Task, ULayer, ZLayer}
 
+import java.time.ZonedDateTime
 import scala.math.*
-import java.time.{Instant, ZonedDateTime}
 import scala.util.Try
 
 package object data:
@@ -18,10 +18,10 @@ package object data:
       low: Double,
       volume: Long,
       snapshotTime: ZonedDateTime
-  ) {}
+  )
 
   enum SnapshotInterval:
-    case OneMinute, FiveMinutes, FifteenMinutes, ThirtyMinutes, SixtyMinutes
+    case OneMinute, FiveMinutes, FifteenMinutes, ThirtyMinutes, SixtyMinutes, Hourly, Daily
 
   enum SnapshotFrequency:
     case Daily, Weekly, Monthly
