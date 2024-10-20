@@ -14,6 +14,9 @@ import scala.util.Try
 
 class FinInstrumentServiceImpl extends FinInstrumentService:
 
+  private val minAvgDailyVolume = 500000
+  private val minAvgTrueRange = 0.5
+
   private case class FinInstrumentDB(
       symbol: String,
       name: String,
@@ -135,7 +138,7 @@ class FinInstrumentServiceImpl extends FinInstrumentService:
              creation_date,
              last_update,
              active
-             FROM fin_instrument order by price_volatility desc LIMIT ${limit}"""
+             FROM fin_instrument WHERE avg_daily_volume > $minAvgDailyVolume and ACTIVE='YES' and average_true_range > $minAvgTrueRange order by price_volatility desc LIMIT ${limit}"""
       .query[FinInstrumentDB]
       .to[List]
       .map(_.map(_.toDomain))
